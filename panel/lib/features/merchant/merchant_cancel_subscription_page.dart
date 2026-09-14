@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../auth/otp_verification_page.dart';
 
 class MerchantCancelSubscriptionPage extends StatefulWidget {
   const MerchantCancelSubscriptionPage({super.key});
@@ -158,16 +157,157 @@ class _MerchantCancelSubscriptionPageState
     );
   }
 
-  /// يفتح رمز التحقق ثم ينفّذ الاسترداد
+  /// يطلب كلمة المرور للتأكيد ثم ينفّذ الاسترداد
   void _startRefund() {
+    final pwd = TextEditingController();
+    bool obscure = true;
+    bool busy = false;
+    String? err;
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => OtpVerificationPage(
-        title: 'تأكيد الاسترداد',
-        subtitle: 'أدخل الرمز المرسل لتأكيد إلغاء اشتراكك واسترداد مبلغك',
-        phoneNumber: _phone,
-        onVerified: _doRefund,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            backgroundColor: Colors.white,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Row(
+              children: [
+                Icon(Icons.lock_outline_rounded, color: brandRed),
+                SizedBox(width: 8),
+                Text('تأكيد الاسترداد',
+                    style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 380),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'أدخل كلمة مرور حسابك لتأكيد إلغاء اشتراكك واسترداد مبلغك.',
+                    style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 13,
+                        height: 1.9,
+                        color: Colors.grey.shade700),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: pwd,
+                    obscureText: obscure,
+                    autofocus: true,
+                    style: const TextStyle(fontFamily: 'Cairo'),
+                    decoration: InputDecoration(
+                      labelText: 'كلمة المرور',
+                      labelStyle: const TextStyle(
+                          fontFamily: 'Cairo', fontSize: 13),
+                      // مخفي ⇒ عين مشطوبة · ظاهر ⇒ عين
+                      suffixIcon: IconButton(
+                        onPressed: () => setLocal(() => obscure = !obscure),
+                        icon: Icon(
+                          obscure
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          size: 19,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: brandRed, width: 1.6)),
+                    ),
+                  ),
+                  if (err != null) ...[
+                    const SizedBox(height: 10),
+                    Text(err!,
+                        style: const TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 12.5,
+                            color: Colors.red)),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: busy ? null : () => Navigator.pop(ctx),
+                child: const Text('إلغاء',
+                    style:
+                        TextStyle(fontFamily: 'Cairo', color: Colors.grey)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: brandRed,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: busy
+                    ? null
+                    : () async {
+                        final email = supabase.auth.currentUser?.email;
+                        if (email == null) {
+                          setLocal(() => err = 'انتهت الجلسة، أعد الدخول');
+                          return;
+                        }
+                        if (pwd.text.trim().isEmpty) {
+                          setLocal(() => err = 'أدخل كلمة المرور');
+                          return;
+                        }
+
+                        setLocal(() {
+                          busy = true;
+                          err = null;
+                        });
+
+                        try {
+                          // التحقّق بإعادة تسجيل الدخول — لا يكسر الجلسة
+                          await supabase.auth.signInWithPassword(
+                            email: email,
+                            password: pwd.text.trim(),
+                          );
+                        } on AuthException {
+                          setLocal(() {
+                            busy = false;
+                            err = 'كلمة المرور غير صحيحة';
+                          });
+                          return;
+                        } catch (_) {
+                          setLocal(() {
+                            busy = false;
+                            err = 'تعذر الاتصال، تحقق من الشبكة';
+                          });
+                          return;
+                        }
+
+                        if (!ctx.mounted) return;
+                        Navigator.pop(ctx);
+                        await _doRefund();
+                      },
+                child: busy
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
+                    : const Text('تأكيد الإلغاء',
+                        style: TextStyle(
+                            fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
