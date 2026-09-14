@@ -9,10 +9,8 @@ import AccountRecoveryGate from '@/components/AccountRecoveryGate';
 import { TvMinimalPlay, Bookmark, Mail } from 'lucide-react';
 import {
   FaTiktok,
-  FaSnapchatGhost,
   FaInstagram,
   FaApple,
-  FaWhatsapp,
 } from 'react-icons/fa';
 import { FaXTwitter, FaGooglePlay } from 'react-icons/fa6';
 import './globals.css';
@@ -200,30 +198,28 @@ export default function RootLayout({
               <div>
                 <h2 className="font-bold text-lg mb-5">تواصل معنا</h2>
 
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center text-gray-400 shrink-0">
-                    <FaWhatsapp size={18} />
-                  </span>
-                  <span className="text-sm text-red-600">
-                    ( رقم الواتساب )
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <span className="w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center text-gray-400 shrink-0">
+                {/* رقم الواتساب والبريد يُضافان لاحقاً من لوحة الأدمن */}
+                <Link
+                  prefetch={false}
+                  href="/support"
+                  className="flex items-center gap-3 group"
+                >
+                  <span className="w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 shrink-0 group-hover:border-red-300 group-hover:text-red-700 transition-colors">
                     <Mail size={16} />
                   </span>
-                  <span className="text-sm text-red-600">
-                    ( البريد الإلكتروني )
+                  <span className="text-sm text-gray-700 group-hover:text-red-700 transition-colors">
+                    راسلنا عبر صفحة الدعم
                   </span>
-                </div>
+                </Link>
 
                 <p className="text-sm font-bold mt-8 mb-1">
                   تجدونا هنا بانتظاركم
                 </p>
                 <div className="flex gap-2.5 mt-4">
                   <a
-                    href="#"
+                    href="https://x.com/redmarketsa"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     aria-label="إكس"
                     title="إكس"
                     className="w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 hover:border-red-300 hover:text-red-700 transition-colors"
@@ -232,7 +228,9 @@ export default function RootLayout({
                   </a>
 
                   <a
-                    href="#"
+                    href="https://www.instagram.com/redmarket.sa/"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     aria-label="انستغرام"
                     title="انستغرام"
                     className="w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 hover:border-red-300 hover:text-red-700 transition-colors"
@@ -241,26 +239,16 @@ export default function RootLayout({
                   </a>
 
                   <a
-                    href="#"
+                    href="https://www.tiktok.com/@redmarket.sa"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     aria-label="تيك توك"
                     title="تيك توك"
                     className="w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 hover:border-red-300 hover:text-red-700 transition-colors"
                   >
                     <FaTiktok size={15} />
                   </a>
-
-                  <a
-                    href="#"
-                    aria-label="سناب شات"
-                    title="سناب شات"
-                    className="w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 hover:border-red-300 hover:text-red-700 transition-colors"
-                  >
-                    <FaSnapchatGhost size={17} />
-                  </a>
                 </div>
-                <p className="text-[11px] text-red-600 mt-2">
-                  ( روابط حسابات التواصل )
-                </p>
 
               </div>
             </div>
