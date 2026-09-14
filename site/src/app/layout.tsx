@@ -31,7 +31,7 @@ const cairo = Cairo({
 export const metadata: Metadata = {
   title: 'رد ماركت — عروض المتاجر في مكان واحد',
   description:
-    'تصفّح أحدث العروض والتخفيضات من متاجر متعددة، وانتقل مباشرة لصفحة العرض في المتجر.',
+    'تصفّح أحدث المنتجات والعروض من متاجر متعددة، وانتقل مباشرة لصفحة المنتج في المتجر.',
 };
 
 export default function RootLayout({
@@ -43,15 +43,15 @@ export default function RootLayout({
     <html lang="ar" dir="rtl">
       <body className={`${cairo.className} bg-white text-gray-900`}>
         <header className="sticky top-0 bg-white z-50">
-          <div className="max-w-6xl mx-auto px-4 h-16 flex items-center gap-4">
+          <div className="max-w-6xl mx-auto px-4 h-12 flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2 shrink-0">
               {/* حاوية ثابتة تحجز المساحة قبل وصول الصورة */}
-              <div className="relative w-[168px] h-[56px]">
+              <div className="relative w-[108px] h-[36px]">
                 <Image
                   src="/logo.png"
                   alt="رد ماركت"
                   fill
-                  sizes="168px"
+                  sizes="108px"
                   className="object-contain"
                   priority
                 />
@@ -63,7 +63,7 @@ export default function RootLayout({
               <SearchBox />
             </div>
 
-            <nav className="flex items-center gap-0.5 shrink-0 ms-auto">
+            <nav className="flex items-center gap-0.5 shrink-0">
               <Link
                 href="/reels"
                 aria-label="الريلز"
@@ -72,7 +72,7 @@ export default function RootLayout({
                 style={{ color: '#D32027' }}
               >
                 <TvMinimalPlay size={30} strokeWidth={1.6} />
-                
+                <span className="text-sm font-bold">Reels</span>
               </Link>
 
               {/* على الحاسب فقط — وعلى الجوال تنزل للصف الثاني */}
@@ -95,7 +95,7 @@ export default function RootLayout({
           </div>
 
           {/* على الجوال: صف ثانٍ — البحث مع المفضلة والإشعارات */}
-          <div className="md:hidden max-w-6xl mx-auto px-4 pb-2 flex items-center gap-0">
+          <div className="md:hidden max-w-6xl mx-auto px-4 pb-2 flex items-center gap-1">
             <div className="flex-1 min-w-0">
               <SearchBox />
             </div>
@@ -104,15 +104,13 @@ export default function RootLayout({
               href="/favorites"
               aria-label="المفضلة"
               title="المفضلة"
-              className="w-11 h-11 shrink-0 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors -me-2"
+              className="w-11 h-11 shrink-0 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
               style={{ color: '#D32027' }}
             >
               <Bookmark size={26} strokeWidth={1.6} />
             </Link>
 
-            <div className="-me-[15px]">
-              <NotificationsBell />
-            </div>
+            <NotificationsBell />
           </div>
         </header>
 
@@ -137,7 +135,7 @@ export default function RootLayout({
                 </div>
 
                 <p className="text-sm text-gray-500 leading-7 mt-4">
-                  رد ماركت منصة تجمع عروض المتاجر في مكان واحد، لتتصفح العروض
+                  رد ماركت منصة تجمع عروض المتاجر في مكان واحد، لتتصفح المنتجات
                   وتقارن بينها، ثم تنتقل مباشرة إلى المتجر لإتمام الشراء.
                 </p>
 
@@ -270,14 +268,8 @@ export default function RootLayout({
             <div className="border-t border-gray-200 mt-10 pt-6">
               <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-2 text-xs text-gray-600">
                 <span>© رد ماركت — جميع الحقوق محفوظة</span>
-                <span>
-                  السجل التجاري :{' '}
-                  <span className="text-red-600 font-bold">( الرقم )</span>
-                </span>
-                <span>
-                  الرقم الضريبي :{' '}
-                  <span className="text-red-600 font-bold">( الرقم )</span>
-                </span>
+                {/* البيانات النظامية تُضاف عند اكتمال التسجيل */}
+                <span>منصة في مرحلة تشغيل تجريبي</span>
               </div>
             </div>
           </div>
