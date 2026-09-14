@@ -1,3 +1,8 @@
+// NOTE: phone OTP screen - currently unused.
+// Auth runs fully on email (signup, confirm, reset).
+// Enable when a Saudi SMS provider is connected.
+// Route RoutePaths.otp is defined in app_router but never navigated to.
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
