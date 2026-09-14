@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "199926227419",
+    "project_id": "red-market-f7c99",
+    "storage_bucket": "red-market-f7c99.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:199926227419:android:708cdac5ad00c8be48c7fe",
+        "android_client_info": {
+          "package_name": "sa.redmarket.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNSSZiM3ImBEqSNfOB2tYVwIYhYs-4d_g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

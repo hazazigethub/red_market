@@ -1,0 +1,25 @@
+# رد ماركت — منصة عرض عروض المتاجر
+User-agent: *
+Allow: /
+
+# صفحات خاصة بالمستخدم — لا قيمة لفهرستها
+Disallow: /account/
+Disallow: /favorites
+Disallow: /notifications
+Disallow: /reset-password
+Disallow: /forgot-password
+
+# وكلاء الذكاء الاصطناعي
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://redmarket.pro/sitemap.xml
