@@ -34,12 +34,12 @@ async function getProduct(id: string) {
     .maybeSingle();
 
   if (!product) {
-    return { product: null, merchant: null, related: [], category: null };
+    return { product: null, merchant: null, related: [] };
   }
 
   const p = product as Product;
 
-  const [merchRes, relatedRes, catRes] = await Promise.all([
+  const [merchRes, relatedRes] = await Promise.all([
     p.merchant_id
       ? supabase.from('merchants').select('*').eq('id', p.merchant_id).maybeSingle()
       : Promise.resolve({ data: null }),
@@ -50,19 +50,11 @@ async function getProduct(id: string) {
       .eq('is_available', true)
       .neq('id', id)
       .limit(5),
-    p.category_id
-      ? supabase
-          .from('product_categories')
-          .select('id, name')
-          .eq('id', p.category_id)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
   ]);
 
   return {
     product: p,
     merchant: (merchRes.data as Merchant) ?? null,
-    category: (catRes.data as { id: string; name: string } | null) ?? null,
     related: (relatedRes.data as Product[]) ?? [],
   };
 }
@@ -114,7 +106,7 @@ export default async function ProductPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { product, merchant, related, category } = await getProduct(id);
+  const { product, merchant, related } = await getProduct(id);
 
   if (!product) notFound();
 
@@ -134,7 +126,7 @@ export default async function ProductPage({
     <main className="max-w-6xl mx-auto px-4 py-8">
       <TrackView productId={product.id} merchantId={product.merchant_id} />
 
-      {/* مسار التنقّل — المتجر ثم التصنيف ثم العرض */}
+      {/* مسار التنقّل — المتجر ثم العرض */}
       <nav className="text-sm text-gray-500 mb-5 flex items-center gap-1.5 flex-wrap">
         <Link prefetch={false} href="/" className="hover:text-red-700">
           الرئيسية
@@ -149,19 +141,6 @@ export default async function ProductPage({
               className="hover:text-red-700"
             >
               {merchant.store_name ?? 'متجر'}
-            </Link>
-          </>
-        )}
-
-        {category && (
-          <>
-            <span className="text-gray-300">/</span>
-            <Link
-              prefetch={false}
-              href={`/category-offers/${category.id}`}
-              className="hover:text-red-700"
-            >
-              {category.name}
             </Link>
           </>
         )}

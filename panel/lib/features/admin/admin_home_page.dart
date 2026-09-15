@@ -206,7 +206,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
   Widget _sideMenu() {
     return Container(
-      width: 236,
+      width: 268,
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
@@ -214,7 +214,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
         ),
       ),
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
         itemCount: _sections.length + 1,
         itemBuilder: (context, i) {
           if (i == 0) {
@@ -254,21 +254,21 @@ class _AdminHomePageState extends State<AdminHomePage> {
           onTap: onTap,
           child: Padding(
             padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
             child: Row(
               children: [
                 Icon(icon,
-                    size: 19,
+                    size: 18,
                     color:
                         selected ? Colors.white : const Color(0xFF8A93A6)),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 13.5,
+                      fontSize: 12.5,
                       color: selected
                           ? Colors.white
                           : const Color(0xFF4A5468),
