@@ -274,10 +274,9 @@ class _AdminAnnouncementsScreenState extends State<AdminAnnouncementsScreen> {
                               if (ctx.mounted) Navigator.pop(ctx);
                               _fetchAnnouncements();
                             } catch (e) {
-                              if (ctx.mounted) {
-                                setModal(() => isUploading = false);
-                              }
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              if (!ctx.mounted) return;
+                              setModal(() => isUploading = false);
+                              ScaffoldMessenger.of(ctx).showSnackBar(
                                 SnackBar(content: Text("خطأ: $e")),
                               );
                             }

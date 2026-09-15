@@ -75,12 +75,14 @@ class _DiscountCodesScreenState extends State<DiscountCodesScreen> {
           _activeTab = 1;
         });
 
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
               content: Text('تم حفظ الكود بنجاح'),
               backgroundColor: Colors.green),
         );
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text('خطأ في الحفظ: $e'), backgroundColor: Colors.red),
@@ -94,8 +96,10 @@ class _DiscountCodesScreenState extends State<DiscountCodesScreen> {
       await supabase
           .from('promo_codes')
           .update({'is_active': currentStatus}).eq('id', id);
+      if (!mounted) return;
       setState(() {});
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text('خطأ في تحديث الحالة: $e'),
@@ -107,8 +111,10 @@ class _DiscountCodesScreenState extends State<DiscountCodesScreen> {
   Future<void> _deleteCode(String id) async {
     try {
       await supabase.from('promo_codes').delete().eq('id', id);
+      if (!mounted) return;
       setState(() {});
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text('خطأ في الحذف: $e'), backgroundColor: Colors.red),

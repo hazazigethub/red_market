@@ -347,6 +347,9 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
             children: [
               TextButton(
                 onPressed: () async {
+                  // يُلتقط قبل الانتظار — فلا يُقرأ context بعده
+                  final messenger = ScaffoldMessenger.of(context);
+
                   if (isBanned) {
                     // إذا كان محظوراً ونريد إلغاء الحظر
                     await supabase
@@ -368,7 +371,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
 
                   if (mounted) {
                     setState(() {});
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       SnackBar(
                         content: Text(
                           isBanned

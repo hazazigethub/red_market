@@ -1813,7 +1813,9 @@ class _ProductsPageState extends State<ProductsPage> {
                                     flashSaleStart: flashSaleStart,
                                   ),
                                   isUpdate: productToEdit != null);
-                              if (mounted) Navigator.pop(sheetContext);
+                              if (sheetContext.mounted) {
+                                Navigator.pop(sheetContext);
+                              }
                             },
                       child: isSaving
                           ? const CircularProgressIndicator(color: Colors.white)

@@ -389,7 +389,11 @@ class ReportsDetailsPage extends StatelessWidget {
                           .from(tableName)
                           .update({'status': 'resolved'}).eq('id', item['id']);
 
+                      if (!ctx.mounted) return;
                       Navigator.pop(ctx);
+
+                      // صفحة بلا حالة — فالفحص على السياق نفسه
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                           content: Text("تم تنفيذ إجراء الحظر بنجاح",
                               style: TextStyle(fontFamily: 'Cairo')),

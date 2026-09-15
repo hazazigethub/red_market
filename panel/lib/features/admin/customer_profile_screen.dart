@@ -34,24 +34,24 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
             ban ? reason : null, // نفترض وجود عمود ban_reason في جدولك
       }).eq('id', widget.userId);
 
+      if (!mounted) return;
       setState(() => _isBanned = ban);
 
-      if (mounted) {
-        Navigator.pop(context); // إغلاق الدايالوج
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(ban ? "تم حظر العميل" : "تم فك الحظر"),
-              backgroundColor: ban ? Colors.black : Colors.green),
-        );
-      }
+      Navigator.pop(context); // إغلاق الدايالوج
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(ban ? "تم حظر العميل" : "تم فك الحظر"),
+            backgroundColor: ban ? Colors.black : Colors.green),
+      );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text("حدث خطأ أثناء التحديث"),
             backgroundColor: Colors.red),
       );
     } finally {
-      setState(() => _isProcessing = false);
+      if (mounted) setState(() => _isProcessing = false);
     }
   }
 

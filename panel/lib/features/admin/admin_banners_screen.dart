@@ -119,6 +119,7 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
       }
     } catch (e) {
       debugPrint("خطأ في الحفظ: $e");
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
       );

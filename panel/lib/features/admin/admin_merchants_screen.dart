@@ -719,11 +719,13 @@ class _MerchantControlScreenState extends State<MerchantControlScreen> {
         });
       }
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text("تم التحديث", style: TextStyle(fontFamily: 'Cairo')),
           backgroundColor: Colors.green,
           duration: Duration(seconds: 1)));
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         if (column == 'is_verified') isVerified = currentValue;
         if (column == 'is_banned') isBanned = currentValue;
