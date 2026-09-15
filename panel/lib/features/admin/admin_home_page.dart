@@ -19,6 +19,7 @@ import 'admin_refunds_screen.dart';
 import 'admin_contacts_screen.dart';
 import 'admin_merchant_banners_screen.dart';
 import 'admin_splash_ads_screen.dart';
+import 'admin_settings_screen.dart';
 import 'admin_campaigns_screen.dart';
 import 'admin_financial_screen.dart';
 import 'admin_users_hub_screen.dart';
@@ -52,6 +53,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     {'label': 'بنرات التجار', 'icon': Icons.storefront_outlined},
     {'label': 'البنرات', 'icon': Icons.ad_units_outlined},
     {'label': 'الزيارات', 'icon': Icons.trending_up_outlined},
+    {'label': 'الإعدادات', 'icon': Icons.settings_outlined},
   ];
 
   Widget _sectionBody(int i) {
@@ -82,6 +84,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
         return const AdminBannersScreen();
       case 12:
         return const AdminAnalyticsVisitsScreen();
+      case 13:
+        return const AdminSettingsScreen();
       default:
         return _welcome();
     }
