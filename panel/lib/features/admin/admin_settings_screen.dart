@@ -22,6 +22,11 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   final _urlTiktok = TextEditingController();
   final _urlSnapchat = TextEditingController();
 
+  // ميزات التاجر — كل واحدة تُفتح وتُغلق وحدها
+  bool _featPromo = false;
+  bool _featBanners = false;
+  bool _featCampaigns = false;
+
   bool _isMaintenanceMode = false;
   bool _isLoading = true;
   bool _isSaving = false;
@@ -59,6 +64,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           _urlInstagram.text = data['url_instagram'] ?? '';
           _urlTiktok.text = data['url_tiktok'] ?? '';
           _urlSnapchat.text = data['url_snapchat'] ?? '';
+          _featPromo = data['feat_promo'] ?? false;
+          _featBanners = data['feat_banners'] ?? false;
+          _featCampaigns = data['feat_campaigns'] ?? false;
         });
       }
     } catch (e) {
@@ -87,6 +95,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         'url_instagram': _clean(_urlInstagram),
         'url_tiktok': _clean(_urlTiktok),
         'url_snapchat': _clean(_urlSnapchat),
+        'feat_promo': _featPromo,
+        'feat_banners': _featBanners,
+        'feat_campaigns': _featCampaigns,
         'updated_at': DateTime.now().toIso8601String(),
       });
       if (mounted) {
@@ -135,6 +146,43 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                             const SizedBox(height: 20),
 
                             _maintenanceCard(),
+                            const SizedBox(height: 16),
+
+                            _card(
+                              icon: Icons.toggle_on_outlined,
+                              title: 'أقسام التاجر',
+                              subtitle:
+                                  'المغلق يظهر للتاجر بعلامة «قريباً» ولا يُفتح',
+                              child: Column(
+                                children: [
+                                  _toggle(
+                                    label: 'رسائل المتابعين',
+                                    icon: Icons.campaign_outlined,
+                                    value: _featPromo,
+                                    onChanged: (v) =>
+                                        setState(() => _featPromo = v),
+                                  ),
+                                  const Divider(height: 22),
+                                  _toggle(
+                                    label: 'بنراتي',
+                                    icon: Icons.ad_units_outlined,
+                                    value: _featBanners,
+                                    note: 'يشمل إعلان شاشة الافتتاح',
+                                    onChanged: (v) =>
+                                        setState(() => _featBanners = v),
+                                  ),
+                                  const Divider(height: 22),
+                                  _toggle(
+                                    label: 'الحملة الموسمية',
+                                    icon:
+                                        Icons.local_fire_department_outlined,
+                                    value: _featCampaigns,
+                                    onChanged: (v) =>
+                                        setState(() => _featCampaigns = v),
+                                  ),
+                                ],
+                              ),
+                            ),
                             const SizedBox(height: 16),
 
                             _card(
@@ -371,6 +419,54 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _toggle({
+    required String label,
+    required IconData icon,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    String? note,
+  }) {
+    return Row(
+      children: [
+        Icon(icon,
+            size: 17, color: value ? _brand : Colors.grey.shade400),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  style: const TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold)),
+              if (note != null) ...[
+                const SizedBox(height: 2),
+                Text(note,
+                    style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 10.5,
+                        color: Colors.grey.shade500)),
+              ],
+            ],
+          ),
+        ),
+        Text(value ? 'مفتوح' : 'قريباً',
+            style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: value ? _brand : Colors.grey.shade400)),
+        const SizedBox(width: 6),
+        Switch(
+          value: value,
+          activeThumbColor: _brand,
+          onChanged: onChanged,
+        ),
+      ],
     );
   }
 

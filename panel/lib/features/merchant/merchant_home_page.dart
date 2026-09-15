@@ -37,6 +37,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
   void initState() {
     super.initState();
     MerchantNav.requested.addListener(_onNavRequest);
+    _loadFeatures();
     _loadSuspended();
     _loadCampaign();
   }
@@ -108,6 +109,42 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
     MerchantNav.clear();
   }
 
+  /// أقسام مرتبطة بميزات تُفتح من لوحة الأدمن
+  /// المفتاح رقم القسم، والقيمة اسم العمود في system_settings
+  static const _gated = <int, String>{
+    3: 'feat_promo',
+    4: 'feat_banners',
+    5: 'feat_campaigns',
+  };
+
+  /// ما هو مفتوح فعلياً — يُملأ عند التحميل
+  Map<String, bool> _features = const {};
+
+  Future<void> _loadFeatures() async {
+    try {
+      final data = await Supabase.instance.client
+          .from('system_settings')
+          .select('feat_promo, feat_banners, feat_campaigns')
+          .eq('id', 1)
+          .maybeSingle();
+
+      if (data == null || !mounted) return;
+      setState(() {
+        _features = {
+          for (final k in _gated.values) k: data[k] == true,
+        };
+      });
+    } catch (_) {
+      // تعذّر الجلب — تبقى الأقسام مغلقة
+    }
+  }
+
+  bool _isLocked(int i) {
+    final key = _gated[i];
+    if (key == null) return false;
+    return _features[key] != true;
+  }
+
   static const _sections = <Map<String, dynamic>>[
     {'label': 'عروضي', 'icon': Icons.inventory_2_outlined},
     {'label': 'الريلز', 'icon': Icons.video_library_outlined},
@@ -123,6 +160,8 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
   ];
 
   Widget _sectionBody(int i) {
+    if (_isLocked(i)) return _comingSoon(i);
+
     switch (i) {
       case 0:
         return const ProductsPage();
@@ -149,6 +188,64 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
       default:
         return _welcome();
     }
+  }
+
+  /// تُعرض بدل القسم حتى تُفتح ميزته من لوحة الأدمن
+  Widget _comingSoon(int i) {
+    final s = _sections[i];
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(s['icon'] as IconData,
+                  size: 34, color: Colors.grey.shade400),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              s['label'] as String,
+              style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+              decoration: BoxDecoration(
+                color: AppColors.brand.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text('قريباً',
+                  style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.brand)),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'هذه الخدمة قيد التجهيز، وستُفتح للتجار قريباً.\nسنُشعرك فور إتاحتها.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 12.5,
+                  height: 1.9,
+                  color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   // ===================== الإحصاءات =====================
@@ -522,6 +619,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
             label: s['label'] as String,
             icon: s['icon'] as IconData,
             selected: _index == i - 1,
+            locked: _isLocked(i - 1),
             onTap: () => setState(() => _index = i - 1),
           );
         },
@@ -534,6 +632,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
     required IconData icon,
     required bool selected,
     required VoidCallback onTap,
+    bool locked = false,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -562,12 +661,33 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
                       fontSize: 13.5,
                       color: selected
                           ? Colors.white
-                          : const Color(0xFF4A5468),
+                          : locked
+                              ? const Color(0xFFA5ADBB)
+                              : const Color(0xFF4A5468),
                       fontWeight:
                           selected ? FontWeight.bold : FontWeight.w500,
                     ),
                   ),
                 ),
+                if (locked)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? Colors.white.withValues(alpha: 0.25)
+                          : const Color(0xFFF0F1F4),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text('قريباً',
+                        style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.bold,
+                            color: selected
+                                ? Colors.white
+                                : const Color(0xFF8A93A6))),
+                  ),
               ],
             ),
           ),
@@ -607,6 +727,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
                           final label = i == 0
                               ? 'الرئيسية'
                               : _sections[i - 1]['label'] as String;
+                          final locked = i > 0 && _isLocked(i - 1);
 
                           return Padding(
                             padding: const EdgeInsets.only(left: 8),
@@ -628,7 +749,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
                                 ),
                                 alignment: Alignment.center,
                                 child: Text(
-                                  label,
+                                  locked ? '$label · قريباً' : label,
                                   style: TextStyle(
                                     fontSize: 12.5,
                                     fontWeight: selected
@@ -636,7 +757,9 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
                                         : FontWeight.normal,
                                     color: selected
                                         ? Colors.white
-                                        : Colors.grey.shade700,
+                                        : locked
+                                            ? Colors.grey.shade400
+                                            : Colors.grey.shade700,
                                   ),
                                 ),
                               ),
