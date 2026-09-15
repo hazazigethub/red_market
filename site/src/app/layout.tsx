@@ -7,6 +7,7 @@ import AccountMenu from '@/components/AccountMenu';
 import NotificationsBell from '@/components/NotificationsBell';
 import AccountRecoveryGate from '@/components/AccountRecoveryGate';
 import FooterContact from '@/components/FooterContact';
+import MaintenanceGate from '@/components/MaintenanceGate';
 import { TvMinimalPlay, Bookmark } from 'lucide-react';
 import { FaApple } from 'react-icons/fa';
 import { FaGooglePlay } from 'react-icons/fa6';
@@ -109,6 +110,7 @@ export default function RootLayout({
           </div>
         </header>
 
+        <MaintenanceGate />
         <AccountRecoveryGate />
 
         {children}
