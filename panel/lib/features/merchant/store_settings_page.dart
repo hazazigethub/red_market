@@ -160,10 +160,11 @@ class _StoreSettingsPageState extends State<StoreSettingsPage> {
           {isLogo ? 'logo_url' : 'cr_image_url': publicUrl}).eq('id', userId);
 
       setState(() {
-        if (isLogo)
+        if (isLogo) {
           _logoUrl = publicUrl;
-        else
+        } else {
           _crImageUrl = publicUrl;
+        }
       });
     } catch (e) {
       debugPrint("Upload Error: $e");

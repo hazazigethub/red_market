@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // ✅ إضافة Riverpod
-import 'package:red_market_core/red_market_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MerchantBankAccountPage extends ConsumerStatefulWidget {
@@ -832,8 +831,9 @@ class _MerchantBankAccountPageState
                 ),
             validator: (val) {
               if (val!.isEmpty) return "يرجى إدخال الآيبان";
-              if (!val.toUpperCase().startsWith("SA") || val.length != 24)
+              if (!val.toUpperCase().startsWith("SA") || val.length != 24) {
                 return "تنسيق الآيبان غير صحيح (24 خانة)";
+              }
               return null;
             },
           ),

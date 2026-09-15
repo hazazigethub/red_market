@@ -130,8 +130,9 @@ class _AdminAnalyticsProductsScreenState
               return const Center(
                   child: CircularProgressIndicator(color: brandRed));
             }
-            if (snapshot.hasError)
+            if (snapshot.hasError) {
               return Center(child: Text("خطأ: ${snapshot.error}"));
+            }
 
             final data = snapshot.data!;
 

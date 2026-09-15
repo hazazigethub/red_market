@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:red_market_core/red_market_core.dart';
-import 'package:video_compress/video_compress.dart';
 import 'review_reels_page.dart';
 
 class ManageReelsPage extends StatefulWidget {

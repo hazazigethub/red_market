@@ -128,8 +128,9 @@ class _AdminAnalyticsMerchantsScreenState
               debugPrint("Error: ${snapshot.error}");
               return Center(child: Text("خطأ: ${snapshot.error}"));
             }
-            if (!snapshot.hasData)
+            if (!snapshot.hasData) {
               return const Center(child: Text("لا توجد بيانات متاجر"));
+            }
 
             final s = snapshot.data!;
 

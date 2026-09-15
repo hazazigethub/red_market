@@ -31,10 +31,12 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
   // ✅ قاموس الأيقونات الرمادية الذكي
   IconData _getIcon(String name) {
     name = name.toLowerCase();
-    if (name.contains("ملابس") || name.contains("أزياء"))
+    if (name.contains("ملابس") || name.contains("أزياء")) {
       return Icons.checkroom_rounded;
-    if (name.contains("قهوه") || name.contains("قهوة"))
+    }
+    if (name.contains("قهوه") || name.contains("قهوة")) {
       return Icons.local_cafe_rounded;
+    }
     if (name.contains("عناية")) return Icons.auto_awesome_rounded;
     if (name.contains("إلكترونيات")) return Icons.devices_rounded;
     if (name.contains("ملحقات")) return Icons.mouse_rounded;
@@ -49,8 +51,9 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
     if (name.contains("ألعاب")) return Icons.videogame_asset_rounded;
     if (name.contains("رحلات")) return Icons.terrain_rounded;
     if (name.contains("حيوان")) return Icons.pets_rounded;
-    if (name.contains("كتب") || name.contains("قرطاسية"))
+    if (name.contains("كتب") || name.contains("قرطاسية")) {
       return Icons.menu_book_rounded;
+    }
     if (name.contains("سيارات")) return Icons.directions_car_filled_rounded;
     if (name.contains("هدايا")) return Icons.redeem_rounded;
     if (name.contains("سفر")) return Icons.flight_takeoff_rounded;

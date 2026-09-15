@@ -336,9 +336,10 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen>
                 .order('created_at'),
             builder: (context, snapshot) {
               final templates = snapshot.data ?? [];
-              if (templates.isEmpty)
+              if (templates.isEmpty) {
                 return const Text("لا توجد قوالب محفوظة",
                     style: TextStyle(fontSize: 12, color: Colors.grey));
+              }
               return ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: templates.length,
@@ -472,10 +473,11 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen>
                     .catchError((e) => []),
               ]),
               builder: (ctx, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting)
+                if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Padding(
                       padding: EdgeInsets.all(15),
                       child: LinearProgressIndicator());
+                }
 
                 final List results = [];
                 if (snapshot.hasData) {
@@ -483,7 +485,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen>
                   results.addAll(snapshot.data![1]);
                 }
 
-                if (results.isEmpty)
+                if (results.isEmpty) {
                   return const Padding(
                       padding: EdgeInsets.all(15),
                       child: Text("لا توجد نتائج مطابقة",
@@ -491,6 +493,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen>
                               fontFamily: 'Cairo',
                               fontSize: 11,
                               color: Colors.grey)));
+                }
 
                 return ListView.separated(
                   shrinkWrap: true,

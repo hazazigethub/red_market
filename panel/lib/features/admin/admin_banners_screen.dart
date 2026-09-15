@@ -465,9 +465,10 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
               child: FutureBuilder<List<Map<String, dynamic>>>(
                 future: _bannersStream,
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting)
+                  if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(
                         child: CircularProgressIndicator(color: brandRed));
+                  }
                   final banners = snapshot.data ?? [];
 
                   final filtered = banners.where((b) {
@@ -479,10 +480,11 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
                         type.contains(_searchQuery);
                   }).toList();
 
-                  if (banners.isEmpty)
+                  if (banners.isEmpty) {
                     return const Center(
                         child: Text("لا توجد بنرات",
                             style: TextStyle(fontFamily: 'Cairo')));
+                  }
 
                   final wideBanners = filtered
                       .where((b) => b['banner_type'] == 'wide')
@@ -1024,8 +1026,9 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
                               lastDate:
                                   DateTime.now().add(const Duration(days: 365)),
                             );
-                            if (picked != null)
+                            if (picked != null) {
                               setSheetState(() => start = picked);
+                            }
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
@@ -1067,8 +1070,9 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
                               lastDate:
                                   DateTime.now().add(const Duration(days: 365)),
                             );
-                            if (picked != null)
+                            if (picked != null) {
                               setSheetState(() => end = picked);
+                            }
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
