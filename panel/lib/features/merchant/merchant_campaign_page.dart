@@ -28,8 +28,8 @@ class _MerchantCampaignPageState extends State<MerchantCampaignPage> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() => _loading = true);
+  Future<void> _load({bool silent = false}) async {
+    if (!silent) setState(() => _loading = true);
     try {
       final uid = supabase.auth.currentUser?.id;
       final camp = await supabase.rpc('get_active_campaign');
@@ -397,9 +397,27 @@ class _MerchantCampaignPageState extends State<MerchantCampaignPage> {
       final map = Map<String, dynamic>.from(res as Map);
 
       if (map['ok'] == true) {
-        await _load();
+        // تحديث موضعي فوري — فلا تومض الصفحة ولا يضيع موضع التمرير
+        if (mounted) {
+          setState(() {
+            if (added) {
+              _inCampaign.removeWhere(
+                  (e) => e['product_id'].toString() == pid);
+            } else {
+              _inCampaign.add({
+                'product_id': pid,
+                'campaign_id': _campaign!['id'],
+                'current_status': 'active',
+              });
+            }
+          });
+        }
+
         _snack(added ? 'أُزيل من الحملة' : 'أُضيف للحملة',
             added ? Colors.orange : Colors.green);
+
+        // مزامنة صامتة في الخلفية — للأرقام والحصة
+        await _load(silent: true);
       } else {
         if (map['need_quota'] == true) {
           _snack(map['error']?.toString() ?? 'نفدت حصتك', Colors.orange);

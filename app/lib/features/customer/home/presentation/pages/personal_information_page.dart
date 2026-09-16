@@ -381,9 +381,7 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
               borderRadius: BorderRadius.circular(10),
               borderSide: const BorderSide(color: brandRed)),
         ),
-        validator: (val) => val == null || val.length < 6
-            ? "يجب أن تكون كلمة المرور 6 خانات على الأقل"
-            : null,
+        validator: (val) => passwordError(val ?? ''),
       ),
     );
   }
@@ -439,4 +437,20 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
         content: Text(msg, style: const TextStyle(fontFamily: 'Cairo')),
         backgroundColor: color));
   }
+}
+
+/// ٨ خانات على الأقل، مع حرف كبير وصغير ورقم ورمز
+String? passwordError(String pw) {
+  if (pw.length < 8) return 'كلمة المرور يجب أن تكون 8 خانات على الأقل';
+  if (!RegExp(r'[a-z]').hasMatch(pw)) {
+    return 'أضف حرفاً إنجليزياً صغيراً على الأقل';
+  }
+  if (!RegExp(r'[A-Z]').hasMatch(pw)) {
+    return 'أضف حرفاً إنجليزياً كبيراً على الأقل';
+  }
+  if (!RegExp(r'[0-9]').hasMatch(pw)) return 'أضف رقماً على الأقل';
+  if (!RegExp(r'[^A-Za-z0-9]').hasMatch(pw)) {
+    return 'أضف رمزاً مثل ! أو @ أو #';
+  }
+  return null;
 }

@@ -57,6 +57,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return;
     }
 
+    final pwErr = passwordError(_passwordController.text.trim());
+    if (pwErr != null) {
+      _showError("⚠️ $pwErr");
+      return;
+    }
+
     setState(() => _isLoading = true);
     isRegisteringInProgress = true;
 
@@ -413,4 +419,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           borderSide: const BorderSide(color: Color(0xFFD32027), width: 1.5)),
     );
   }
+}
+
+/// ٨ خانات على الأقل، مع حرف كبير وصغير ورقم ورمز
+String? passwordError(String pw) {
+  if (pw.length < 8) return 'كلمة المرور يجب أن تكون 8 خانات على الأقل';
+  if (!RegExp(r'[a-z]').hasMatch(pw)) {
+    return 'أضف حرفاً إنجليزياً صغيراً على الأقل';
+  }
+  if (!RegExp(r'[A-Z]').hasMatch(pw)) {
+    return 'أضف حرفاً إنجليزياً كبيراً على الأقل';
+  }
+  if (!RegExp(r'[0-9]').hasMatch(pw)) return 'أضف رقماً على الأقل';
+  if (!RegExp(r'[^A-Za-z0-9]').hasMatch(pw)) {
+    return 'أضف رمزاً مثل ! أو @ أو #';
+  }
+  return null;
 }

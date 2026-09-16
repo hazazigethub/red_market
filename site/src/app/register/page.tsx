@@ -8,6 +8,17 @@ import { supabaseBrowser } from '@/lib/supabase-client';
 
 const BRAND = '#D32027';
 
+/// ٨ خانات على الأقل، مع حرف كبير وصغير ورقم ورمز
+function passwordError(pw: string): string | null {
+  if (pw.length < 8) return 'كلمة المرور يجب أن تكون 8 خانات على الأقل';
+  if (!/[a-z]/.test(pw)) return 'أضف حرفاً إنجليزياً صغيراً على الأقل';
+  if (!/[A-Z]/.test(pw)) return 'أضف حرفاً إنجليزياً كبيراً على الأقل';
+  if (!/[0-9]/.test(pw)) return 'أضف رقماً على الأقل';
+  if (!/[^A-Za-z0-9]/.test(pw)) return 'أضف رمزاً مثل ! أو @ أو #';
+  return null;
+}
+
+
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState('');
@@ -50,8 +61,9 @@ export default function RegisterPage() {
       setError('كلمتا المرور غير متطابقتين');
       return;
     }
-    if (password.trim().length < 6) {
-      setError('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+    const pwErr = passwordError(password.trim());
+    if (pwErr) {
+      setError(pwErr);
       return;
     }
     if (!/^[\w.\-+]+@[\w\-]+(\.[\w\-]+)+$/.test(email.trim())) {
@@ -442,7 +454,7 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                placeholder="6 أحرف على الأقل"
+                placeholder="8 خانات · حرف كبير وصغير ورقم ورمز"
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5 pl-11 outline-none focus:border-red-400"
               />
               <button

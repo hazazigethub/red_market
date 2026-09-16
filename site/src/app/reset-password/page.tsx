@@ -7,6 +7,17 @@ import { Eye, EyeOff } from 'lucide-react';
 
 const BRAND = '#D32027';
 
+/// ٨ خانات على الأقل، مع حرف كبير وصغير ورقم ورمز
+function passwordError(pw: string): string | null {
+  if (pw.length < 8) return 'كلمة المرور يجب أن تكون 8 خانات على الأقل';
+  if (!/[a-z]/.test(pw)) return 'أضف حرفاً إنجليزياً صغيراً على الأقل';
+  if (!/[A-Z]/.test(pw)) return 'أضف حرفاً إنجليزياً كبيراً على الأقل';
+  if (!/[0-9]/.test(pw)) return 'أضف رقماً على الأقل';
+  if (!/[^A-Za-z0-9]/.test(pw)) return 'أضف رمزاً مثل ! أو @ أو #';
+  return null;
+}
+
+
 export default function ResetPasswordPage() {
   const router = useRouter();
 
@@ -72,8 +83,9 @@ export default function ResetPasswordPage() {
     if (busy) return;
     setError(null);
 
-    if (password.length < 6) {
-      setError('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+    const pwErr = passwordError(password);
+    if (pwErr) {
+      setError(pwErr);
       return;
     }
     if (password !== confirm) {
@@ -181,7 +193,7 @@ export default function ResetPasswordPage() {
           تعيين كلمة مرور جديدة
         </h1>
         <p className="mt-2 text-sm text-gray-500 text-center leading-7">
-          اختر كلمة مرور قوية لا تقل عن 6 أحرف
+          ٨ خانات على الأقل، مع حرف كبير وصغير ورقم ورمز
         </p>
 
         <div className="mt-6">

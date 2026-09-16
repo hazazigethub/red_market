@@ -130,6 +130,12 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
       return;
     }
 
+    final pwErr = passwordError(_passwordController.text.trim());
+    if (pwErr != null) {
+      _showError(pwErr);
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -816,4 +822,20 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
           (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null,
     );
   }
+}
+
+/// ٨ خانات على الأقل، مع حرف كبير وصغير ورقم ورمز
+String? passwordError(String pw) {
+  if (pw.length < 8) return 'كلمة المرور يجب أن تكون 8 خانات على الأقل';
+  if (!RegExp(r'[a-z]').hasMatch(pw)) {
+    return 'أضف حرفاً إنجليزياً صغيراً على الأقل';
+  }
+  if (!RegExp(r'[A-Z]').hasMatch(pw)) {
+    return 'أضف حرفاً إنجليزياً كبيراً على الأقل';
+  }
+  if (!RegExp(r'[0-9]').hasMatch(pw)) return 'أضف رقماً على الأقل';
+  if (!RegExp(r'[^A-Za-z0-9]').hasMatch(pw)) {
+    return 'أضف رمزاً مثل ! أو @ أو #';
+  }
+  return null;
 }
