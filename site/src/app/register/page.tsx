@@ -136,7 +136,8 @@ export default function RegisterPage() {
         return;
       }
 
-      router.push('/');
+      // اختيار التصنيفات المفضّلة بعد التأكيد
+      router.push('/interests');
       router.refresh();
     } catch {
       setOtpError('تعذر الاتصال، تحقق من الشبكة');
