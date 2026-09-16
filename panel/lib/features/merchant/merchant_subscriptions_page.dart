@@ -256,8 +256,7 @@ class _MerchantSubscriptionsPageState
                             _sectionTabs(),
                             const SizedBox(height: 22),
                             cols >= types.length
-                                ? SizedBox(
-                                    height: 840,
+                                ? IntrinsicHeight(
                                     child: Row(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.stretch,
@@ -301,6 +300,7 @@ class _MerchantSubscriptionsPageState
                                             planType: type,
                                             hasYearly: hasYearly,
                                             isYearly: isYearly,
+                                            stretch: true,
                                           );
                                         }),
                                         gap,
@@ -379,6 +379,7 @@ class _MerchantSubscriptionsPageState
     String planType = '',
     bool hasYearly = false,
     bool isYearly = false,
+    bool stretch = false,
   }) {
     bool isSelected = _selectedPlanIndex == index;
 
@@ -564,25 +565,22 @@ class _MerchantSubscriptionsPageState
                       color: Color(0xFFE5E7EB),
                     ),
 
-                    // ميزات الباقة — ارتفاع موحّد مع تمرير داخلي
-                    SizedBox(
-                      height: 520,
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: ((plan['features'] as List?) ?? [])
-                              .map(
-                                (f) => _buildFeatureRow(
-                                  Icons.check_circle_rounded,
-                                  f.toString(),
-                                  isDark,
-                                  accent,
-                                ),
-                              )
-                              .toList(),
-                        ),
-                      ),
+                    // ميزات الباقة — تظهر كلّها بلا سقف
+                    Column(
+                      children: ((plan['features'] as List?) ?? [])
+                          .map(
+                            (f) => _buildFeatureRow(
+                              Icons.check_circle_rounded,
+                              f.toString(),
+                              isDark,
+                              accent,
+                            ),
+                          )
+                          .toList(),
                     ),
 
+                    // يدفع الأزرار لأسفل البطاقة — فتتساوى بصرياً
+                    if (stretch) const Spacer(),
                     const SizedBox(height: 20),
 
                     // مساحة محجوزة — فزرّ الاشتراك في مستوى واحد بكل البطاقات
