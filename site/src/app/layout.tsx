@@ -8,6 +8,7 @@ import NotificationsBell from '@/components/NotificationsBell';
 import AccountRecoveryGate from '@/components/AccountRecoveryGate';
 import FooterContact from '@/components/FooterContact';
 import MaintenanceGate from '@/components/MaintenanceGate';
+import NewsTicker from '@/components/NewsTicker';
 import { TvMinimalPlay, Bookmark } from 'lucide-react';
 import { FaApple } from 'react-icons/fa';
 import { FaGooglePlay } from 'react-icons/fa6';
@@ -38,6 +39,8 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl">
       <body className={`${cairo.className} bg-white text-gray-900`}>
+        <NewsTicker />
+
         <header className="sticky top-0 bg-white z-50">
           <div className="max-w-6xl mx-auto px-4 h-12 flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2 shrink-0">

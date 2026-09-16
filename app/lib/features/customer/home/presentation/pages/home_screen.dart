@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:red_market/shared/news_ticker.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -698,10 +700,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         body: SafeArea(
-          child: _isDataLoading
-              ? const Center(
-                  child: CircularProgressIndicator(color: Color(0xFFD32027)))
-              : _buildCurrentPage(isAdmin, isMerchant, recentlyViewedItems),
+          child: Column(
+            children: [
+              const NewsTicker(audience: 'customer'),
+              Expanded(
+                child: _isDataLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                            color: Color(0xFFD32027)))
+                    : _buildCurrentPage(
+                        isAdmin, isMerchant, recentlyViewedItems),
+              ),
+            ],
+          ),
         ),
         floatingActionButton: (isAdmin || isMerchant) ? null : null,
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

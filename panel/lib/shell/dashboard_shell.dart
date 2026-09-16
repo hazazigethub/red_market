@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'news_ticker.dart';
 import 'package:red_market_core/red_market_core.dart';
 
 import '../features/auth/login_page.dart';
@@ -215,6 +217,7 @@ class _DashboardShellState extends State<DashboardShell> {
         body: Column(
           children: [
             _topBar(wide),
+            NewsTicker(audience: _isMerchant ? 'merchant' : 'all'),
             Expanded(
               child: DashboardNav(
                 goTo: goTo,
