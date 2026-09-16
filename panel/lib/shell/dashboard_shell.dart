@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:red_market_core/red_market_core.dart';
 
@@ -30,16 +31,46 @@ class _DashboardShellState extends State<DashboardShell> {
 
   bool get _isMerchant => widget.role == 'merchant';
 
+  /// مفتاح مستقلّ لكل دور — فلا يختلط موضع التاجر بموضع الأدمن
+  String get _posKey => 'rm_nav_${widget.role}';
+
   @override
   void initState() {
     super.initState();
+    _restorePosition();
     _loadStoreName();
     if (_isMerchant) _loadUnread();
   }
 
+  /// يعيدك للقسم الذي كنت فيه قبل تحديث الصفحة
+  Future<void> _restorePosition() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final i = prefs.getInt(_posKey);
+      if (i != null && i >= 0 && i < widget.items.length && mounted) {
+        setState(() => _index = i);
+      }
+    } catch (_) {
+      // التخزين قد يكون معطّلاً — نبدأ من الرئيسية
+    }
+  }
+
+  Future<void> _savePosition(int i) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_posKey, i);
+    } catch (_) {}
+  }
+
+  void _setIndex(int i) {
+    if (i < 0 || i >= widget.items.length) return;
+    _savePosition(i);
+    setState(() => _index = i);
+  }
+
   void goTo(String label) {
     final i = widget.items.indexWhere((e) => e.label == label);
-    if (i >= 0) setState(() => _index = i);
+    if (i >= 0) _setIndex(i);
   }
 
   Future<void> _loadStoreName() async {
@@ -153,6 +184,12 @@ class _DashboardShellState extends State<DashboardShell> {
 
     final navigator = Navigator.of(context);
 
+    // الموضع المحفوظ يخصّ الجلسة المنتهية
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_posKey);
+    } catch (_) {}
+
     try {
       await supabase.auth.signOut();
     } catch (e) {
@@ -209,7 +246,7 @@ class _DashboardShellState extends State<DashboardShell> {
           children: [
             if (_index != 0)
               TextButton.icon(
-                onPressed: () => setState(() => _index = 0),
+                onPressed: () => _setIndex(0),
                 icon: const Icon(Icons.home_rounded, size: 18),
                 label: const Text('الرئيسية'),
                 style: TextButton.styleFrom(foregroundColor: AppColors.brand),

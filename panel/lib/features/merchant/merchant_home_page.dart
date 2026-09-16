@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:red_market_core/red_market_core.dart';
 
@@ -26,6 +27,30 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
   /// -1 يعني شاشة الترحيب
   int _index = -1;
 
+  static const String _secKey = 'rm_sec_merchant';
+
+  /// يعيدك للقسم الذي كنت فيه قبل تحديث الصفحة
+  Future<void> _restoreSection() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final i = prefs.getInt(_secKey);
+      if (i != null && i >= -1 && i < _sections.length && mounted) {
+        setState(() => _index = i);
+      }
+    } catch (_) {
+      // التخزين قد يكون معطّلاً — نبدأ من الترحيب
+    }
+  }
+
+  void _setSection(int i) {
+    if (i < -1 || i >= _sections.length) return;
+    setState(() => _index = i);
+    SharedPreferences.getInstance()
+        .then((p) => p.setInt(_secKey, i))
+        .catchError((_) => false);
+  }
+
+
   /// بنرات أوقفتها الإدارة ولم يطّلع عليها التاجر
   List<Map<String, dynamic>> _suspendedBanners = [];
 
@@ -36,6 +61,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
   @override
   void initState() {
     super.initState();
+    _restoreSection();
     MerchantNav.requested.addListener(_onNavRequest);
     _loadFeatures();
     _loadSuspended();
@@ -105,7 +131,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
   void _onNavRequest() {
     final target = MerchantNav.requested.value;
     if (target == null || !mounted) return;
-    setState(() => _index = target);
+    _setSection(target);
     MerchantNav.clear();
   }
 
@@ -610,7 +636,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
               label: 'الرئيسية',
               icon: Icons.dashboard_outlined,
               selected: _index == -1,
-              onTap: () => setState(() => _index = -1),
+              onTap: () => _setSection(-1),
             );
           }
 
@@ -620,7 +646,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
             icon: s['icon'] as IconData,
             selected: _index == i - 1,
             locked: _isLocked(i - 1),
-            onTap: () => setState(() => _index = i - 1),
+            onTap: () => _setSection(i - 1),
           );
         },
       ),
@@ -733,7 +759,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
                             padding: const EdgeInsets.only(left: 8),
                             child: GestureDetector(
                               onTap: () =>
-                                  setState(() => _index = i == 0 ? -1 : i - 1),
+                                  _setSection(i == 0 ? -1 : i - 1),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 8),

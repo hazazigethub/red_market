@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:red_market_core/red_market_core.dart';
 
@@ -27,6 +28,36 @@ class AdminHomePage extends StatefulWidget {
 class _AdminHomePageState extends State<AdminHomePage> {
   /// -1 يعني شاشة الترحيب
   int _index = -1;
+
+  static const String _secKey = 'rm_sec_admin';
+
+  /// يعيدك للقسم الذي كنت فيه قبل تحديث الصفحة
+  Future<void> _restoreSection() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final i = prefs.getInt(_secKey);
+      if (i != null && i >= -1 && i < _sections.length && mounted) {
+        setState(() => _index = i);
+      }
+    } catch (_) {
+      // التخزين قد يكون معطّلاً — نبدأ من الترحيب
+    }
+  }
+
+  void _setSection(int i) {
+    if (i < -1 || i >= _sections.length) return;
+    setState(() => _index = i);
+    SharedPreferences.getInstance()
+        .then((p) => p.setInt(_secKey, i))
+        .catchError((_) => false);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreSection();
+  }
+
 
   static const _sections = <Map<String, dynamic>>[
     {'label': 'التقرير المالي', 'icon': Icons.payments_outlined},
@@ -222,7 +253,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
               label: 'الرئيسية',
               icon: Icons.dashboard_outlined,
               selected: _index == -1,
-              onTap: () => setState(() => _index = -1),
+              onTap: () => _setSection(-1),
             );
           }
 
@@ -231,7 +262,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             label: s['label'] as String,
             icon: s['icon'] as IconData,
             selected: _index == i - 1,
-            onTap: () => setState(() => _index = i - 1),
+            onTap: () => _setSection(i - 1),
           );
         },
       ),
@@ -320,7 +351,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                             padding: const EdgeInsets.only(left: 8),
                             child: GestureDetector(
                               onTap: () =>
-                                  setState(() => _index = i == 0 ? -1 : i - 1),
+                                  _setSection(i == 0 ? -1 : i - 1),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 8),
