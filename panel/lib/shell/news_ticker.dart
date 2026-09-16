@@ -7,7 +7,10 @@ class NewsTicker extends StatefulWidget {
   /// 'merchant' أو 'customer' — ورسائل 'all' تظهر للجميع
   final String audience;
 
-  const NewsTicker({super.key, required this.audience});
+  /// يظهر في رأس الشريط — يميّز الشريطين عند الأدمن
+  final String? label;
+
+  const NewsTicker({super.key, required this.audience, this.label});
 
   @override
   State<NewsTicker> createState() => _NewsTickerState();
@@ -16,7 +19,7 @@ class NewsTicker extends StatefulWidget {
 class _NewsTickerState extends State<NewsTicker>
     with SingleTickerProviderStateMixin {
   static const Color _brand = Color(0xFFD32027);
-  static const double _speed = 40; // بكسل في الثانية
+  static const double _speed = 90; // بكسل في الثانية
 
   final _contentKey = GlobalKey();
 
@@ -24,6 +27,10 @@ class _NewsTickerState extends State<NewsTicker>
   Ticker? _ticker;
   double _offset = 0;
   double _contentWidth = 0;
+
+  /// نسخ تكفي لملء عرض الشريط — وإلا ظهرت الرسائل في نطاق ضيّق
+  int _copies = 2;
+  double _viewport = 0;
 
   @override
   void initState() {
@@ -73,6 +80,14 @@ class _NewsTickerState extends State<NewsTicker>
     _contentWidth = box.size.width;
     if (_contentWidth <= 0) return;
 
+    // نسخة تُعرض ونسخ تملأ ما تبقّى من العرض
+    final need = (_viewport / _contentWidth).ceil() + 1;
+    if (need > _copies) {
+      setState(() => _copies = need);
+    }
+
+    if (_ticker != null) return;
+
     Duration? last;
     _ticker = createTicker((elapsed) {
       final dt = last == null
@@ -103,29 +118,27 @@ class _NewsTickerState extends State<NewsTicker>
       ),
       child: Row(
         children: [
-          Container(
-            height: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            color: _brand,
-            alignment: Alignment.center,
-            child: const Icon(Icons.campaign_outlined,
-                size: 15, color: Colors.white),
-          ),
           Expanded(
-            child: ClipRect(
-              child: Directionality(
-                textDirection: TextDirection.ltr,
-                child: Transform.translate(
-                  offset: Offset(-_offset, 0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _strip(key: _contentKey),
-                      _strip(),
-                    ],
+            child: LayoutBuilder(
+              builder: (context, c) {
+                _viewport = c.maxWidth;
+
+                return ClipRect(
+                  child: Directionality(
+                    textDirection: TextDirection.rtl,
+                    child: Transform.translate(
+                      offset: Offset(-_offset, 0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          for (int i = 0; i < _copies; i++)
+                            _strip(key: i == 0 ? _contentKey : null),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ),
         ],
@@ -139,6 +152,29 @@ class _NewsTickerState extends State<NewsTicker>
       key: key,
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (widget.label != null) ...[
+          Directionality(
+            textDirection: TextDirection.rtl,
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: _brand,
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: Text(
+                widget.label!,
+                style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+        ],
         for (final m in _messages) ...[
           Directionality(
             textDirection: TextDirection.rtl,

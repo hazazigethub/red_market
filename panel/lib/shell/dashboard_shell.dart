@@ -217,7 +217,13 @@ class _DashboardShellState extends State<DashboardShell> {
         body: Column(
           children: [
             _topBar(wide),
-            NewsTicker(audience: _isMerchant ? 'merchant' : 'all'),
+            // التاجر يرى شريطه، والأدمن يرى الشريطين كما يراهما أصحابهما
+            if (_isMerchant)
+              const NewsTicker(audience: 'merchant')
+            else ...[
+              const NewsTicker(audience: 'merchant', label: 'التجار'),
+              const NewsTicker(audience: 'customer', label: 'العملاء'),
+            ],
             Expanded(
               child: DashboardNav(
                 goTo: goTo,

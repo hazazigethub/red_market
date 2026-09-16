@@ -537,30 +537,39 @@ class _AdminTickerScreenState extends State<AdminTickerScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            crossAxisAlignment: WrapCrossAlignment.center,
+          Row(
             children: [
-              _tag(_audienceLabel(r['audience']?.toString()),
-                  Icons.people_outline_rounded),
-              _tag('ترتيب ${r['sort_order'] ?? 0}', Icons.sort_rounded),
-              if (exp != null)
-                _tag(expired ? 'منتهية · $exp' : 'حتى $exp',
-                    Icons.event_outlined,
-                    danger: expired),
-              const Spacer(),
+              // الوسوم تلتفّ عند الضيق، والأزرار تبقى في الطرف
+              Expanded(
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    _tag(_audienceLabel(r['audience']?.toString()),
+                        Icons.people_outline_rounded),
+                    _tag('ترتيب ${r['sort_order'] ?? 0}', Icons.sort_rounded),
+                    if (exp != null)
+                      _tag(expired ? 'منتهية · $exp' : 'حتى $exp',
+                          Icons.event_outlined,
+                          danger: expired),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
               IconButton(
                 onPressed: () => _edit(row: r),
                 icon: const Icon(Icons.edit_outlined, size: 17),
                 color: Colors.grey.shade600,
                 tooltip: 'تعديل',
+                visualDensity: VisualDensity.compact,
               ),
               IconButton(
                 onPressed: () => _delete(r),
                 icon: const Icon(Icons.delete_outline_rounded, size: 17),
                 color: const Color(0xFFB91C1C),
                 tooltip: 'حذف',
+                visualDensity: VisualDensity.compact,
               ),
             ],
           ),

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-client';
 
 const BRAND = '#D32027';
@@ -8,6 +8,30 @@ const BRAND = '#D32027';
 /// شريط أخبار متحرّك — رسائله تُدار من لوحة الأدمن
 export default function NewsTicker() {
   const [messages, setMessages] = useState<string[]>([]);
+
+  /// نسخ تكفي لملء عرض الشريط — وإلا ظهرت الرسائل في نطاق ضيّق
+  const [copies, setCopies] = useState(2);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const stripRef = useRef<HTMLDivElement>(null);
+
+  const measure = useCallback(() => {
+    const box = boxRef.current;
+    const strip = stripRef.current;
+    if (!box || !strip) return;
+
+    const w = strip.offsetWidth;
+    if (w <= 0) return;
+
+    setCopies(Math.max(2, Math.ceil(box.offsetWidth / w) + 1));
+  }, []);
+
+  useEffect(() => {
+    if (messages.length === 0) return;
+    measure();
+
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [messages, measure]);
 
   useEffect(() => {
     let alive = true;
@@ -43,10 +67,14 @@ export default function NewsTicker() {
 
   if (messages.length === 0) return null;
 
-  const strip = (
-    <div className="flex items-center shrink-0">
-      {messages.map((m, i) => (
-        <span key={i} className="flex items-center">
+  const strip = (i: number) => (
+    <div
+      key={i}
+      ref={i === 0 ? stripRef : undefined}
+      className="flex items-center shrink-0"
+    >
+      {messages.map((m, j) => (
+        <span key={j} className="flex items-center">
           <span className="text-xs font-semibold text-gray-700 whitespace-nowrap">
             {m}
           </span>
@@ -62,29 +90,16 @@ export default function NewsTicker() {
   return (
     <div className="flex items-stretch border-b border-gray-200 overflow-hidden"
          style={{ backgroundColor: `${BRAND}0F` }}>
-      <span
-        className="flex items-center px-3 shrink-0"
-        style={{ backgroundColor: BRAND }}
-        aria-hidden
+      <div
+        ref={boxRef}
+        className="flex-1 overflow-hidden py-1.5"
+        dir="rtl"
       >
-        <svg
-          className="w-3.5 h-3.5 text-white"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          viewBox="0 0 24 24"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+        <div
+          className="flex w-max animate-rm-ticker"
+          style={{ '--rm-copies': copies } as React.CSSProperties}
         >
-          <path d="M3 11v2a1 1 0 001 1h2l4 4V6L6 10H4a1 1 0 00-1 1z" />
-          <path d="M15 9a3 3 0 010 6" />
-        </svg>
-      </span>
-
-      <div className="flex-1 overflow-hidden py-1.5" dir="ltr">
-        <div className="flex w-max animate-rm-ticker">
-          {strip}
-          {strip}
+          {Array.from({ length: copies }, (_, i) => strip(i))}
         </div>
       </div>
 
@@ -94,11 +109,11 @@ export default function NewsTicker() {
             transform: translateX(0);
           }
           to {
-            transform: translateX(-50%);
+            transform: translateX(calc(-100% / var(--rm-copies)));
           }
         }
         .animate-rm-ticker {
-          animation: rm-ticker 32s linear infinite;
+          animation: rm-ticker 18s linear infinite;
         }
         .animate-rm-ticker:hover {
           animation-play-state: paused;
