@@ -81,7 +81,6 @@ class _MerchantSubscriptionsPageState
   final Map<String, bool> _yearlyByType = {};
 
   /// القسم السفلي المفتوح: -1 يعني لا شيء
-  int _openSection = -1;
 
   bool _startingTrial = false;
 
@@ -254,9 +253,11 @@ class _MerchantSubscriptionsPageState
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            _sectionTabs(),
+                            const SizedBox(height: 22),
                             cols >= types.length
                                 ? SizedBox(
-                                    height: 705,
+                                    height: 840,
                                     child: Row(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.stretch,
@@ -352,10 +353,6 @@ class _MerchantSubscriptionsPageState
                                       );
                                     }),
                                   ),
-                            const SizedBox(height: 26),
-                            _sectionTabs(),
-                            const SizedBox(height: 16),
-                            _sectionBody(),
                           ],
                         );
                       },
@@ -384,8 +381,6 @@ class _MerchantSubscriptionsPageState
     bool isYearly = false,
   }) {
     bool isSelected = _selectedPlanIndex == index;
-    String duration = isYearly ? "سنوي" : "شهري";
-    if (!hasYearly) duration = "شهري فقط";
 
     // السعر المكتوب هو الأصلي (المشطوب)
     final double oldPrice = (plan['price'] as num).toDouble();
@@ -400,6 +395,11 @@ class _MerchantSubscriptionsPageState
     final bool isDisabled =
         status == _PlanStatus.current || status == _PlanStatus.downgrade;
 
+    // الباقة الحالية ملوّنة، والباقي رمادي
+    final bool isCurrent = status == _PlanStatus.current;
+    final Color accent =
+        isCurrent ? brandRed : const Color(0xFF9CA3AF);
+
     return GestureDetector(
       onTap: isDisabled
           ? null
@@ -407,192 +407,166 @@ class _MerchantSubscriptionsPageState
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOutQuart,
-        margin: const EdgeInsets.only(bottom: 20),
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(16),
           color: isDark ? darkCard : Colors.white,
           boxShadow: [
             BoxShadow(
-              color: isSelected
-                  ? brandRed.withValues(alpha: 0.15)
-                  : Colors.black.withValues(alpha: 0.05),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+              color: isCurrent
+                  ? brandRed.withValues(alpha: 0.10)
+                  : Colors.black.withValues(alpha: 0.03),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
           border: Border.all(
-            color: status == _PlanStatus.current
-                ? Colors
-                      .green // ✅ لون أخضر للباقة الحالية
-                : isSelected
+            color: isCurrent
                 ? brandRed
-                : brandRed.withValues(alpha: 0.3),
-            width: isSelected || status == _PlanStatus.current ? 2.5 : 1.5,
+                : isSelected
+                ? const Color(0xFFCBD2DC)
+                : const Color(0xFFE5E7EB),
+            width: isCurrent ? 1.8 : 1,
           ),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(16),
           child: Stack(
             children: [
               Padding(
-                padding: const EdgeInsets.all(25),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              plan['name'].toString().toUpperCase(),
-                              style: TextStyle(
-                                fontFamily: 'Cairo',
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
-                                color: brandRed,
-                              ),
-                            ),
-                            if (status == _PlanStatus.current &&
-                                currentPlan?['subscription_end_date'] != null)
-                              Text(
-                                "ينتهي: ${DateTime.parse(currentPlan!['subscription_end_date']).day}/${DateTime.parse(currentPlan['subscription_end_date']).month}/${DateTime.parse(currentPlan['subscription_end_date']).year}",
-                                style: TextStyle(
-                                  fontFamily: 'Cairo',
-                                  fontSize: 11,
-                                  color: Colors.green.shade700,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                          ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: brandRed.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            duration,
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: brandRed,
-                            ),
-                          ),
-                        ),
-                      ],
+                    // ارتفاع محجوز — فتتساوى البطاقات وإن خلت من التبويبات
+                    SizedBox(
+                      height: 44,
+                      child: hasYearly
+                          ? _cardBillingToggle(planType, isYearly, isDark)
+                          : null,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
 
-                    // مفتاح شهري / سنوي داخل الباقة
-                    if (hasYearly) ...[
-                      _cardBillingToggle(planType, isYearly, isDark),
-                      const SizedBox(height: 16),
-                    ],
-
-                    // --- القسم المحدث: عرض السعر القديم والجديد والخصم ---
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    // الاسم والسعر والخصم في سطر واحد
+                    SizedBox(
+                      height: 42,
+                      child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        if (discountPercent > 0)
-                          Row(
-                            children: [
-                              PriceWidget(
-                                price: oldPrice,
-                                fontSize: 16,
-                                color: Colors.grey,
-                                decoration: TextDecoration.lineThrough,
-                              ),
-                              const SizedBox(width: 10),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: brandRed.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  "وفر $discountPercent%",
-                                  style: TextStyle(
-                                    fontFamily: 'Cairo',
-                                    fontSize: 12,
-                                    color: brandRed,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        const SizedBox(height: 5),
-                        // سعر صفر ⇒ عرض لا خطأ في النظام
-                        if (currentPrice <= 0)
-                          Column(
+                        Expanded(
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "مجاني",
+                                _planBaseName(plan['name'].toString()),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.w900,
                                   fontFamily: 'Cairo',
-                                  color: brandRed,
-                                ),
-                              ),
-                              Text(
-                                "فترة التأسيس",
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontFamily: 'Cairo',
+                                  fontSize: 13,
                                   fontWeight: FontWeight.bold,
-                                  color: brandRed,
+                                  color: accent,
                                 ),
                               ),
-                            ],
-                          )
-                        else
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Text(
-                                "$currentPrice",
-                                style: TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.w900,
-                                  fontFamily: 'Cairo',
-                                  color: brandRed,
+                              if (status == _PlanStatus.current &&
+                                  currentPlan?['subscription_end_date'] != null)
+                                Text(
+                                  "ينتهي: ${DateTime.parse(currentPlan!['subscription_end_date']).day}/${DateTime.parse(currentPlan['subscription_end_date']).month}/${DateTime.parse(currentPlan['subscription_end_date']).year}",
+                                  style: TextStyle(
+                                    fontFamily: 'Cairo',
+                                    fontSize: 9.5,
+                                    color: Colors.green.shade700,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Image.asset(
-                                'assets/images/sar_symbol.png',
-                                height: 22,
-                                width: 22,
-                                color: isDark ? Colors.white70 : Colors.black54,
-                              ),
                             ],
                           ),
+                        ),
+                        const SizedBox(width: 8),
+
+                        if (currentPrice <= 0)
+                          Text(
+                            "مجاني",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              fontFamily: 'Cairo',
+                              color: accent,
+                            ),
+                          )
+                        else
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: AlignmentDirectional.centerEnd,
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  if (discountPercent > 0) ...[
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            accent.withValues(alpha: 0.1),
+                                        borderRadius:
+                                            BorderRadius.circular(5),
+                                      ),
+                                      child: Text(
+                                        "وفر $discountPercent%",
+                                        style: TextStyle(
+                                          fontFamily: 'Cairo',
+                                          fontSize: 9.5,
+                                          color: accent,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    PriceWidget(
+                                      price: oldPrice,
+                                      fontSize: 11,
+                                      color: Colors.grey,
+                                      decoration: TextDecoration.lineThrough,
+                                    ),
+                                    const SizedBox(width: 6),
+                                  ],
+                                  Text(
+                                    "${currentPrice.toInt()}",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w900,
+                                      fontFamily: 'Cairo',
+                                      color: accent,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Image.asset(
+                                    'assets/images/sar_symbol.png',
+                                    height: 13,
+                                    width: 13,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : Colors.black54,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                       ],
+                      ),
                     ),
 
                     // --- نهاية قسم السعر المحدث ---
                     const Divider(
-                      height: 40,
+                      height: 26,
                       thickness: 1,
-                      color: Color(0xFFEEEEEE),
+                      color: Color(0xFFE5E7EB),
                     ),
 
                     // ميزات الباقة — ارتفاع موحّد مع تمرير داخلي
                     SizedBox(
-                      height: 320,
+                      height: 520,
                       child: SingleChildScrollView(
                         child: Column(
                           children: ((plan['features'] as List?) ?? [])
@@ -601,7 +575,7 @@ class _MerchantSubscriptionsPageState
                                   Icons.check_circle_rounded,
                                   f.toString(),
                                   isDark,
-                                  brandRed,
+                                  accent,
                                 ),
                               )
                               .toList(),
@@ -609,14 +583,14 @@ class _MerchantSubscriptionsPageState
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 20),
 
-                    // زر الفترة التجريبية — للأساسية وللمؤهلين فقط
+                    // مساحة محجوزة — فزرّ الاشتراك في مستوى واحد بكل البطاقات
                     if (planType == 'basic' &&
                         ref.watch(trialEligibleProvider).value == true) ...[
                       SizedBox(
                         width: double.infinity,
-                        height: 50,
+                        height: 44,
                         child: OutlinedButton.icon(
                           onPressed: _startingTrial ? null : _startTrial,
                           icon: const Icon(
@@ -629,7 +603,7 @@ class _MerchantSubscriptionsPageState
                                 : 'ابدأ 3 شهور مجاناً',
                             style: const TextStyle(
                               fontFamily: 'Cairo',
-                              fontSize: 15,
+                              fontSize: 13.5,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -637,17 +611,18 @@ class _MerchantSubscriptionsPageState
                             foregroundColor: brandRed,
                             side: BorderSide(color: brandRed),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 12),
-                    ],
+                    ] else
+                      const SizedBox(height: 56),
 
                     SizedBox(
                       width: double.infinity,
-                      height: 55,
+                      height: 46,
                       child: ElevatedButton(
                         onPressed: isDisabled
                             ? null
@@ -669,14 +644,14 @@ class _MerchantSubscriptionsPageState
                               : Colors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                         child: Text(
                           _getButtonLabel(status),
                           style: const TextStyle(
                             fontFamily: 'Cairo',
-                            fontSize: 18,
+                            fontSize: 15,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -690,6 +665,25 @@ class _MerchantSubscriptionsPageState
         ),
       ),
     );
+  }
+
+  /// الاسم بلا لاحقة المدة — فالتبويبات تبيّنها
+  String _planBaseName(String name) {
+    var n = name.trim();
+    for (final suffix in const [
+      'السنوية',
+      'الشهرية',
+      'سنوية',
+      'شهرية',
+      'سنوي',
+      'شهري',
+    ]) {
+      if (n.endsWith(' $suffix')) {
+        n = n.substring(0, n.length - suffix.length - 1).trim();
+        break;
+      }
+    }
+    return n;
   }
 
   Widget _buildEmptyState() {
@@ -744,7 +738,7 @@ class _MerchantSubscriptionsPageState
           spacing: gap,
           runSpacing: gap,
           children: List.generate(items.length, (i) {
-            final on = _openSection == i;
+            const on = false;
             final danger = i == 1;
 
             return SizedBox(
@@ -754,14 +748,17 @@ class _MerchantSubscriptionsPageState
                 borderRadius: BorderRadius.circular(14),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(14),
-                  onTap: () => setState(() => _openSection = on ? -1 : i),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => _sectionPage(i)),
+                  ),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
+                      horizontal: 13,
+                      vertical: 11,
                     ),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: on ? brandRed : const Color(0xFFEDEFF3),
                       ),
@@ -769,18 +766,18 @@ class _MerchantSubscriptionsPageState
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             color: on
                                 ? Colors.white.withValues(alpha: 0.18)
                                 : (danger ? Colors.red : brandRed).withValues(
                                     alpha: 0.08,
                                   ),
-                            borderRadius: BorderRadius.circular(9),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
                             items[i].icon,
-                            size: 17,
+                            size: 15,
                             color: on
                                 ? Colors.white
                                 : (danger ? Colors.red : brandRed),
@@ -820,8 +817,9 @@ class _MerchantSubscriptionsPageState
   }
 
   /// محتوى القسم المفتوح
-  Widget _sectionBody() {
-    switch (_openSection) {
+  /// تُفتح كصفحة مستقلّة عند الضغط على إحدى البطاقات الثلاث
+  Widget _sectionPage(int i) {
+    switch (i) {
       case 0:
         return const MerchantAutoRenewPage();
       case 1:
@@ -881,17 +879,22 @@ class _MerchantSubscriptionsPageState
     Color brandRed,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: brandRed),
-          const SizedBox(width: 12),
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(icon, size: 16, color: brandRed),
+          ),
+          const SizedBox(width: 9),
           Expanded(
             child: Text(
               text,
               style: TextStyle(
                 fontFamily: 'Cairo',
-                fontSize: 14,
+                fontSize: 12.5,
+                height: 1.5,
                 fontWeight: FontWeight.w500,
                 color: isDark ? Colors.white70 : Colors.black87,
               ),
