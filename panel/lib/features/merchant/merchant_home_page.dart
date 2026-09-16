@@ -207,14 +207,14 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
                 shape: BoxShape.circle,
               ),
               child: Icon(s['icon'] as IconData,
-                  size: 34, color: Colors.grey.shade400),
+                  size: 30, color: Colors.grey.shade400),
             ),
             const SizedBox(height: 18),
             Text(
               s['label'] as String,
               style: const TextStyle(
                   fontFamily: 'Cairo',
-                  fontSize: 17,
+                  fontSize: 15,
                   fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -228,7 +228,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
               child: Text('قريباً',
                   style: TextStyle(
                       fontFamily: 'Cairo',
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.bold,
                       color: AppColors.brand)),
             ),
@@ -324,7 +324,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 15.5,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
@@ -356,7 +356,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
                   ? 'لديك $_campaignProducts عرض في الحملة — أضف المزيد لزيادة ظهورك'
                   : 'اعرض ما لديك في صفحة الحملة أمام كل زوّار المنصة',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12.5,
                 height: 1.9,
                 color: Colors.white.withValues(alpha: 0.9),
               ),
@@ -443,7 +443,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
                 child: Text(
                   'أُوقف بنرك $type',
                   style: const TextStyle(
-                    fontSize: 14.5,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.bold,
                     color: Colors.red,
                   ),
@@ -516,7 +516,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
                 'مرحباً بك في متجرك',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 26,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: AppColors.brand,
                 ),
@@ -525,9 +525,9 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
               const Text(
                 'اختر قسماً من القائمة لإدارة متجرك',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+                style: TextStyle(fontSize: 12.5, color: Colors.grey),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
               LayoutBuilder(
                 builder: (context, c) {
                   const gap = 16.0;
@@ -564,24 +564,24 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
   }
 
   Widget _stat(String label, Future<int> future) => Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(label,
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
-            const SizedBox(height: 8),
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+            const SizedBox(height: 6),
             FutureBuilder<int>(
               future: future,
               builder: (context, snap) => Text(
                 snap.hasData ? '${snap.data}' : '—',
                 style: TextStyle(
-                    fontSize: 28,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: AppColors.brand),
               ),
@@ -594,7 +594,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
 
   Widget _sideMenu() {
     return Container(
-      width: 236,
+      width: 268,
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
@@ -602,7 +602,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
         ),
       ),
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
         itemCount: _sections.length + 1,
         itemBuilder: (context, i) {
           if (i == 0) {
@@ -644,21 +644,21 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
           onTap: onTap,
           child: Padding(
             padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
             child: Row(
               children: [
                 Icon(icon,
-                    size: 19,
+                    size: 18,
                     color:
                         selected ? Colors.white : const Color(0xFF8A93A6)),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 13.5,
+                      fontSize: 12.5,
                       color: selected
                           ? Colors.white
                           : locked

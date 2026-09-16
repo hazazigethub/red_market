@@ -208,43 +208,7 @@ class _LoginPageState extends State<LoginPage>
 
       if (mounted) {
         Navigator.of(context).pushReplacement(MaterialPageRoute(
-          builder: (_) => DashboardShell(
-            role: role!,
-            items: role == 'merchant'
-                ? const [
-                    NavItem('الرئيسية', Icons.dashboard, MerchantHomePage()),
-                    NavItem('عروضي', Icons.inventory_2, ProductsPage()),
-                    NavItem('الريلز', Icons.video_library, ManageReelsPage()),
-                    NavItem('التقارير', Icons.bar_chart, MerchantReportsPage()),
-                    NavItem('رسائل المتابعين', Icons.campaign, MerchantPromoPage()),
-                    NavItem('الاشتراكات', Icons.card_membership, MerchantSubscriptionsPage()),
-                    NavItem('الإشعارات', Icons.notifications, merchant_notif.NotificationsPage()),
-                    NavItem('إعدادات المتجر', Icons.settings, StoreSettingsPage()),
-                    NavItem('الحساب البنكي', Icons.account_balance, MerchantBankAccountPage()),
-                    NavItem('روابط مفيدة', Icons.link, UsefulLinksPage()),
-                  ]
-                : const [
-              NavItem('الرئيسية', Icons.dashboard, AdminHomePage()),
-              NavItem('التصنيفات', Icons.category, AdminCategoriesScreen()),
-              NavItem('إدارة العملاء', Icons.people, AdminUsersScreen()),
-              NavItem('إدارة التجار', Icons.storefront, AdminMerchantsScreen()),
-              NavItem('التجار الجدد', Icons.fiber_new_outlined, NewMerchantsScreen()),
-              NavItem('إدارة العروض', Icons.inventory, AdminProductsScreen()),
-              NavItem('تحليلات العملاء', Icons.analytics, AdminAnalyticsUsersScreen()),
-              NavItem('تصنيفات المتاجر', Icons.storefront, AdminAnalyticsMerchantCategoriesScreen()),
-              NavItem('تصنيفات العروض', Icons.inventory_2, AdminAnalyticsProductCategoriesScreen()),
-              NavItem('الإشعارات', Icons.notifications, AdminNotificationsScreen()),
-              NavItem('النشرة الأسبوعية', Icons.campaign, AdminNewsletterScreen()),
-              NavItem('أكواد الخصم', Icons.local_offer, DiscountCodesScreen()),
-              NavItem('التجار', Icons.store, AdminAnalyticsMerchantsScreen()),
-              NavItem('العروض', Icons.shopping_bag, AdminAnalyticsProductsScreen()),
-              NavItem('البلاغات', Icons.flag, AdminReportsScreen()),
-              NavItem('الزيارات', Icons.trending_up, AdminAnalyticsVisitsScreen()),
-              NavItem('البنرات', Icons.ad_units, AdminBannersScreen()),
-              NavItem('الإعلانات', Icons.campaign, AdminAnnouncementsScreen()),
-              NavItem('الإعدادات', Icons.settings, AdminSettingsScreen()),
-            ],
-          ),
+          builder: (_) => buildDashboardFor(role!),
         ));
       }
     } catch (e) {
@@ -641,4 +605,46 @@ class _LoginPageState extends State<LoginPage>
       ),
     );
   }
+}
+
+
+/// يبني اللوحة المناسبة للدور — يستعملها تسجيل الدخول وحارس الجلسة
+Widget buildDashboardFor(String role) {
+  return DashboardShell(
+    role: role,
+    items: role == 'merchant'
+                ? const [
+                    NavItem('الرئيسية', Icons.dashboard, MerchantHomePage()),
+                    NavItem('عروضي', Icons.inventory_2, ProductsPage()),
+                    NavItem('الريلز', Icons.video_library, ManageReelsPage()),
+                    NavItem('التقارير', Icons.bar_chart, MerchantReportsPage()),
+                    NavItem('رسائل المتابعين', Icons.campaign, MerchantPromoPage()),
+                    NavItem('الاشتراكات', Icons.card_membership, MerchantSubscriptionsPage()),
+                    NavItem('الإشعارات', Icons.notifications, merchant_notif.NotificationsPage()),
+                    NavItem('إعدادات المتجر', Icons.settings, StoreSettingsPage()),
+                    NavItem('الحساب البنكي', Icons.account_balance, MerchantBankAccountPage()),
+                    NavItem('روابط مفيدة', Icons.link, UsefulLinksPage()),
+                  ]
+                : const [
+              NavItem('الرئيسية', Icons.dashboard, AdminHomePage()),
+              NavItem('التصنيفات', Icons.category, AdminCategoriesScreen()),
+              NavItem('إدارة العملاء', Icons.people, AdminUsersScreen()),
+              NavItem('إدارة التجار', Icons.storefront, AdminMerchantsScreen()),
+              NavItem('التجار الجدد', Icons.fiber_new_outlined, NewMerchantsScreen()),
+              NavItem('إدارة العروض', Icons.inventory, AdminProductsScreen()),
+              NavItem('تحليلات العملاء', Icons.analytics, AdminAnalyticsUsersScreen()),
+              NavItem('تصنيفات المتاجر', Icons.storefront, AdminAnalyticsMerchantCategoriesScreen()),
+              NavItem('تصنيفات العروض', Icons.inventory_2, AdminAnalyticsProductCategoriesScreen()),
+              NavItem('الإشعارات', Icons.notifications, AdminNotificationsScreen()),
+              NavItem('النشرة الأسبوعية', Icons.campaign, AdminNewsletterScreen()),
+              NavItem('أكواد الخصم', Icons.local_offer, DiscountCodesScreen()),
+              NavItem('التجار', Icons.store, AdminAnalyticsMerchantsScreen()),
+              NavItem('العروض', Icons.shopping_bag, AdminAnalyticsProductsScreen()),
+              NavItem('البلاغات', Icons.flag, AdminReportsScreen()),
+              NavItem('الزيارات', Icons.trending_up, AdminAnalyticsVisitsScreen()),
+              NavItem('البنرات', Icons.ad_units, AdminBannersScreen()),
+              NavItem('الإعلانات', Icons.campaign, AdminAnnouncementsScreen()),
+              NavItem('الإعدادات', Icons.settings, AdminSettingsScreen()),
+            ],
+  );
 }

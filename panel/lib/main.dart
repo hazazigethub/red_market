@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:red_market_core/red_market_core.dart';
 import 'features/auth/login_page.dart';
+import 'features/auth/account_recovery_page.dart';
 
 final supabase = Supabase.instance.client;
 
@@ -42,7 +43,83 @@ class RedMarketWebApp extends StatelessWidget {
         textTheme: GoogleFonts.cairoTextTheme(base.textTheme),
         primaryTextTheme: GoogleFonts.cairoTextTheme(base.primaryTextTheme),
       ),
-      home: const LoginPage(),
+      home: const AuthGate(),
+    );
+  }
+}
+
+/// يفحص الجلسة المحفوظة عند كل تحميل — فلا يخرج التاجر بتحديث الصفحة
+class AuthGate extends StatefulWidget {
+  const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  Future<Widget>? _start;
+
+  @override
+  void initState() {
+    super.initState();
+    _start = _resolve();
+  }
+
+  Future<Widget> _resolve() async {
+    final session = supabase.auth.currentSession;
+    if (session == null) return const LoginPage();
+
+    try {
+      final profile = await supabase
+          .from('profiles')
+          .select('role, deletion_scheduled_at')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+      final role = profile?['role']?.toString();
+
+      // اللوحة للتجار والإدارة فقط
+      if (role != 'super_admin' && role != 'merchant') {
+        await supabase.auth.signOut();
+        return const LoginPage();
+      }
+
+      // حساب مجدول للحذف: شاشة الاستعادة بدل اللوحة
+      final raw = profile?['deletion_scheduled_at'];
+      final scheduled =
+          raw == null ? null : DateTime.tryParse(raw.toString());
+
+      if (scheduled != null) {
+        return AccountRecoveryPage(
+          scheduledAt: scheduled,
+          onRestored: () {
+            if (mounted) setState(() => _start = _resolve());
+          },
+        );
+      }
+
+      return buildDashboardFor(role!);
+    } catch (_) {
+      // تعذّر التحقّق — نعود لصفحة الدخول بلا إسقاط التطبيق
+      return const LoginPage();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Widget>(
+      future: _start,
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return Scaffold(
+            backgroundColor: Colors.white,
+            body: Center(
+              child: CircularProgressIndicator(color: AppColors.brand),
+            ),
+          );
+        }
+        return snap.data ?? const LoginPage();
+      },
     );
   }
 }

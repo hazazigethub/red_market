@@ -98,9 +98,17 @@ class _MerchantAutoRenewPageState extends State<MerchantAutoRenewPage> {
 
   @override
   Widget build(BuildContext context) {
+    return _pageShell(
+      title: 'التجديد التلقائي',
+      icon: Icons.autorenew_rounded,
+      child: _body(),
+    );
+  }
+
+  Widget _body() {
     if (_loading) {
       return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 50),
+        padding: EdgeInsets.symmetric(vertical: 60),
         child: Center(child: CircularProgressIndicator(color: brandRed)),
       );
     }
@@ -125,8 +133,8 @@ class _MerchantAutoRenewPageState extends State<MerchantAutoRenewPage> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEDEFF3)),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -175,7 +183,7 @@ class _MerchantAutoRenewPageState extends State<MerchantAutoRenewPage> {
           ),
 
           const SizedBox(height: 18),
-          const Divider(color: Color(0xFFEDEFF3), height: 1),
+          const Divider(color: Color(0xFFE5E7EB), height: 1),
           const SizedBox(height: 14),
 
           _line(
@@ -235,8 +243,8 @@ class _MerchantAutoRenewPageState extends State<MerchantAutoRenewPage> {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEDEFF3)),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,4 +316,63 @@ class _MerchantAutoRenewPageState extends State<MerchantAutoRenewPage> {
       ),
     );
   }
+
+  /// إطار الصفحة — موحّد مع بقية اللوحة
+  Widget _pageShell({
+    required String title,
+    required IconData icon,
+    required Widget child,
+  }) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF7F8FA),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          foregroundColor: const Color(0xFF374151),
+          shape: const Border(
+            bottom: BorderSide(color: Color(0xFFE5E7EB)),
+          ),
+          titleSpacing: 0,
+          title: Row(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: brandRed.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(icon, size: 16, color: brandRed),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF111827),
+                ),
+              ),
+            ],
+          ),
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 820),
+              child: child,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
 }

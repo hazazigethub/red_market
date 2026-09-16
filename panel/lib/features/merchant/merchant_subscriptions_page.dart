@@ -736,73 +736,63 @@ class _MerchantSubscriptionsPageState
           spacing: gap,
           runSpacing: gap,
           children: List.generate(items.length, (i) {
-            const on = false;
-            final danger = i == 1;
+            // الإلغاء بلون تحذير أغمق — فلا يلتبس بلون الهوية
+            final tint = i == 1 ? const Color(0xFFB91C1C) : brandRed;
 
             return SizedBox(
               width: w,
               child: Material(
-                color: on ? brandRed : Colors.white,
-                borderRadius: BorderRadius.circular(14),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => _sectionPage(i)),
                   ),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 13,
-                      vertical: 11,
-                    ),
+                  child: Ink(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: on ? brandRed : const Color(0xFFEDEFF3),
-                      ),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
                     ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: on
-                                ? Colors.white.withValues(alpha: 0.18)
-                                : (danger ? Colors.red : brandRed).withValues(
-                                    alpha: 0.08,
-                                  ),
-                            borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 13,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: tint.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(9),
+                            ),
+                            child: Icon(items[i].icon, size: 16, color: tint),
                           ),
-                          child: Icon(
-                            items[i].icon,
-                            size: 15,
-                            color: on
-                                ? Colors.white
-                                : (danger ? Colors.red : brandRed),
-                          ),
-                        ),
-                        const SizedBox(width: 11),
-                        Expanded(
-                          child: Text(
-                            items[i].label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: on ? Colors.white : Colors.black87,
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              items[i].label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF374151),
+                              ),
                             ),
                           ),
-                        ),
-                        Icon(
-                          on
-                              ? Icons.keyboard_arrow_up_rounded
-                              : Icons.keyboard_arrow_down_rounded,
-                          size: 18,
-                          color: on ? Colors.white70 : Colors.grey.shade400,
-                        ),
-                      ],
+                          const Icon(
+                            Icons.chevron_left_rounded,
+                            size: 18,
+                            color: Color(0xFF9CA3AF),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
