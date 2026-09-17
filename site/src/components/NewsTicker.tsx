@@ -113,7 +113,7 @@ export default function NewsTicker() {
           }
         }
         .animate-rm-ticker {
-          animation: rm-ticker 18s linear infinite;
+          animation: rm-ticker 5s linear infinite;
         }
         .animate-rm-ticker:hover {
           animation-play-state: paused;
