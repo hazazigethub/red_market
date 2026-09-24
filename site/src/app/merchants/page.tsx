@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
-export const revalidate = 300;
+export const revalidate = 60;
 
 const BRAND = '#D32027';
 const PANEL_URL =
@@ -31,12 +31,12 @@ type Plan = {
   features: string[] | null;
 };
 
-async function getPlans(): Promise<Plan[]> {
+async function getPlans(yearly: boolean): Promise<Plan[]> {
   const { data } = await supabase
     .from('subscription_plans')
     .select('*')
     .eq('is_active', true)
-    .lt('duration_days', 365)
+    .eq('duration_days', yearly ? 365 : 30)
     .order('price', { ascending: true });
   return (data as Plan[]) ?? [];
 }
@@ -128,8 +128,14 @@ function Price({ value, strike = false }: { value: number; strike?: boolean }) {
   );
 }
 
-export default async function MerchantsPage() {
-  const plans = await getPlans();
+export default async function MerchantsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ billing?: string }>;
+}) {
+  const { billing } = await searchParams;
+  const yearly = billing === 'yearly';
+  const plans = await getPlans(yearly);
 
   return (
     <main>
@@ -248,9 +254,36 @@ export default async function MerchantsPage() {
       {plans.length > 0 && (
         <section id="plans" className="max-w-5xl mx-auto px-4 py-16">
           <h2 className="text-2xl font-bold mb-3 text-center">الباقات</h2>
-          <p className="text-sm text-gray-500 text-center mb-12">
+          <p className="text-sm text-gray-500 text-center mb-8">
             اختر ما يناسب حجم متجرك — والأسعار شاملة الضريبة
           </p>
+
+          <div className="flex justify-center mb-12">
+            <div className="inline-flex bg-gray-100 rounded-full p-1">
+              <Link
+                href="/merchants?billing=monthly#plans"
+                className="px-5 py-2 rounded-full text-sm font-bold transition-colors"
+                style={
+                  !yearly
+                    ? { backgroundColor: BRAND, color: '#fff' }
+                    : { color: '#4B5563' }
+                }
+              >
+                شهرياً
+              </Link>
+              <Link
+                href="/merchants?billing=yearly#plans"
+                className="px-5 py-2 rounded-full text-sm font-bold transition-colors"
+                style={
+                  yearly
+                    ? { backgroundColor: BRAND, color: '#fff' }
+                    : { color: '#4B5563' }
+                }
+              >
+                سنوياً
+              </Link>
+            </div>
+          </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
             {plans.map((p) => {
