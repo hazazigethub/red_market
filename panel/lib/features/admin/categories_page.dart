@@ -312,83 +312,86 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
         brandRed: brandRed,
         category: item,
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isVisible
-              ? Theme.of(context).colorScheme.surface
-              : Theme.of(context).colorScheme.surface.withValues(alpha: 0.7),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: isVisible ? Colors.green : Colors.grey,
-                  shape: BoxShape.circle,
+      child: Tooltip(
+        message: 'اضغط مطوّلاً للتعديل أو الحذف',
+        child: Container(
+          decoration: BoxDecoration(
+            color: isVisible
+                ? Theme.of(context).colorScheme.surface
+                : Theme.of(context).colorScheme.surface.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: isVisible ? Colors.green : Colors.grey,
+                    shape: BoxShape.circle,
+                  ),
                 ),
               ),
-            ),
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // ✅ تصميم الأيقونات الرمادية الموحدة
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: isVisible
-                          ? Colors.grey.shade100
-                          : Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(15),
-                      border: Border.all(
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // ✅ تصميم الأيقونات الرمادية الموحدة
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
                         color: isVisible
-                            ? Colors.grey.shade200
-                            : Colors.transparent,
-                        width: 1,
+                            ? Colors.grey.shade100
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(
+                          color: isVisible
+                              ? Colors.grey.shade200
+                              : Colors.transparent,
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(
+                        _getIcon(item['name']),
+                        size: 24,
+                        color: isVisible
+                            ? Colors.grey.shade700
+                            : Colors.grey.shade400,
                       ),
                     ),
-                    child: Icon(
-                      _getIcon(item['name']),
-                      size: 24,
-                      color: isVisible
-                          ? Colors.grey.shade700
-                          : Colors.grey.shade400,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                    child: Text(
-                      item['name'],
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: 'Cairo',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 11,
-                        color: isVisible
-                            ? Colors.black87
-                            : Colors.grey.shade500,
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      child: Text(
+                        item['name'],
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11,
+                          color: isVisible
+                              ? Colors.black87
+                              : Colors.grey.shade500,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
