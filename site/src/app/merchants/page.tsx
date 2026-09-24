@@ -407,17 +407,7 @@ export default async function MerchantsPage({
                       )}
                   </ul>
 
-                  <Link
-                    href="/support"
-                    className={`mt-7 block text-center py-3 rounded-lg font-bold text-sm transition-colors ${
-                      isPro
-                        ? 'text-white hover:opacity-90'
-                        : 'border border-gray-300 text-gray-700 hover:border-gray-400'
-                    }`}
-                    style={isPro ? { backgroundColor: BRAND } : undefined}
-                  >
-                    اشترك في {p.name ?? 'الباقة'}
-                  </Link>
+
                 </div>
               );
             })}
