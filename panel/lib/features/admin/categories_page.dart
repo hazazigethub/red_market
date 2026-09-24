@@ -314,6 +314,8 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
       ),
       child: Tooltip(
         message: 'اضغط مطوّلاً للتعديل أو الحذف',
+        waitDuration: const Duration(milliseconds: 400),
+        triggerMode: TooltipTriggerMode.longPress,
         child: Container(
           decoration: BoxDecoration(
             color: isVisible
