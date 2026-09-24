@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
@@ -407,8 +407,8 @@ export default async function MerchantsPage({
                       )}
                   </ul>
 
-                  <a
-                    href={PANEL_URL}
+                  <Link
+                    href="/support"
                     className={`mt-7 block text-center py-3 rounded-lg font-bold text-sm transition-colors ${
                       isPro
                         ? 'text-white hover:opacity-90'
@@ -417,15 +417,11 @@ export default async function MerchantsPage({
                     style={isPro ? { backgroundColor: BRAND } : undefined}
                   >
                     اشترك في {p.name ?? 'الباقة'}
-                  </a>
+                  </Link>
                 </div>
               );
             })}
           </div>
-
-          <p className="text-center text-xs text-gray-500 mt-8 leading-6">
-            تتوفر باقات سنوية بأسعار أوفر · وتسترد مبلغك كاملاً خلال 7 أيام
-          </p>
         </section>
       )}
 
