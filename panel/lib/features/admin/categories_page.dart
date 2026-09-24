@@ -18,7 +18,28 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
 
   String? _selectedStoreCategoryId;
   String? _selectedStoreCategoryName;
+  String? _selectedProductCategoryId;
+  String? _selectedProductCategoryName;
   bool _isProcessing = false;
+
+  /// ١ رئيسي · ٢ فرعي · ٣ فرعي الفرعي
+  int get _level {
+    if (_selectedProductCategoryId != null) return 3;
+    if (_selectedStoreCategoryId != null) return 2;
+    return 1;
+  }
+
+  String _tableForLevel(int level) {
+    switch (level) {
+      case 2:
+        return 'product_categories';
+      case 3:
+        return 'sup_product_subcategories';
+      default:
+        return 'store_categories';
+    }
+  }
+
   String get _searchQuery => widget.searchQuery;
 
   @override
@@ -62,28 +83,29 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
     return Icons.grid_view_rounded; // أيقونة افتراضية
   }
 
-  // --- دالة الحذف الذكي ---
-  Future<void> _deleteCategory(String id, bool isGeneral) async {
+  Future<void> _deleteCategory(String id, int level) async {
     setState(() => _isProcessing = true);
     try {
-      if (isGeneral) {
-        final subCategories = await supabase
-            .from('product_categories')
+      if (level < 3) {
+        // نمنع حذف مستوى له فروع — فرعي الفرعي لا فروع له
+        final childTable = level == 1
+            ? 'product_categories'
+            : 'sup_product_subcategories';
+        final children = await supabase
+            .from(childTable)
             .select('id')
             .eq('parent_id', id)
             .limit(1);
 
-        if (subCategories.isNotEmpty) {
+        if (children.isNotEmpty) {
           _showSnackBar(
             "لا يمكن حذف قسم يحتوي على أقسام فرعية!",
             Colors.orange,
           );
           return;
         }
-        await supabase.from('store_categories').delete().eq('id', id);
-      } else {
-        await supabase.from('product_categories').delete().eq('id', id);
       }
+      await supabase.from(_tableForLevel(level)).delete().eq('id', id);
 
       if (mounted) {
         Navigator.pop(context);
@@ -106,19 +128,21 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
     );
   }
 
-  Future<void> _upsertCategory({String? id, required bool isGeneral}) async {
+  Future<void> _upsertCategory({String? id, required int level}) async {
     if (_nameController.text.isEmpty) return;
     setState(() => _isProcessing = true);
-    final tableName = isGeneral ? 'store_categories' : 'product_categories';
+    final parentId = level == 2
+        ? _selectedStoreCategoryId
+        : _selectedProductCategoryId;
     final data = {
       'name': _nameController.text.trim(),
-      if (!isGeneral) 'parent_id': _selectedStoreCategoryId,
+      if (level > 1) 'parent_id': parentId,
     };
     try {
       if (id == null) {
-        await supabase.from(tableName).insert(data);
+        await supabase.from(_tableForLevel(level)).insert(data);
       } else {
-        await supabase.from(tableName).update(data).eq('id', id);
+        await supabase.from(_tableForLevel(level)).update(data).eq('id', id);
       }
       _nameController.clear();
       if (mounted) {
@@ -137,11 +161,10 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
   Future<void> _toggleVisibility(
     String id,
     bool currentStatus,
-    bool isGeneral,
+    int level,
   ) async {
-    final tableName = isGeneral ? 'store_categories' : 'product_categories';
     await supabase
-        .from(tableName)
+        .from(_tableForLevel(level))
         .update({'is_visible': !currentStatus})
         .eq('id', id);
     if (mounted) setState(() {});
@@ -159,7 +182,7 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
           physics: const BouncingScrollPhysics(),
           slivers: [
             // شريط رجوع يظهر داخل الأقسام الفرعية فقط
-            if (_selectedStoreCategoryId != null)
+            if (_level > 1)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -167,13 +190,18 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
                     alignment: Alignment.centerRight,
                     child: TextButton.icon(
                       onPressed: () => setState(() {
-                        _selectedStoreCategoryId = null;
-                        _selectedStoreCategoryName = null;
+                        if (_level == 3) {
+                          _selectedProductCategoryId = null;
+                          _selectedProductCategoryName = null;
+                        } else {
+                          _selectedStoreCategoryId = null;
+                          _selectedStoreCategoryName = null;
+                        }
                         _searchController.clear();
                       }),
                       icon: const Icon(Icons.arrow_back_ios_new, size: 15),
-                      label: const Text(
-                        'الأقسام الرئيسية',
+                      label: Text(
+                        _level == 3 ? 'الأقسام الفرعية' : 'الأقسام الرئيسية',
                         style: TextStyle(
                           fontFamily: 'Cairo',
                           fontSize: 12.5,
@@ -200,9 +228,12 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          _selectedStoreCategoryId == null
-                              ? "الأقسام الرئيسية"
-                              : "الأقسام الفرعية لـ $_selectedStoreCategoryName",
+                          switch (_level) {
+                            2 =>
+                              "الأقسام الفرعية لـ $_selectedStoreCategoryName",
+                            3 => "أقسام فرعية لـ $_selectedProductCategoryName",
+                            _ => "الأقسام الرئيسية",
+                          },
                           style: const TextStyle(
                             fontFamily: 'Cairo',
                             fontSize: 12,
@@ -219,18 +250,13 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
             ),
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-              sliver: _buildCategoryGrid(
-                isGeneral: _selectedStoreCategoryId == null,
-                brandRed: brandRed,
-              ),
+              sliver: _buildCategoryGrid(level: _level, brandRed: brandRed),
             ),
           ],
         ),
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => _showAddEditDialog(
-            isGeneral: _selectedStoreCategoryId == null,
-            brandRed: brandRed,
-          ),
+          onPressed: () =>
+              _showAddEditDialog(level: _level, brandRed: brandRed),
           backgroundColor: brandRed,
           elevation: 4,
           icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
@@ -248,14 +274,12 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
     );
   }
 
-  Widget _buildCategoryGrid({
-    required bool isGeneral,
-    required Color brandRed,
-  }) {
-    final tableName = isGeneral ? 'store_categories' : 'product_categories';
-    var query = supabase.from(tableName).select();
-    if (!isGeneral) {
+  Widget _buildCategoryGrid({required int level, required Color brandRed}) {
+    var query = supabase.from(_tableForLevel(level)).select();
+    if (level == 2) {
       query = query.eq('parent_id', _selectedStoreCategoryId as Object);
+    } else if (level == 3) {
+      query = query.eq('parent_id', _selectedProductCategoryId as Object);
     }
 
     return FutureBuilder<List<Map<String, dynamic>>>(
@@ -284,7 +308,7 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
           delegate: SliverChildBuilderDelegate((context, index) {
             final item = data[index];
             final bool isVisible = item['is_visible'] ?? true;
-            return _buildCompactCard(item, isVisible, isGeneral, brandRed);
+            return _buildCompactCard(item, isVisible, level, brandRed);
           }, childCount: data.length),
         );
       },
@@ -294,24 +318,27 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
   Widget _buildCompactCard(
     Map<String, dynamic> item,
     bool isVisible,
-    bool isGeneral,
+    int level,
     Color brandRed,
   ) {
     return GestureDetector(
       onTap: () {
-        if (isGeneral) {
+        if (level == 1) {
           setState(() {
             _selectedStoreCategoryId = item['id'].toString();
             _selectedStoreCategoryName = item['name'];
             _searchController.clear();
           });
+        } else if (level == 2) {
+          setState(() {
+            _selectedProductCategoryId = item['id'].toString();
+            _selectedProductCategoryName = item['name'];
+            _searchController.clear();
+          });
         }
       },
-      onLongPress: () => _showAddEditDialog(
-        isGeneral: isGeneral,
-        brandRed: brandRed,
-        category: item,
-      ),
+      onLongPress: () =>
+          _showAddEditDialog(level: level, brandRed: brandRed, category: item),
       child: Tooltip(
         message: 'اضغط مطوّلاً للتعديل أو الحذف',
         waitDuration: const Duration(milliseconds: 400),
@@ -418,7 +445,7 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
   }
 
   void _showAddEditDialog({
-    required bool isGeneral,
+    required int level,
     required Color brandRed,
     Map<String, dynamic>? category,
   }) {
@@ -484,10 +511,8 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
                             borderRadius: BorderRadius.circular(15),
                           ),
                         ),
-                        onPressed: () => _upsertCategory(
-                          id: category?['id'],
-                          isGeneral: isGeneral,
-                        ),
+                        onPressed: () =>
+                            _upsertCategory(id: category?['id'], level: level),
                         child: const Text(
                           "حفظ",
                           style: TextStyle(
@@ -505,7 +530,7 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
                           _toggleVisibility(
                             category['id'],
                             category['is_visible'] ?? true,
-                            isGeneral,
+                            level,
                           );
                           Navigator.pop(context);
                         },
@@ -518,8 +543,7 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
                       ),
                       const SizedBox(width: 8),
                       IconButton(
-                        onPressed: () =>
-                            _deleteCategory(category['id'], isGeneral),
+                        onPressed: () => _deleteCategory(category['id'], level),
                         icon: const Icon(
                           Icons.delete_forever_rounded,
                           color: Colors.red,
