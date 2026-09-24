@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+﻿import { supabase } from '@/lib/supabase';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
@@ -407,7 +407,17 @@ export default async function MerchantsPage({
                       )}
                   </ul>
 
-
+                  <a
+                    href={PANEL_URL}
+                    className={`mt-7 block text-center py-3 rounded-lg font-bold text-sm transition-colors ${
+                      isPro
+                        ? 'text-white hover:opacity-90'
+                        : 'border border-gray-300 text-gray-700 hover:border-gray-400'
+                    }`}
+                    style={isPro ? { backgroundColor: BRAND } : undefined}
+                  >
+                    اشترك في {p.name ?? 'الباقة'}
+                  </a>
                 </div>
               );
             })}
