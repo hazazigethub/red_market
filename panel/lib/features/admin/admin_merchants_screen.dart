@@ -21,6 +21,9 @@ class _AdminMerchantsScreenState extends State<AdminMerchantsScreen> {
 
   String get _searchQuery => widget.searchQuery;
 
+  /// القائمة المفتوحة داخل الصفحة (null = الملخص)
+  String? _listKey;
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -75,6 +78,19 @@ class _AdminMerchantsScreenState extends State<AdminMerchantsScreen> {
                           (m['user_status'] == null ||
                               m['user_status'] == 'new'))
                       .toList();
+
+                  final lists = <String, List<Map<String, dynamic>>>{
+                    'الكل': filteredData,
+                    'النشطة': activeList,
+                    'غير المشتركين': neverSubscribedList,
+                    'المحظورة': bannedList,
+                    'المنتهية': expiredList,
+                  };
+
+                  if (_listKey != null) {
+                    return _buildInlineList(
+                        _listKey!, lists[_listKey] ?? const []);
+                  }
 
                   return SingleChildScrollView(
                     padding: const EdgeInsets.all(20),
@@ -340,14 +356,135 @@ class _AdminMerchantsScreenState extends State<AdminMerchantsScreen> {
     );
   }
 
+  /// قائمة المتاجر داخل نفس الصفحة — بدل فتح صفحة منفصلة
+  Widget _buildInlineList(String title, List<Map<String, dynamic>> items) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        Row(
+          children: [
+            TextButton.icon(
+              onPressed: () => setState(() => _listKey = null),
+              icon: const Icon(Icons.arrow_back_ios_new, size: 15),
+              label: const Text(
+                'رجوع',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              style: TextButton.styleFrom(foregroundColor: brandRed),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'المتاجر: $title',
+              style: const TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '${items.length}',
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (items.isEmpty)
+          const Padding(
+            padding: EdgeInsets.only(top: 40),
+            child: Center(
+              child: Text(
+                'لا توجد متاجر في هذه القائمة',
+                style: TextStyle(fontFamily: 'Cairo', color: Colors.grey),
+              ),
+            ),
+          )
+        else
+          ...items.map(_buildMerchantTile),
+      ],
+    );
+  }
+
+  Widget _buildMerchantTile(Map<String, dynamic> m) {
+    final bool isBanned = m['is_banned'] ?? false;
+    final bool isActive = m['is_subscription_active'] ?? false;
+    final String? logo = m['store_logo_url'];
+
+    final String statusLabel =
+        isBanned ? 'محظور' : (isActive ? 'نشط' : 'اشتراك منتهي');
+    final Color statusColor =
+        isBanned ? Colors.black87 : (isActive ? Colors.green : brandRed);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFEDEFF3)),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        onTap: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => MerchantControlScreen(merchant: m)),
+          );
+          if (mounted) setState(() {});
+        },
+        leading: CircleAvatar(
+          radius: 22,
+          backgroundColor: brandRed.withValues(alpha: 0.08),
+          backgroundImage: logo != null ? NetworkImage(logo) : null,
+          child: logo == null
+              ? const Icon(Icons.store, color: brandRed, size: 20)
+              : null,
+        ),
+        title: Text(
+          m['store_name'] ?? m['full_name'] ?? 'بدون اسم',
+          style: const TextStyle(
+            fontFamily: 'Cairo',
+            fontWeight: FontWeight.bold,
+            fontSize: 13.5,
+          ),
+        ),
+        subtitle: Text(
+          (m['email'] ?? '').toString(),
+          style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
+        ),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: statusColor.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            statusLabel,
+            style: TextStyle(
+              fontFamily: 'Cairo',
+              fontSize: 10.5,
+              fontWeight: FontWeight.bold,
+              color: statusColor,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSummaryCard(String title, String value, Color color,
       IconData icon, List<Map<String, dynamic>> list, String category) {
     return GestureDetector(
-      onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => MerchantGridPage(
-                  merchants: list, title: category, brandColor: brandRed))),
+      onTap: () => setState(() => _listKey = category),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -378,11 +515,7 @@ class _AdminMerchantsScreenState extends State<AdminMerchantsScreen> {
   Widget _buildSmallStatCard(String title, String value, Color color,
       IconData icon, List<Map<String, dynamic>> list, String category) {
     return GestureDetector(
-      onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => MerchantGridPage(
-                  merchants: list, title: category, brandColor: brandRed))),
+      onTap: () => setState(() => _listKey = category),
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(

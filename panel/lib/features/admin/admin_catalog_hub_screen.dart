@@ -8,8 +8,7 @@ class AdminCatalogHubScreen extends StatefulWidget {
   const AdminCatalogHubScreen({super.key});
 
   @override
-  State<AdminCatalogHubScreen> createState() =>
-      _AdminCatalogHubScreenState();
+  State<AdminCatalogHubScreen> createState() => _AdminCatalogHubScreenState();
 }
 
 class _AdminCatalogHubScreenState extends State<AdminCatalogHubScreen> {
@@ -67,11 +66,7 @@ class _AdminCatalogHubScreenState extends State<AdminCatalogHubScreen> {
                       if (!wide) {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            tabs,
-                            const SizedBox(height: 12),
-                            search,
-                          ],
+                          children: [tabs, const SizedBox(height: 12), search],
                         );
                       }
 
@@ -91,7 +86,7 @@ class _AdminCatalogHubScreenState extends State<AdminCatalogHubScreen> {
             Expanded(
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1050),
+                  constraints: const BoxConstraints(maxWidth: 1400),
                   child: IndexedStack(
                     index: _tab,
                     children: [
@@ -116,20 +111,25 @@ class _AdminCatalogHubScreenState extends State<AdminCatalogHubScreen> {
         onChanged: (v) => setState(() => _query = v),
         style: const TextStyle(fontFamily: 'Cairo', fontSize: 13),
         decoration: InputDecoration(
-          hintText: _tab == 0
-              ? 'ابحث باسم العرض أو التاجر'
-              : 'ابحث عن تصنيف',
+          hintText: _tab == 0 ? 'ابحث باسم العرض أو التاجر' : 'ابحث عن تصنيف',
           hintStyle: TextStyle(
-              fontFamily: 'Cairo',
-              fontSize: 12.5,
-              color: Colors.grey.shade400),
-          prefixIcon: Icon(Icons.search_rounded,
-              size: 19, color: Colors.grey.shade500),
+            fontFamily: 'Cairo',
+            fontSize: 12.5,
+            color: Colors.grey.shade400,
+          ),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            size: 19,
+            color: Colors.grey.shade500,
+          ),
           suffixIcon: _query.isEmpty
               ? null
               : IconButton(
-                  icon: Icon(Icons.close_rounded,
-                      size: 17, color: Colors.grey.shade500),
+                  icon: Icon(
+                    Icons.close_rounded,
+                    size: 17,
+                    color: Colors.grey.shade500,
+                  ),
                   onPressed: () {
                     _searchCtrl.clear();
                     setState(() => _query = '');
@@ -146,8 +146,10 @@ class _AdminCatalogHubScreenState extends State<AdminCatalogHubScreen> {
             borderRadius: BorderRadius.circular(11),
             borderSide: const BorderSide(color: brandRed, width: 1.4),
           ),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 12,
+          ),
         ),
       ),
     );
@@ -168,8 +170,11 @@ class _AdminCatalogHubScreenState extends State<AdminCatalogHubScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon,
-                size: 17, color: on ? Colors.white : Colors.grey.shade600),
+            Icon(
+              icon,
+              size: 17,
+              color: on ? Colors.white : Colors.grey.shade600,
+            ),
             const SizedBox(width: 8),
             Text(
               label,

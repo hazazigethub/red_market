@@ -299,11 +299,11 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
         if (data.isEmpty) return SliverFillRemaining(child: _buildEmptyState());
 
         return SliverGrid(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 180,
+            mainAxisExtent: 140,
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
-            childAspectRatio: 0.85,
           ),
           delegate: SliverChildBuilderDelegate((context, index) {
             final item = data[index];

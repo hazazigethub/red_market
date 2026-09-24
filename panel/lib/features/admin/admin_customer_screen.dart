@@ -19,6 +19,9 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
 
   String get _searchQuery => widget.searchQuery;
 
+  /// عرض قائمة المحظورين داخل نفس الصفحة
+  bool _showBanned = false;
+
   /// كل العملاء على دفعات — يتجاوز حد الألف الافتراضي
   Future<List<Map<String, dynamic>>> _fetchAllCustomers() async {
     final List<Map<String, dynamic>> out = [];
@@ -84,6 +87,10 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                         phone.contains(_searchQuery);
                   }).toList();
 
+                  if (_showBanned) {
+                    return _buildBannedList(bannedUsers, fourteenDaysAgo);
+                  }
+
                   return ListView(
                     padding: const EdgeInsets.all(20),
                     children: [
@@ -107,13 +114,12 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                                   Icons.person_off_rounded)),
                           const SizedBox(width: 10),
 
-                          // بطاقة المحظورين المحدثة مع الـ BottomSheet
+                          // بطاقة المحظورين — تفتح القائمة داخل الصفحة
                           Expanded(
                             child: InkWell(
                               splashColor: Colors.transparent,
                               highlightColor: Colors.transparent,
-                              onTap: () => _showBannedBottomSheet(
-                                  context, bannedUsers, fourteenDaysAgo),
+                              onTap: () => setState(() => _showBanned = true),
                               child: _buildSmallStatCard(
                                   "محظورون",
                                   "${bannedUsers.length}",
@@ -176,41 +182,62 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     return u['user_status'] == 'active';
   }
 
-  // دالة عرض قائمة المحظورين في Bottom Sheet
-  void _showBannedBottomSheet(BuildContext context,
+  /// قائمة العملاء المحظورين داخل نفس الصفحة — بدل الشاشة السفلية
+  Widget _buildBannedList(
       List<Map<String, dynamic>> bannedUsers, DateTime threshold) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        Row(
           children: [
-            const Text("قائمة العملاء المحظورين",
+            TextButton.icon(
+              onPressed: () => setState(() => _showBanned = false),
+              icon: const Icon(Icons.arrow_back_ios_new, size: 15),
+              label: const Text(
+                'رجوع',
                 style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16)),
-            const Divider(),
-            if (bannedUsers.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Text("لا يوجد عملاء محظورون حالياً",
-                    style: TextStyle(fontFamily: 'Cairo')),
-              )
-            else
-              Expanded(
-                child: ListView.builder(
-                  itemCount: bannedUsers.length,
-                  itemBuilder: (context, index) =>
-                      _buildUserCard(bannedUsers[index], threshold),
+                  fontFamily: 'Cairo',
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
+              style: TextButton.styleFrom(foregroundColor: brandRed),
+            ),
+            const SizedBox(width: 6),
+            const Text(
+              'العملاء المحظورون',
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '${bannedUsers.length}',
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade600,
+              ),
+            ),
           ],
         ),
-      ),
+        const SizedBox(height: 12),
+        if (bannedUsers.isEmpty)
+          const Padding(
+            padding: EdgeInsets.only(top: 40),
+            child: Center(
+              child: Text(
+                'لا يوجد عملاء محظورون حالياً',
+                style: TextStyle(fontFamily: 'Cairo', color: Colors.grey),
+              ),
+            ),
+          )
+        else
+          ...bannedUsers.map((u) => _buildUserCard(u, threshold)),
+      ],
     );
   }
 
@@ -271,12 +298,13 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     bool isActive = _checkIfActive(user, threshold);
     bool isBanned = user['is_banned'] == true;
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-          side: BorderSide(color: Colors.grey.shade200)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFEDEFF3)),
+      ),
       child: ListTile(
         onTap: () => Navigator.push(
           context,
