@@ -14,6 +14,7 @@ class ProductModel {
   final List<String> imagesUrl;
   final String category;
   final String? categoryName;
+  final String? subCategoryId;
   final String? storeCategory;
   final String? region;
   final int stock;
@@ -36,6 +37,7 @@ class ProductModel {
     required this.imagesUrl,
     required this.category,
     this.categoryName,
+    this.subCategoryId,
     this.storeCategory,
     this.region,
     this.stock = 0,
@@ -104,6 +106,7 @@ class ProductModel {
       imagesUrl: parsedImages,
       category: json['category']?.toString() ?? '',
       categoryName: categoryName,
+      subCategoryId: json['sub_category_id']?.toString(),
       storeCategory: json['store_category']?.toString(),
       region: json['region'] as String?,
       stock: (json['stock'] as num?)?.toInt() ?? 0,

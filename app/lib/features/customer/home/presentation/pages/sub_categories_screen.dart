@@ -143,33 +143,55 @@ class SubCategoryItemsPage extends StatefulWidget {
 
 class _SubCategoryItemsPageState extends State<SubCategoryItemsPage> {
   final supabase = Supabase.instance.client;
-  List<ProductModel> _products = [];
+  List<ProductModel> _allProducts = [];
+  List<Map<String, dynamic>> _subSubCategories = [];
   bool _isLoading = true;
+
+  /// null يعني "الكل" — بلا فلترة
+  String? _selectedSubSubId;
 
   @override
   void initState() {
     super.initState();
-    _fetchProducts();
+    _fetchData();
   }
 
-  Future<void> _fetchProducts() async {
+  Future<void> _fetchData() async {
     try {
-      final data = await supabase
-          .from('products')
-          .select('*')
-          .eq('category_id', widget.categoryId)
-          .eq('is_available', true);
+      final results = await Future.wait([
+        supabase
+            .from('products')
+            .select('*')
+            .eq('category_id', widget.categoryId)
+            .eq('is_available', true),
+        supabase
+            .from('sup_product_subcategories')
+            .select()
+            .eq('parent_id', widget.categoryId)
+            .eq('is_visible', true)
+            .order('name'),
+      ]);
 
       if (mounted) {
         setState(() {
-          _products =
-              (data as List).map((p) => ProductModel.fromJson(p)).toList();
+          _allProducts = (results[0] as List)
+              .map((p) => ProductModel.fromJson(p))
+              .toList();
+          _subSubCategories = List<Map<String, dynamic>>.from(results[1]);
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  /// العروض بعد تطبيق فلتر فرعي الفرعي — أو الكل
+  List<ProductModel> get _filteredProducts {
+    if (_selectedSubSubId == null) return _allProducts;
+    return _allProducts
+        .where((p) => p.subCategoryId == _selectedSubSubId)
+        .toList();
   }
 
   @override
@@ -202,7 +224,8 @@ class _SubCategoryItemsPageState extends State<SubCategoryItemsPage> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05), blurRadius: 5)
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 5)
                   ],
                 ),
                 child: TextField(
@@ -216,11 +239,33 @@ class _SubCategoryItemsPageState extends State<SubCategoryItemsPage> {
                 ),
               ),
             ),
+            // شريط فرعي الفرعي — أفقي قابل للسحب، يظهر فقط إن وُجدت فروع
+            if (_subSubCategories.isNotEmpty)
+              SizedBox(
+                height: 42,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: [
+                    _subSubChip(label: "الكل", id: null),
+                    const SizedBox(width: 8),
+                    for (final s in _subSubCategories) ...[
+                      _subSubChip(
+                        label: (s['name'] ?? '').toString(),
+                        id: s['id'].toString(),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                  ],
+                ),
+              ),
+            if (_subSubCategories.isNotEmpty) const SizedBox(height: 10),
+
             Expanded(
               child: _isLoading
                   ? const Center(
                       child: CircularProgressIndicator(color: brandRed))
-                  : _products.isEmpty
+                  : _filteredProducts.isEmpty
                       ? const Center(
                           child: Text("لا توجد عروض حالياً",
                               style: TextStyle(fontFamily: 'Cairo')))
@@ -233,13 +278,43 @@ class _SubCategoryItemsPageState extends State<SubCategoryItemsPage> {
                             crossAxisSpacing: 12,
                             childAspectRatio: 0.75,
                           ),
-                          itemCount: _products.length,
+                          itemCount: _filteredProducts.length,
                           itemBuilder: (context, index) {
-                            return ProductCard(product: _products[index]);
+                            return ProductCard(
+                                product: _filteredProducts[index]);
                           },
                         ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _subSubChip({required String label, required String? id}) {
+    const Color brandRed = Color(0xFFD32027);
+    final bool selected = _selectedSubSubId == id;
+
+    return GestureDetector(
+      onTap: () => setState(() => _selectedSubSubId = id),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? brandRed : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? brandRed : brandRed.withValues(alpha: 0.4),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Cairo',
+            fontSize: 12.5,
+            fontWeight: FontWeight.bold,
+            color: selected ? Colors.white : brandRed,
+          ),
         ),
       ),
     );
