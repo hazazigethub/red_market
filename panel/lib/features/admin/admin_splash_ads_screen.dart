@@ -87,8 +87,7 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
             .inFilter('id', ids);
 
         for (final m in List<Map<String, dynamic>>.from(merch)) {
-          names[m['id'].toString()] =
-              (m['store_name'] ?? 'متجر').toString();
+          names[m['id'].toString()] = (m['store_name'] ?? 'متجر').toString();
         }
       }
 
@@ -110,18 +109,22 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
 
   void _snack(String msg, Color color) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: const TextStyle(fontFamily: 'Cairo')),
-      backgroundColor: color,
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg, style: const TextStyle(fontFamily: 'Cairo')),
+        backgroundColor: color,
+      ),
+    );
   }
 
   Future<void> _generate() async {
     if (_generating) return;
     setState(() => _generating = true);
     try {
-      final res = await supabase
-          .rpc('generate_splash_days', params: {'p_count': 30});
+      final res = await supabase.rpc(
+        'generate_splash_days',
+        params: {'p_count': 30},
+      );
       await _load();
       _snack('أُضيف ${res ?? 30} يوماً', Colors.green);
     } catch (e) {
@@ -135,9 +138,11 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
   /// نافذة تعديل اليوم
   void _editDay(Map<String, dynamic> d) {
     final price = TextEditingController(
-        text: '${(d['price'] as num?)?.toInt() ?? 0}');
-    final occasion =
-        TextEditingController(text: (d['occasion_name'] ?? '').toString());
+      text: '${(d['price'] as num?)?.toInt() ?? 0}',
+    );
+    final occasion = TextEditingController(
+      text: (d['occasion_name'] ?? '').toString(),
+    );
     bool isOpen = d['is_open'] == true;
     bool saving = false;
 
@@ -148,8 +153,9 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
           textDirection: TextDirection.rtl,
           child: AlertDialog(
             backgroundColor: Colors.white,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: Row(
               children: [
                 Container(
@@ -158,17 +164,21 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                     color: brandRed.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(9),
                   ),
-                  child: const Icon(Icons.event_rounded,
-                      color: brandRed, size: 17),
+                  child: const Icon(
+                    Icons.event_rounded,
+                    color: brandRed,
+                    size: 17,
+                  ),
                 ),
                 const SizedBox(width: 11),
                 Expanded(
                   child: Text(
                     (d['ad_date'] ?? '').toString(),
                     style: const TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.bold),
+                      fontFamily: 'Cairo',
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -183,17 +193,17 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                     controller: price,
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    style:
-                        const TextStyle(fontFamily: 'Cairo', fontSize: 13.5),
+                    style: const TextStyle(fontFamily: 'Cairo', fontSize: 13.5),
                     decoration: _dec('سعر اليوم', Icons.payments_outlined),
                   ),
                   const SizedBox(height: 14),
                   TextField(
                     controller: occasion,
-                    style:
-                        const TextStyle(fontFamily: 'Cairo', fontSize: 13.5),
-                    decoration:
-                        _dec('اسم المناسبة', Icons.celebration_outlined),
+                    style: const TextStyle(fontFamily: 'Cairo', fontSize: 13.5),
+                    decoration: _dec(
+                      'اسم المناسبة',
+                      Icons.celebration_outlined,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   SwitchListTile(
@@ -201,11 +211,14 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                     activeColor: brandRed,
                     contentPadding: EdgeInsets.zero,
                     dense: true,
-                    title: const Text('الحجز مفتوح',
-                        style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.bold)),
+                    title: const Text(
+                      'الحجز مفتوح',
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     onChanged: (v) => setModal(() => isOpen = v),
                   ),
                 ],
@@ -214,28 +227,33 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
             actions: [
               TextButton(
                 onPressed: saving ? null : () => Navigator.pop(ctx),
-                child: const Text('إلغاء',
-                    style:
-                        TextStyle(fontFamily: 'Cairo', color: Colors.grey)),
+                child: const Text(
+                  'إلغاء',
+                  style: TextStyle(fontFamily: 'Cairo', color: Colors.grey),
+                ),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: brandRed,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 onPressed: saving
                     ? null
                     : () async {
                         setModal(() => saving = true);
                         try {
-                          await supabase.from('splash_ad_days').update({
-                            'price': int.tryParse(price.text.trim()) ?? 0,
-                            'occasion_name': occasion.text.trim().isEmpty
-                                ? null
-                                : occasion.text.trim(),
-                            'is_open': isOpen,
-                          }).eq('ad_date', d['ad_date']);
+                          await supabase
+                              .from('splash_ad_days')
+                              .update({
+                                'price': int.tryParse(price.text.trim()) ?? 0,
+                                'occasion_name': occasion.text.trim().isEmpty
+                                    ? null
+                                    : occasion.text.trim(),
+                                'is_open': isOpen,
+                              })
+                              .eq('ad_date', d['ad_date']);
 
                           if (ctx.mounted) Navigator.pop(ctx);
                           await _load();
@@ -246,11 +264,14 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                           _snack('تعذر الحفظ', Colors.red);
                         }
                       },
-                child: Text(saving ? 'جاري الحفظ...' : 'حفظ',
-                    style: const TextStyle(
-                        fontFamily: 'Cairo',
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white)),
+                child: Text(
+                  saving ? 'جاري الحفظ...' : 'حفظ',
+                  style: const TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ],
           ),
@@ -263,7 +284,10 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
     return InputDecoration(
       labelText: label,
       labelStyle: TextStyle(
-          fontFamily: 'Cairo', fontSize: 13, color: Colors.grey.shade600),
+        fontFamily: 'Cairo',
+        fontSize: 13,
+        color: Colors.grey.shade600,
+      ),
       prefixIcon: Icon(icon, size: 19, color: Colors.grey.shade500),
       filled: true,
       fillColor: const Color(0xFFF7F8FA),
@@ -275,8 +299,7 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
         borderRadius: BorderRadius.circular(11),
         borderSide: const BorderSide(color: brandRed, width: 1.5),
       ),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     );
   }
 
@@ -291,11 +314,14 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
 
   Future<void> _approve(Map<String, dynamic> a) async {
     try {
-      await supabase.from('splash_ads').update({
-        'is_approved': true,
-        'rejection_reason': null,
-        'reviewed_at': DateTime.now().toIso8601String(),
-      }).eq('id', a['id']);
+      await supabase
+          .from('splash_ads')
+          .update({
+            'is_approved': true,
+            'rejection_reason': null,
+            'reviewed_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', a['id']);
 
       await _load();
       _snack('اعتُمد الإعلان', Colors.green);
@@ -318,17 +344,21 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
           textDirection: TextDirection.rtl,
           child: AlertDialog(
             backgroundColor: Colors.white,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: const Row(
               children: [
                 Icon(Icons.block_rounded, color: Colors.red, size: 19),
                 SizedBox(width: 10),
-                Text('إيقاف الإعلان',
-                    style: TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold)),
+                Text(
+                  'إيقاف الإعلان',
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
             content: ConstrainedBox(
@@ -342,28 +372,34 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                     'يمكنه تعديل الصورة قبل 24 ساعة من موعد العرض '
                     'فيعود للمراجعة، وإلا أُلغي تلقائياً وأُعيد المبلغ لرصيده.',
                     style: const TextStyle(
-                        fontFamily: 'Cairo', fontSize: 13, height: 1.9),
+                      fontFamily: 'Cairo',
+                      fontSize: 13,
+                      height: 1.9,
+                    ),
                   ),
                   const SizedBox(height: 14),
                   TextField(
                     controller: ctrl,
                     maxLines: 3,
                     autofocus: true,
-                    style:
-                        const TextStyle(fontFamily: 'Cairo', fontSize: 13),
+                    style: const TextStyle(fontFamily: 'Cairo', fontSize: 13),
                     decoration: InputDecoration(
                       hintText: 'سبب الإيقاف — يظهر للتاجر في لوحته',
                       hintStyle: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 12,
-                          color: Colors.grey.shade400),
+                        fontFamily: 'Cairo',
+                        fontSize: 12,
+                        color: Colors.grey.shade400,
+                      ),
                       filled: true,
                       fillColor: const Color(0xFFF7F8FA),
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 13),
+                        horizontal: 14,
+                        vertical: 13,
+                      ),
                     ),
                   ),
                 ],
@@ -372,15 +408,17 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
             actions: [
               TextButton(
                 onPressed: saving ? null : () => Navigator.pop(ctx),
-                child: const Text('إلغاء',
-                    style:
-                        TextStyle(fontFamily: 'Cairo', color: Colors.grey)),
+                child: const Text(
+                  'إلغاء',
+                  style: TextStyle(fontFamily: 'Cairo', color: Colors.grey),
+                ),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 onPressed: saving
                     ? null
@@ -392,23 +430,28 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                         setModal(() => saving = true);
 
                         try {
-                          final res = await supabase
-                              .rpc('suspend_splash_ad', params: {
-                            'p_ad_id': a['id'],
-                            'p_reason': ctrl.text.trim(),
-                          });
+                          final res = await supabase.rpc(
+                            'suspend_splash_ad',
+                            params: {
+                              'p_ad_id': a['id'],
+                              'p_reason': ctrl.text.trim(),
+                            },
+                          );
                           final map = Map<String, dynamic>.from(res as Map);
 
                           if (ctx.mounted) Navigator.pop(ctx);
 
                           if (map['ok'] == true) {
                             await _load();
-                            _snack('أُوقف الإعلان — بانتظار تعديل التاجر',
-                                Colors.orange);
+                            _snack(
+                              'أُوقف الإعلان — بانتظار تعديل التاجر',
+                              Colors.orange,
+                            );
                           } else {
                             _snack(
-                                map['error']?.toString() ?? 'تعذر الإيقاف',
-                                Colors.red);
+                              map['error']?.toString() ?? 'تعذر الإيقاف',
+                              Colors.red,
+                            );
                           }
                         } catch (e) {
                           debugPrint('Suspend error: $e');
@@ -416,11 +459,14 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                           _snack('تعذر تنفيذ العملية', Colors.red);
                         }
                       },
-                child: Text(saving ? 'جاري...' : 'إيقاف الإعلان',
-                    style: const TextStyle(
-                        fontFamily: 'Cairo',
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white)),
+                child: Text(
+                  saving ? 'جاري...' : 'إيقاف الإعلان',
+                  style: const TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ],
           ),
@@ -443,17 +489,21 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
           textDirection: TextDirection.rtl,
           child: AlertDialog(
             backgroundColor: Colors.white,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: const Row(
               children: [
                 Icon(Icons.gpp_bad_rounded, color: Colors.red, size: 20),
                 SizedBox(width: 10),
-                Text('حظر الإعلان',
-                    style: TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold)),
+                Text(
+                  'حظر الإعلان',
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
             content: ConstrainedBox(
@@ -467,8 +517,9 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                     decoration: BoxDecoration(
                       color: Colors.red.withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(10),
-                      border:
-                          Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: Colors.red.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: const Text(
                       'الحظر قطعي:\n'
@@ -476,17 +527,21 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                       '• لا يُسترد المبلغ\n'
                       '• لا يستطيع التاجر تعديله',
                       style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 12,
-                          height: 2.0,
-                          color: Colors.red),
+                        fontFamily: 'Cairo',
+                        fontSize: 12,
+                        height: 2.0,
+                        color: Colors.red,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     'يصل $store إشعار بالسبب.',
                     style: const TextStyle(
-                        fontFamily: 'Cairo', fontSize: 12.5, height: 1.8),
+                      fontFamily: 'Cairo',
+                      fontSize: 12.5,
+                      height: 1.8,
+                    ),
                   ),
                   const SizedBox(height: 14),
                   TextField(
@@ -497,16 +552,20 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                     decoration: InputDecoration(
                       hintText: 'سبب الحظر — يظهر للتاجر',
                       hintStyle: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 12,
-                          color: Colors.grey.shade400),
+                        fontFamily: 'Cairo',
+                        fontSize: 12,
+                        color: Colors.grey.shade400,
+                      ),
                       filled: true,
                       fillColor: const Color(0xFFF7F8FA),
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 13),
+                        horizontal: 14,
+                        vertical: 13,
+                      ),
                     ),
                   ),
                 ],
@@ -515,14 +574,17 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
             actions: [
               TextButton(
                 onPressed: saving ? null : () => Navigator.pop(ctx),
-                child: const Text('إلغاء',
-                    style: TextStyle(fontFamily: 'Cairo', color: Colors.grey)),
+                child: const Text(
+                  'إلغاء',
+                  style: TextStyle(fontFamily: 'Cairo', color: Colors.grey),
+                ),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red.shade900,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 onPressed: saving
                     ? null
@@ -534,11 +596,13 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                         setModal(() => saving = true);
 
                         try {
-                          final res =
-                              await supabase.rpc('ban_splash_ad', params: {
-                            'p_ad_id': a['id'],
-                            'p_reason': ctrl.text.trim(),
-                          });
+                          final res = await supabase.rpc(
+                            'ban_splash_ad',
+                            params: {
+                              'p_ad_id': a['id'],
+                              'p_reason': ctrl.text.trim(),
+                            },
+                          );
                           final map = Map<String, dynamic>.from(res as Map);
 
                           if (ctx.mounted) Navigator.pop(ctx);
@@ -547,8 +611,10 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                             await _load();
                             _snack('حُظر الإعلان', Colors.red);
                           } else {
-                            _snack(map['error']?.toString() ?? 'تعذر الحظر',
-                                Colors.red);
+                            _snack(
+                              map['error']?.toString() ?? 'تعذر الحظر',
+                              Colors.red,
+                            );
                           }
                         } catch (e) {
                           debugPrint('Ban error: $e');
@@ -556,11 +622,14 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                           _snack('تعذر تنفيذ العملية', Colors.red);
                         }
                       },
-                child: Text(saving ? 'جاري...' : 'تأكيد الحظر',
-                    style: const TextStyle(
-                        fontFamily: 'Cairo',
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white)),
+                child: Text(
+                  saving ? 'جاري...' : 'تأكيد الحظر',
+                  style: const TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ],
           ),
@@ -596,8 +665,10 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                       height: 300,
                       color: Colors.grey.shade200,
                       child: const Center(
-                        child: Text('تعذر عرض الصورة',
-                            style: TextStyle(fontFamily: 'Cairo')),
+                        child: Text(
+                          'تعذر عرض الصورة',
+                          style: TextStyle(fontFamily: 'Cairo'),
+                        ),
                       ),
                     ),
                   ),
@@ -606,13 +677,19 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
               const SizedBox(height: 14),
               TextButton.icon(
                 onPressed: () => Navigator.pop(ctx),
-                icon: const Icon(Icons.close_rounded,
-                    color: Colors.white, size: 18),
-                label: const Text('إغلاق',
-                    style: TextStyle(
-                        fontFamily: 'Cairo',
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold)),
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
+                label: const Text(
+                  'إغلاق',
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),
@@ -639,18 +716,22 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('إعلان الشاشة الرئيسية',
-                      style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 19,
-                          fontWeight: FontWeight.bold)),
+                  const Text(
+                    'إعلان الشاشة الرئيسية',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   Text(
                     'موضع واحد حصري لكل يوم — والحجز يبدأ بعد ثلاثة أيام',
                     style: TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 11.5,
-                        color: Colors.grey.shade500),
+                      fontFamily: 'Cairo',
+                      fontSize: 11.5,
+                      color: Colors.grey.shade500,
+                    ),
                   ),
 
                   const SizedBox(height: 18),
@@ -670,7 +751,8 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 60),
                       child: Center(
-                          child: CircularProgressIndicator(color: brandRed)),
+                        child: CircularProgressIndicator(color: brandRed),
+                      ),
                     )
                   else if (_tab == 0)
                     _daysView()
@@ -717,12 +799,22 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
     final taken = <String>{
       for (final a in _ads)
         if (['paid', 'scheduled', 'active'].contains(a['status']))
-          (a['ad_date'] ?? '').toString()
+          (a['ad_date'] ?? '').toString(),
     };
 
     const names = [
-      'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+      'يناير',
+      'فبراير',
+      'مارس',
+      'أبريل',
+      'مايو',
+      'يونيو',
+      'يوليو',
+      'أغسطس',
+      'سبتمبر',
+      'أكتوبر',
+      'نوفمبر',
+      'ديسمبر',
     ];
 
     final first = DateTime(_calMonth.year, _calMonth.month, 1);
@@ -734,27 +826,36 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
       children: [
         Row(
           children: [
-            Text('${_days.length} يوماً مولّداً',
-                style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 12.5,
-                    color: Colors.grey.shade600)),
+            Text(
+              '${_days.length} يوماً مولّداً',
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 12.5,
+                color: Colors.grey.shade600,
+              ),
+            ),
             const Spacer(),
             ElevatedButton.icon(
               onPressed: _generating ? null : _generate,
               icon: const Icon(Icons.add_rounded, size: 18),
-              label: Text(_generating ? 'جاري...' : 'توليد 30 يوماً',
-                  style: const TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.bold)),
+              label: Text(
+                _generating ? 'جاري...' : 'توليد 30 يوماً',
+                style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: brandRed,
                 foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 13,
+                ),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
           ],
@@ -762,79 +863,110 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
 
         const SizedBox(height: 18),
 
-        // ===== شريط الشهر =====
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFEDEFF3)),
-          ),
-          child: Row(
-            children: [
-              IconButton(
-                onPressed: () => setState(() {
-                  _calMonth = DateTime(_calMonth.year, _calMonth.month - 1);
-                }),
-                icon: const Icon(Icons.chevron_right_rounded, size: 22),
-                color: Colors.grey.shade700,
+        // ===== التقويم =====
+        Align(
+          alignment: Alignment.topRight,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFEDEFF3)),
               ),
-              Expanded(
-                child: Text(
-                  '${names[_calMonth.month - 1]} ${_calMonth.year}',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.bold),
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // شريط الشهر
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => setState(() {
+                          _calMonth = DateTime(
+                            _calMonth.year,
+                            _calMonth.month - 1,
+                          );
+                        }),
+                        icon: const Icon(Icons.chevron_left_rounded, size: 20),
+                        color: Colors.grey.shade700,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      Expanded(
+                        child: Text(
+                          '${names[_calMonth.month - 1]} ${_calMonth.year}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => setState(() {
+                          _calMonth = DateTime(
+                            _calMonth.year,
+                            _calMonth.month + 1,
+                          );
+                        }),
+                        icon: const Icon(Icons.chevron_right_rounded, size: 20),
+                        color: Colors.grey.shade700,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  // أسماء الأيام
+                  Row(
+                    children:
+                        const ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                            .map(
+                              (d) => Expanded(
+                                child: Center(
+                                  child: Text(
+                                    d,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF8A93A6),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 7,
+                          mainAxisSpacing: 4,
+                          crossAxisSpacing: 4,
+                          mainAxisExtent: 100,
+                        ),
+                    itemCount: lead + daysInMonth,
+                    itemBuilder: (context, i) {
+                      if (i < lead) return const SizedBox.shrink();
+                      final day = DateTime(
+                        _calMonth.year,
+                        _calMonth.month,
+                        i - lead + 1,
+                      );
+                      return _dayCell(day, taken);
+                    },
+                  ),
+                ],
               ),
-              IconButton(
-                onPressed: () => setState(() {
-                  _calMonth = DateTime(_calMonth.year, _calMonth.month + 1);
-                }),
-                icon: const Icon(Icons.chevron_left_rounded, size: 22),
-                color: Colors.grey.shade700,
-              ),
-            ],
+            ),
           ),
-        ),
-
-        const SizedBox(height: 14),
-
-        Row(
-          children: const ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س']
-              .map((d) => Expanded(
-                    child: Center(
-                      child: Text(d,
-                          style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF8A93A6))),
-                    ),
-                  ))
-              .toList(),
-        ),
-
-        const SizedBox(height: 10),
-
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 7,
-            mainAxisSpacing: 6,
-            crossAxisSpacing: 6,
-            childAspectRatio: 0.85,
-          ),
-          itemCount: lead + daysInMonth,
-          itemBuilder: (context, i) {
-            if (i < lead) return const SizedBox.shrink();
-            final day =
-                DateTime(_calMonth.year, _calMonth.month, i - lead + 1);
-            return _dayCell(day, taken);
-          },
         ),
 
         const SizedBox(height: 16),
@@ -854,7 +986,10 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
         Text(
           'اضغط أي يوم لتعديل سعره أو مناسبته أو إغلاقه',
           style: TextStyle(
-              fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade500),
+            fontFamily: 'Cairo',
+            fontSize: 11,
+            color: Colors.grey.shade500,
+          ),
         ),
       ],
     );
@@ -874,11 +1009,14 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
           ),
         ),
         const SizedBox(width: 6),
-        Text(label,
-            style: TextStyle(
-                fontFamily: 'Cairo',
-                fontSize: 11,
-                color: Colors.grey.shade600)),
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Cairo',
+            fontSize: 11,
+            color: Colors.grey.shade600,
+          ),
+        ),
       ],
     );
   }
@@ -891,9 +1029,9 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
     final key = _dateKey(day);
 
     final info = _days.cast<Map<String, dynamic>?>().firstWhere(
-          (d) => (d?['ad_date'] ?? '').toString().startsWith(key),
-          orElse: () => null,
-        );
+      (d) => (d?['ad_date'] ?? '').toString().startsWith(key),
+      orElse: () => null,
+    );
 
     if (info == null) {
       return _cellBox(
@@ -911,26 +1049,26 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
 
     return InkWell(
       onTap: () => _editDay(info),
-      borderRadius: BorderRadius.circular(9),
+      borderRadius: BorderRadius.circular(8),
       child: _cellBox(
         day.day,
         fill: isTaken
             ? brandRed.withValues(alpha: 0.1)
             : open
-                ? Colors.white
-                : const Color(0xFFF1F2F5),
+            ? Colors.white
+            : const Color(0xFFF1F2F5),
         border: isTaken
             ? brandRed.withValues(alpha: 0.5)
             : occasion.isNotEmpty
-                ? brandRed.withValues(alpha: 0.4)
-                : open
-                    ? const Color(0xFFD5D8DE)
-                    : const Color(0xFFE5E7EB),
+            ? brandRed.withValues(alpha: 0.4)
+            : open
+            ? const Color(0xFFD5D8DE)
+            : const Color(0xFFE5E7EB),
         textColor: isTaken
             ? brandRed
             : open
-                ? const Color(0xFF1F2937)
-                : Colors.grey.shade400,
+            ? const Color(0xFF1F2937)
+            : Colors.grey.shade400,
         label: isTaken ? 'محجوز' : '$price',
       ),
     );
@@ -946,23 +1084,32 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
     return Container(
       decoration: BoxDecoration(
         color: fill,
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: border),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('$day',
-              style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: textColor)),
+          Text(
+            '$day',
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
           if (label != null) ...[
-            const SizedBox(height: 2),
-            Text(label,
-                style: TextStyle(
-                    fontFamily: 'Cairo', fontSize: 8.5, color: textColor)),
+            const SizedBox(height: 1),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 8.5,
+                color: textColor,
+              ),
+            ),
           ],
         ],
       ),
@@ -986,13 +1133,16 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
             return GestureDetector(
               onTap: () => setState(() => _filter = f.key),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 15,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: on ? brandRed.withValues(alpha: 0.08) : Colors.white,
                   borderRadius: BorderRadius.circular(9),
                   border: Border.all(
-                      color: on ? brandRed : const Color(0xFFEDEFF3)),
+                    color: on ? brandRed : const Color(0xFFEDEFF3),
+                  ),
                 ),
                 child: Text(
                   '${f.label} ($count)',
@@ -1075,8 +1225,11 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                             width: 52,
                             height: 88,
                             color: const Color(0xFFF1F2F5),
-                            child: const Icon(Icons.image_outlined,
-                                size: 17, color: Colors.grey),
+                            child: const Icon(
+                              Icons.image_outlined,
+                              size: 17,
+                              color: Colors.grey,
+                            ),
                           ),
                         ),
                       ),
@@ -1089,8 +1242,11 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                             color: Colors.black.withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(5),
                           ),
-                          child: const Icon(Icons.zoom_in_rounded,
-                              size: 12, color: Colors.white),
+                          child: const Icon(
+                            Icons.zoom_in_rounded,
+                            size: 12,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ],
@@ -1101,20 +1257,24 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(store,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontFamily: 'Cairo',
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold)),
+                    Text(
+                      store,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 3),
                     Text(
                       'يوم ${a['ad_date']}',
                       style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 11.5,
-                          color: Colors.grey.shade600),
+                        fontFamily: 'Cairo',
+                        fontSize: 11.5,
+                        color: Colors.grey.shade600,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Row(
@@ -1132,9 +1292,10 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                               ? 'يفتح عرضاً'
                               : 'يفتح المتجر',
                           style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 10.5,
-                              color: Colors.grey.shade600),
+                            fontFamily: 'Cairo',
+                            fontSize: 10.5,
+                            color: Colors.grey.shade600,
+                          ),
                         ),
                       ],
                     ),
@@ -1142,18 +1303,20 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(7),
                 ),
-                child: Text(label,
-                    style: TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.bold,
-                        color: color)),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
               ),
             ],
           ),
@@ -1164,40 +1327,59 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
 
           Row(
             children: [
-              Icon(Icons.visibility_outlined,
-                  size: 14, color: Colors.grey.shade500),
+              Icon(
+                Icons.visibility_outlined,
+                size: 14,
+                color: Colors.grey.shade500,
+              ),
               const SizedBox(width: 6),
-              Text('${a['impressions'] ?? 0}',
-                  style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 11,
-                      color: Colors.grey.shade600)),
+              Text(
+                '${a['impressions'] ?? 0}',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 11,
+                  color: Colors.grey.shade600,
+                ),
+              ),
               const SizedBox(width: 14),
-              Icon(Icons.skip_next_outlined,
-                  size: 14, color: Colors.grey.shade500),
+              Icon(
+                Icons.skip_next_outlined,
+                size: 14,
+                color: Colors.grey.shade500,
+              ),
               const SizedBox(width: 6),
-              Text('${a['skips'] ?? 0}',
-                  style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 11,
-                      color: Colors.grey.shade600)),
+              Text(
+                '${a['skips'] ?? 0}',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 11,
+                  color: Colors.grey.shade600,
+                ),
+              ),
               const SizedBox(width: 14),
-              Icon(Icons.touch_app_outlined,
-                  size: 14, color: Colors.grey.shade500),
+              Icon(
+                Icons.touch_app_outlined,
+                size: 14,
+                color: Colors.grey.shade500,
+              ),
               const SizedBox(width: 6),
-              Text('${a['clicks'] ?? 0}',
-                  style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 11,
-                      color: Colors.grey.shade600)),
+              Text(
+                '${a['clicks'] ?? 0}',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 11,
+                  color: Colors.grey.shade600,
+                ),
+              ),
               const Spacer(),
               Text(
                 '${(a['final_price'] as num?)?.toStringAsFixed(2)} ر.س',
                 style: const TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: brandRed),
+                  fontFamily: 'Cairo',
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: brandRed,
+                ),
               ),
             ],
           ),
@@ -1211,22 +1393,30 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                 borderRadius: BorderRadius.circular(10),
                 border: Border(
                   right: BorderSide(
-                      color: Colors.red.withValues(alpha: 0.5), width: 2.5),
+                    color: Colors.red.withValues(alpha: 0.5),
+                    width: 2.5,
+                  ),
                 ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.info_outline_rounded,
-                      size: 15, color: Colors.red),
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    size: 15,
+                    color: Colors.red,
+                  ),
                   const SizedBox(width: 9),
                   Expanded(
-                    child: Text(reason,
-                        style: const TextStyle(
-                            fontFamily: 'Cairo',
-                            fontSize: 11.5,
-                            height: 1.8,
-                            color: Colors.red)),
+                    child: Text(
+                      reason,
+                      style: const TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 11.5,
+                        height: 1.8,
+                        color: Colors.red,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -1234,8 +1424,12 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
           ],
 
           if (group != 'banned' &&
-              ['paid', 'scheduled', 'active', 'suspended']
-                  .contains(status)) ...[
+              [
+                'paid',
+                'scheduled',
+                'active',
+                'suspended',
+              ].contains(status)) ...[
             const SizedBox(height: 14),
             Wrap(
               spacing: 10,
@@ -1245,58 +1439,78 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                   ElevatedButton.icon(
                     onPressed: () => _approve(a),
                     icon: const Icon(Icons.check_rounded, size: 17),
-                    label: const Text('اعتماد',
-                        style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.bold)),
+                    label: const Text(
+                      'اعتماد',
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 26, vertical: 12),
+                        horizontal: 26,
+                        vertical: 12,
+                      ),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
 
                 if (group != 'suspended')
                   OutlinedButton.icon(
                     onPressed: () => _suspendDialog(a),
-                    icon: const Icon(Icons.pause_circle_outline_rounded,
-                        size: 16),
-                    label: const Text('إيقاف حتى التعديل',
-                        style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.bold)),
+                    icon: const Icon(
+                      Icons.pause_circle_outline_rounded,
+                      size: 16,
+                    ),
+                    label: const Text(
+                      'إيقاف حتى التعديل',
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.orange.shade800,
                       side: BorderSide(
-                          color: Colors.orange.withValues(alpha: 0.5)),
+                        color: Colors.orange.withValues(alpha: 0.5),
+                      ),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 12),
+                        horizontal: 18,
+                        vertical: 12,
+                      ),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
 
                 OutlinedButton.icon(
                   onPressed: () => _banDialog(a),
                   icon: const Icon(Icons.gpp_bad_rounded, size: 16),
-                  label: const Text('حظر',
-                      style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.bold)),
+                  label: const Text(
+                    'حظر',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.red.shade900,
-                    side: BorderSide(
-                        color: Colors.red.withValues(alpha: 0.45)),
+                    side: BorderSide(color: Colors.red.withValues(alpha: 0.45)),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 22, vertical: 12),
+                      horizontal: 22,
+                      vertical: 12,
+                    ),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 ),
               ],
@@ -1342,11 +1556,14 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('إيراد الإعلانات',
-                  style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 14,
-                      color: Colors.white70)),
+              const Text(
+                'إيراد الإعلانات',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 14,
+                  color: Colors.white70,
+                ),
+              ),
               const SizedBox(height: 10),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -1354,29 +1571,31 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
                   Text(
                     n(r['grand_total']).toStringAsFixed(2),
                     style: const TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        height: 1.1),
+                      fontFamily: 'Cairo',
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      height: 1.1,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   const Padding(
                     padding: EdgeInsets.only(bottom: 5),
-                    child: Text('ر.س',
-                        style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontSize: 13,
-                            color: Colors.white70)),
+                    child: Text(
+                      'ر.س',
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 13,
+                        color: Colors.white70,
+                      ),
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 18),
               Row(
                 children: [
-                  Expanded(
-                    child: _whiteBox('محقّق', n(r['grand_earned'])),
-                  ),
+                  Expanded(child: _whiteBox('محقّق', n(r['grand_earned']))),
                   const SizedBox(width: 10),
                   Expanded(
                     child: _whiteBox('تحت التنفيذ', n(r['grand_pending'])),
@@ -1386,15 +1605,19 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  const Icon(Icons.undo_rounded,
-                      size: 14, color: Colors.white70),
+                  const Icon(
+                    Icons.undo_rounded,
+                    size: 14,
+                    color: Colors.white70,
+                  ),
                   const SizedBox(width: 7),
                   Text(
                     'مستردّ للتجار ${n(r['grand_refunded']).toStringAsFixed(2)} ر.س',
                     style: const TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 11,
-                        color: Colors.white70),
+                      fontFamily: 'Cairo',
+                      fontSize: 11,
+                      color: Colors.white70,
+                    ),
                   ),
                 ],
               ),
@@ -1409,19 +1632,23 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
           builder: (context, c) {
             final wide = c.maxWidth >= 700;
             final cards = [
-              _sourceCard('البنرات الأسبوعية',
-                  Icons.view_carousel_outlined, banners, n),
-              _sourceCard('إعلان الشاشة الرئيسية',
-                  Icons.smartphone_outlined, splash, n),
+              _sourceCard(
+                'البنرات الأسبوعية',
+                Icons.view_carousel_outlined,
+                banners,
+                n,
+              ),
+              _sourceCard(
+                'إعلان الشاشة الرئيسية',
+                Icons.smartphone_outlined,
+                splash,
+                n,
+              ),
             ];
 
             if (!wide) {
               return Column(
-                children: [
-                  cards[0],
-                  const SizedBox(height: 12),
-                  cards[1],
-                ],
+                children: [cards[0], const SizedBox(height: 12), cards[1]],
               );
             }
 
@@ -1447,18 +1674,22 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.info_outline_rounded,
-                  size: 16, color: Colors.grey.shade600),
+              Icon(
+                Icons.info_outline_rounded,
+                size: 16,
+                color: Colors.grey.shade600,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   'المحقّق: إعلانات انتهى عرضها أو حُظرت — إيراد نهائي.\n'
                   'تحت التنفيذ: مباعة ولم تُعرض بعد — قد تُلغى ويُسترد مبلغها.',
                   style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 11,
-                      height: 1.9,
-                      color: Colors.grey.shade700),
+                    fontFamily: 'Cairo',
+                    fontSize: 11,
+                    height: 1.9,
+                    color: Colors.grey.shade700,
+                  ),
                 ),
               ),
             ],
@@ -1478,25 +1709,35 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: const TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 10.5,
-                  color: Colors.white70)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'Cairo',
+              fontSize: 10.5,
+              color: Colors.white70,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text('${value.toStringAsFixed(2)} ر.س',
-              style: const TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white)),
+          Text(
+            '${value.toStringAsFixed(2)} ر.س',
+            style: const TextStyle(
+              fontFamily: 'Cairo',
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _sourceCard(String title, IconData icon,
-      Map<String, dynamic> data, double Function(dynamic) n) {
+  Widget _sourceCard(
+    String title,
+    IconData icon,
+    Map<String, dynamic> data,
+    double Function(dynamic) n,
+  ) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -1512,11 +1753,14 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
               Icon(icon, size: 18, color: brandRed),
               const SizedBox(width: 10),
               Expanded(
-                child: Text(title,
-                    style: const TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold)),
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),
@@ -1532,18 +1776,24 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
           ),
           Row(
             children: [
-              const Text('الإجمالي',
-                  style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.bold)),
+              const Text(
+                'الإجمالي',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const Spacer(),
-              Text('${n(data['total']).toStringAsFixed(2)} ر.س',
-                  style: const TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: brandRed)),
+              Text(
+                '${n(data['total']).toStringAsFixed(2)} ر.س',
+                style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: brandRed,
+                ),
+              ),
             ],
           ),
         ],
@@ -1560,17 +1810,23 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 9),
-        Text(label,
-            style: TextStyle(
-                fontFamily: 'Cairo',
-                fontSize: 12,
-                color: Colors.grey.shade600)),
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Cairo',
+            fontSize: 12,
+            color: Colors.grey.shade600,
+          ),
+        ),
         const Spacer(),
-        Text('${value.toStringAsFixed(2)} ر.س',
-            style: const TextStyle(
-                fontFamily: 'Cairo',
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600)),
+        Text(
+          '${value.toStringAsFixed(2)} ر.س',
+          style: const TextStyle(
+            fontFamily: 'Cairo',
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ],
     );
   }
@@ -1581,12 +1837,20 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
       child: Center(
         child: Column(
           children: [
-            Icon(Icons.smartphone_outlined,
-                size: 52, color: Colors.grey.shade300),
+            Icon(
+              Icons.smartphone_outlined,
+              size: 52,
+              color: Colors.grey.shade300,
+            ),
             const SizedBox(height: 12),
-            Text(msg,
-                style: const TextStyle(
-                    fontFamily: 'Cairo', fontSize: 14, color: Colors.grey)),
+            Text(
+              msg,
+              style: const TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
           ],
         ),
       ),

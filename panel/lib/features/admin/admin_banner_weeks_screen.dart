@@ -6,8 +6,7 @@ class AdminBannerWeeksScreen extends StatefulWidget {
   const AdminBannerWeeksScreen({super.key});
 
   @override
-  State<AdminBannerWeeksScreen> createState() =>
-      _AdminBannerWeeksScreenState();
+  State<AdminBannerWeeksScreen> createState() => _AdminBannerWeeksScreenState();
 }
 
 class _AdminBannerWeeksScreenState extends State<AdminBannerWeeksScreen> {
@@ -21,7 +20,8 @@ class _AdminBannerWeeksScreenState extends State<AdminBannerWeeksScreen> {
 
   bool _loading = true;
   bool _generating = false;
-  bool _hidePast = true;
+  int _year = DateTime.now().year;
+  int? _busyMonth;
 
   @override
   void initState() {
@@ -69,36 +69,150 @@ class _AdminBannerWeeksScreenState extends State<AdminBannerWeeksScreen> {
 
   void _snack(String msg, Color color) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: const TextStyle(fontFamily: 'Cairo')),
-      backgroundColor: color,
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg, style: const TextStyle(fontFamily: 'Cairo')),
+        backgroundColor: color,
+      ),
+    );
   }
 
-  Future<void> _generate() async {
-    if (_generating) return;
-    setState(() => _generating = true);
+  DateTime? _date(dynamic raw) {
+    final d = DateTime.tryParse((raw ?? '').toString());
+    return d == null ? null : DateTime(d.year, d.month, d.day);
+  }
+
+  /// يوم بداية الأسبوع حسب الأسابيع الموجودة (الافتراضي الأحد)
+  int get _weekStartDay {
+    for (final w in _weeks) {
+      final d = _date(w['week_start']);
+      if (d != null) return d.weekday;
+    }
+    return DateTime.sunday;
+  }
+
+  /// أسابيع السنة المعروضة: 52 خانة (أو 53 إن وُجد)، المولَّد منها مربوط بسجلّه
+  List<_WeekSlot> _yearSlots() {
+    final inYear = _weeks.where((w) => (w['year'] as num?)?.toInt() == _year);
+    final byNumber = <int, Map<String, dynamic>>{
+      for (final w in inYear)
+        if (w['week_number'] != null) (w['week_number'] as num).toInt(): w,
+    };
+
+    // بداية أسبوع 1: من سجل موجود، وإلا أول يوم بداية أسبوع في السنة
+    // (نفس منطق generate_banner_weeks: الأسبوع ينتمي لسنة يوم بدايته)
+    DateTime? week1;
+    for (final e in byNumber.entries) {
+      final d = _date(e.value['week_start']);
+      if (d != null) {
+        week1 = d.subtract(Duration(days: 7 * (e.key - 1)));
+        break;
+      }
+    }
+    week1 ??= _firstWeekStart(_year);
+
+    // عدد أسابيع السنة = عدد أيام بداية الأسبوع فيها (52 أو 53)
+    int count = 0;
+    while (week1.add(Duration(days: 7 * count)).year == _year) {
+      count++;
+    }
+
+    return List.generate(count, (i) {
+      final n = i + 1;
+      final rec = byNumber[n];
+      final start =
+          _date(rec?['week_start']) ?? week1!.add(Duration(days: 7 * i));
+      return _WeekSlot(n, start, rec);
+    });
+  }
+
+  /// أول يوم بداية أسبوع في السنة (الأحد)
+  DateTime _firstWeekStart(int year) {
+    final jan1 = DateTime(year, 1, 1);
+    final forward = (_weekStartDay - jan1.weekday + 7) % 7;
+    return jan1.add(Duration(days: forward));
+  }
+
+  /// الشهر الذي ينتمي له الأسبوع = شهر يوم بدايته
+  int _slotMonth(_WeekSlot w) => w.start.month;
+
+  /// كم أسبوع ناقص حتى آخر أسبوع في الشهر
+  /// (الدالة تكمل من آخر week_start + 7، أو من أول أحد في السنة الحالية)
+  int _missingFor(List<_WeekSlot> monthSlots) {
+    if (monthSlots.every((w) => w.rec != null)) return 0;
+    final target = monthSlots.last.start;
+    DateTime? lastStart;
+    for (final w in _weeks) {
+      final d = _date(w['week_start']);
+      if (d != null && (lastStart == null || d.isAfter(lastStart))) {
+        lastStart = d;
+      }
+    }
+    final from =
+        lastStart ??
+        _firstWeekStart(DateTime.now().year).subtract(const Duration(days: 7));
+    if (!target.isAfter(from)) return 0;
+    return (target.difference(from).inDays / 7).ceil();
+  }
+
+  /// تفعيل الشهر: يولّد الأسابيع الناقصة حتى آخر أسبوع فيه
+  Future<void> _activateMonth(int month, int count) async {
+    if (_busyMonth != null || count <= 0) return;
+    if (count > 60) {
+      _snack('فعّل الأشهر بالترتيب — هذا الشهر بعيد جداً', Colors.orange);
+      return;
+    }
+    setState(() => _busyMonth = month);
     try {
-      final res =
-          await supabase.rpc('generate_banner_weeks', params: {'p_count': 4});
+      await supabase.rpc('generate_banner_weeks', params: {'p_count': count});
       await _load();
-      _snack('أُضيفت ${res ?? 4} أسابيع', Colors.green);
+      _snack('تم تفعيل الشهر', Colors.green);
     } catch (e) {
       debugPrint('Generate error: $e');
-      _snack('تعذر التوليد', Colors.red);
+      _snack('تعذر تفعيل الشهر', Colors.red);
     } finally {
-      if (mounted) setState(() => _generating = false);
+      if (mounted) setState(() => _busyMonth = null);
+    }
+  }
+
+  /// فتح أو إغلاق الحجز لأسابيع الشهر القادمة
+  Future<void> _setMonthOpen(
+    int month,
+    List<_WeekSlot> slots,
+    bool open,
+  ) async {
+    final ids = slots
+        .where((w) => w.rec != null && !_isPast(w.rec!))
+        .map((w) => w.rec!['id'])
+        .toList();
+    if (ids.isEmpty || _busyMonth != null) return;
+    setState(() => _busyMonth = month);
+    try {
+      await supabase
+          .from('banner_weeks')
+          .update({'is_open': open})
+          .inFilter('id', ids);
+      await _load();
+      _snack(open ? 'فُتح حجز الشهر' : 'أُغلق حجز الشهر', Colors.green);
+    } catch (e) {
+      debugPrint('Toggle month error: $e');
+      _snack('تعذر التعديل', Colors.red);
+    } finally {
+      if (mounted) setState(() => _busyMonth = null);
     }
   }
 
   /// نافذة تعديل الأسبوع
   void _editDialog(Map<String, dynamic> w) {
-    final occasion =
-        TextEditingController(text: (w['occasion_name'] ?? '').toString());
+    final occasion = TextEditingController(
+      text: (w['occasion_name'] ?? '').toString(),
+    );
     final priceWide = TextEditingController(
-        text: '${(w['price_wide'] as num?)?.toInt() ?? 0}');
+      text: '${(w['price_wide'] as num?)?.toInt() ?? 0}',
+    );
     final priceSmall = TextEditingController(
-        text: '${(w['price_small'] as num?)?.toInt() ?? 0}');
+      text: '${(w['price_small'] as num?)?.toInt() ?? 0}',
+    );
     bool isOpen = w['is_open'] == true;
     bool saving = false;
 
@@ -110,7 +224,8 @@ class _AdminBannerWeeksScreenState extends State<AdminBannerWeeksScreen> {
           child: AlertDialog(
             backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16)),
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: Row(
               children: [
                 Container(
@@ -119,8 +234,11 @@ class _AdminBannerWeeksScreenState extends State<AdminBannerWeeksScreen> {
                     color: brandRed.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(9),
                   ),
-                  child: const Icon(Icons.edit_calendar_rounded,
-                      color: brandRed, size: 17),
+                  child: const Icon(
+                    Icons.edit_calendar_rounded,
+                    color: brandRed,
+                    size: 17,
+                  ),
                 ),
                 const SizedBox(width: 11),
                 Expanded(
@@ -128,9 +246,10 @@ class _AdminBannerWeeksScreenState extends State<AdminBannerWeeksScreen> {
                     'الأسبوع ${w['week_number']} · ${w['year']} — '
                     '${_fmt(w['week_start'])} إلى ${_fmt(w['week_end'])}',
                     style: const TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.bold),
+                      fontFamily: 'Cairo',
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -169,17 +288,23 @@ class _AdminBannerWeeksScreenState extends State<AdminBannerWeeksScreen> {
                     activeColor: brandRed,
                     contentPadding: EdgeInsets.zero,
                     dense: true,
-                    title: const Text('الحجز مفتوح',
-                        style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.bold)),
+                    title: const Text(
+                      'الحجز مفتوح',
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     subtitle: Text(
-                        isOpen
-                            ? 'يستطيع التجار الحجز في هذا الأسبوع'
-                            : 'الحجز مغلق — لا يظهر للتجار',
-                        style: const TextStyle(
-                            fontFamily: 'Cairo', fontSize: 11.5)),
+                      isOpen
+                          ? 'يستطيع التجار الحجز في هذا الأسبوع'
+                          : 'الحجز مغلق — لا يظهر للتجار',
+                      style: const TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 11.5,
+                      ),
+                    ),
                     onChanged: (v) => setModal(() => isOpen = v),
                   ),
                 ],
@@ -188,31 +313,36 @@ class _AdminBannerWeeksScreenState extends State<AdminBannerWeeksScreen> {
             actions: [
               TextButton(
                 onPressed: saving ? null : () => Navigator.pop(ctx),
-                child: const Text('إلغاء',
-                    style:
-                        TextStyle(fontFamily: 'Cairo', color: Colors.grey)),
+                child: const Text(
+                  'إلغاء',
+                  style: TextStyle(fontFamily: 'Cairo', color: Colors.grey),
+                ),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: brandRed,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 onPressed: saving
                     ? null
                     : () async {
                         setModal(() => saving = true);
                         try {
-                          await supabase.from('banner_weeks').update({
-                            'occasion_name': occasion.text.trim().isEmpty
-                                ? null
-                                : occasion.text.trim(),
-                            'price_wide':
-                                int.tryParse(priceWide.text.trim()) ?? 0,
-                            'price_small':
-                                int.tryParse(priceSmall.text.trim()) ?? 0,
-                            'is_open': isOpen,
-                          }).eq('id', w['id']);
+                          await supabase
+                              .from('banner_weeks')
+                              .update({
+                                'occasion_name': occasion.text.trim().isEmpty
+                                    ? null
+                                    : occasion.text.trim(),
+                                'price_wide':
+                                    int.tryParse(priceWide.text.trim()) ?? 0,
+                                'price_small':
+                                    int.tryParse(priceSmall.text.trim()) ?? 0,
+                                'is_open': isOpen,
+                              })
+                              .eq('id', w['id']);
 
                           if (ctx.mounted) Navigator.pop(ctx);
                           await _load();
@@ -223,11 +353,14 @@ class _AdminBannerWeeksScreenState extends State<AdminBannerWeeksScreen> {
                           _snack('تعذر الحفظ', Colors.red);
                         }
                       },
-                child: Text(saving ? 'جاري الحفظ...' : 'حفظ',
-                    style: const TextStyle(
-                        fontFamily: 'Cairo',
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white)),
+                child: Text(
+                  saving ? 'جاري الحفظ...' : 'حفظ',
+                  style: const TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ],
           ),
@@ -246,16 +379,23 @@ class _AdminBannerWeeksScreenState extends State<AdminBannerWeeksScreen> {
     return TextField(
       controller: controller,
       keyboardType: numeric ? TextInputType.number : null,
-      inputFormatters:
-          numeric ? [FilteringTextInputFormatter.digitsOnly] : null,
+      inputFormatters: numeric
+          ? [FilteringTextInputFormatter.digitsOnly]
+          : null,
       style: const TextStyle(fontFamily: 'Cairo', fontSize: 13.5),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(
-            fontFamily: 'Cairo', fontSize: 13, color: Colors.grey.shade600),
+          fontFamily: 'Cairo',
+          fontSize: 13,
+          color: Colors.grey.shade600,
+        ),
         hintText: hint,
         hintStyle: TextStyle(
-            fontFamily: 'Cairo', fontSize: 12, color: Colors.grey.shade400),
+          fontFamily: 'Cairo',
+          fontSize: 12,
+          color: Colors.grey.shade400,
+        ),
         prefixIcon: Icon(icon, size: 19, color: Colors.grey.shade500),
         filled: true,
         fillColor: const Color(0xFFF7F8FA),
@@ -267,8 +407,10 @@ class _AdminBannerWeeksScreenState extends State<AdminBannerWeeksScreen> {
           borderRadius: BorderRadius.circular(11),
           borderSide: const BorderSide(color: brandRed, width: 1.5),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
       ),
     );
   }
@@ -285,10 +427,25 @@ class _AdminBannerWeeksScreenState extends State<AdminBannerWeeksScreen> {
     return '${d.day}/${d.month}';
   }
 
+  static const _monthNames = [
+    'يناير',
+    'فبراير',
+    'مارس',
+    'أبريل',
+    'مايو',
+    'يونيو',
+    'يوليو',
+    'أغسطس',
+    'سبتمبر',
+    'أكتوبر',
+    'نوفمبر',
+    'ديسمبر',
+  ];
+
   @override
   Widget build(BuildContext context) {
-    final visible =
-        _hidePast ? _weeks.where((w) => !_isPast(w)).toList() : _weeks;
+    final slots = _loading ? <_WeekSlot>[] : _yearSlots();
+    final generated = slots.where((w) => w.rec != null).length;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -298,337 +455,402 @@ class _AdminBannerWeeksScreenState extends State<AdminBannerWeeksScreen> {
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1600),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // ===== الترويسة =====
-                  Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: [
-                      const Text('الأسابيع الإعلانية',
-                          style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 19,
-                              fontWeight: FontWeight.bold)),
-                      Text('${visible.length}',
-                          style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 13,
-                              color: Colors.grey.shade500)),
-                    ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'الأسابيع الإعلانية',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'فعّل الشهر من بطاقته، واضغط أي أسبوع لتعديل أسعاره أو مناسبته',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 11.5,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              // ===== شريط السنة =====
+              Align(
+                alignment: Alignment.topRight,
+                child: Container(
+                  width: 320,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
                   ),
-
-                  const SizedBox(height: 14),
-
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFEDEFF3)),
+                  ),
+                  child: Row(
                     children: [
-                      OutlinedButton.icon(
-                        onPressed: () =>
-                            setState(() => _hidePast = !_hidePast),
-                        icon: Icon(
-                            _hidePast
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                            size: 17),
-                        label: Text(
-                            _hidePast ? 'إظهار المنقضية' : 'إخفاء المنقضية',
-                            style: const TextStyle(
-                                fontFamily: 'Cairo', fontSize: 12.5)),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.grey.shade700,
-                          side: BorderSide(color: Colors.grey.shade300),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 13),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                        ),
+                      IconButton(
+                        onPressed: () => setState(() => _year--),
+                        icon: const Icon(Icons.chevron_left_rounded, size: 20),
+                        color: Colors.grey.shade700,
+                        visualDensity: VisualDensity.compact,
                       ),
-                      ElevatedButton.icon(
-                        onPressed: _generating ? null : _generate,
-                        icon: const Icon(Icons.add_rounded, size: 18),
-                        label: Text(
-                            _generating ? 'جاري...' : 'توليد 4 أسابيع',
-                            style: const TextStyle(
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Text(
+                              '$_year',
+                              style: const TextStyle(
                                 fontFamily: 'Cairo',
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.bold)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: brandRed,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 18, vertical: 13),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              '$generated من ${slots.length} أسبوع مفعّل',
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 10.5,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                          ],
                         ),
+                      ),
+                      IconButton(
+                        onPressed: () => setState(() => _year++),
+                        icon: const Icon(Icons.chevron_right_rounded, size: 20),
+                        color: Colors.grey.shade700,
+                        visualDensity: VisualDensity.compact,
                       ),
                     ],
                   ),
+                ),
+              ),
 
-                  const SizedBox(height: 22),
+              const SizedBox(height: 16),
 
-                  if (_loading)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 60),
-                      child: Center(
-                          child: CircularProgressIndicator(color: brandRed)),
-                    )
-                  else if (visible.isEmpty)
-                    _empty()
-                  else
-                    LayoutBuilder(
-                      builder: (context, c) {
-                        const gap = 14.0;
-                        int cols = 6;
-                        if (c.maxWidth < 480) {
-                          cols = 2;
-                        } else if (c.maxWidth < 700) {
-                          cols = 3;
-                        } else if (c.maxWidth < 950) {
-                          cols = 4;
-                        } else if (c.maxWidth < 1250) {
-                          cols = 5;
-                        }
+              if (_loading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 60),
+                  child: Center(
+                    child: CircularProgressIndicator(color: brandRed),
+                  ),
+                )
+              else
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: List.generate(12, (i) {
+                    final month = i + 1;
+                    final monthSlots = slots
+                        .where((w) => _slotMonth(w) == month)
+                        .toList();
+                    return _monthCard(month, monthSlots);
+                  }),
+                ),
 
-                        final w = (c.maxWidth - gap * (cols - 1)) / cols;
+              const SizedBox(height: 16),
 
-                        return Wrap(
-                          spacing: gap,
-                          runSpacing: gap,
-                          children: visible
-                              .map((week) =>
-                                  SizedBox(width: w, child: _card(week)))
-                              .toList(),
-                        );
-                      },
-                    ),
+              Wrap(
+                spacing: 16,
+                runSpacing: 8,
+                children: [
+                  _legend('مفتوح', Colors.white, const Color(0xFFD5D8DE)),
+                  _legend(
+                    'مغلق',
+                    const Color(0xFFF1F2F5),
+                    const Color(0xFFE5E7EB),
+                  ),
+                  _legend(
+                    'مناسبة',
+                    Colors.white,
+                    brandRed.withValues(alpha: 0.5),
+                  ),
+                  _legend(
+                    'غير مفعّل',
+                    const Color(0xFFFAFAFA),
+                    const Color(0xFFF1F2F5),
+                  ),
                 ],
               ),
-            ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _card(Map<String, dynamic> w) {
-    final id = w['id'].toString();
-    final past = _isPast(w);
-    final open = w['is_open'] == true;
+  Widget _monthCard(int month, List<_WeekSlot> monthSlots) {
+    final missing = monthSlots.isEmpty ? 0 : _missingFor(monthSlots);
+    final upcoming = monthSlots
+        .where((w) => w.rec != null && !_isPast(w.rec!))
+        .toList();
+    final allOpen =
+        upcoming.isNotEmpty && upcoming.every((w) => w.rec!['is_open'] == true);
+    final busy = _busyMonth == month;
 
-    final wide = _bookedWide[id] ?? 0;
-    final small = _bookedSmall[id] ?? 0;
-    final wideTotal = (w['wide_slots_total'] as num?)?.toInt() ?? 20;
-    final smallTotal = (w['small_slots_total'] as num?)?.toInt() ?? 20;
+    Widget? action;
+    if (missing > 0) {
+      action = _monthButton(
+        label: busy ? 'جاري...' : 'تفعيل',
+        filled: true,
+        onTap: busy ? null : () => _activateMonth(month, missing),
+      );
+    } else if (upcoming.isNotEmpty) {
+      action = _monthButton(
+        label: busy ? 'جاري...' : (allOpen ? 'إغلاق' : 'فتح'),
+        filled: !allOpen,
+        onTap: busy ? null : () => _setMonthOpen(month, monthSlots, !allOpen),
+      );
+    }
 
-    final occasion = (w['occasion_name'] ?? '').toString();
+    return Container(
+      width: _monthCardWidth,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFEDEFF3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Text(
+                _monthNames[month - 1],
+                style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 6),
+              if (upcoming.isNotEmpty)
+                Icon(
+                  allOpen
+                      ? Icons.lock_open_rounded
+                      : Icons.lock_outline_rounded,
+                  size: 13,
+                  color: allOpen ? Colors.green : Colors.orange,
+                ),
+              const Spacer(),
+              if (action != null) action,
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: monthSlots.map(_weekTile).toList(),
+          ),
+        ],
+      ),
+    );
+  }
 
-    return Opacity(
+  Widget _weekTile(_WeekSlot slot) {
+    final week = slot.rec;
+    final exists = week != null;
+    final past = exists && _isPast(week!);
+    final open = exists && week!['is_open'] == true;
+    final occasion = exists ? (week!['occasion_name'] ?? '').toString() : '';
+
+    int wide = 0, small = 0, wideTotal = 20, smallTotal = 20;
+    if (exists) {
+      final id = week!['id'].toString();
+      wide = _bookedWide[id] ?? 0;
+      small = _bookedSmall[id] ?? 0;
+      wideTotal = (week!['wide_slots_total'] as num?)?.toInt() ?? 20;
+      smallTotal = (week!['small_slots_total'] as num?)?.toInt() ?? 20;
+    }
+
+    final end = slot.start.add(const Duration(days: 6));
+
+    final Color fill = !exists
+        ? const Color(0xFFFAFAFA)
+        : open
+        ? Colors.white
+        : const Color(0xFFF1F2F5);
+    final Color border = !exists
+        ? const Color(0xFFF1F2F5)
+        : occasion.isNotEmpty
+        ? brandRed.withValues(alpha: 0.5)
+        : open
+        ? const Color(0xFFD5D8DE)
+        : const Color(0xFFE5E7EB);
+    final Color stateColor = past
+        ? Colors.grey
+        : open
+        ? Colors.green
+        : Colors.orange;
+
+    final tile = Opacity(
       opacity: past ? 0.5 : 1,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        width: _tileSize,
+        height: _tileSize,
+        padding: const EdgeInsets.all(7),
         decoration: BoxDecoration(
-          color: past ? const Color(0xFFF7F8FA) : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: past
-                ? const Color(0xFFEDEFF3)
-                : occasion.isNotEmpty
-                    ? brandRed.withValues(alpha: 0.35)
-                    : const Color(0xFFEDEFF3),
-          ),
+          color: fill,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: border),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ===== الترويسة =====
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 9, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: past
-                        ? Colors.grey.withValues(alpha: 0.12)
-                        : brandRed.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(7),
-                  ),
-                  child: Text(
-                    'أسبوع ${w['week_number']} · ${w['year']}',
-                    style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: past ? Colors.grey : brandRed,
-                    ),
+                Text(
+                  '${slot.number}',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: !exists
+                        ? Colors.grey.shade400
+                        : past
+                        ? Colors.grey
+                        : brandRed,
                   ),
                 ),
                 const Spacer(),
-                if (!past)
-                  InkWell(
-                    onTap: () => _editDialog(w),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.all(5),
-                      child: Icon(Icons.edit_outlined,
-                          size: 17, color: Colors.grey.shade600),
-                    ),
-                  ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-            Text(
-              '${_fmt(w['week_start'])} — ${_fmt(w['week_end'])}',
-              style: TextStyle(
-                fontFamily: 'Cairo',
-                fontSize: 13.5,
-                fontWeight: FontWeight.bold,
-                color: past ? Colors.grey : const Color(0xFF1F2937),
-              ),
-            ),
-
-            const SizedBox(height: 4),
-
-            Text(
-              occasion.isEmpty ? 'أسبوع عادي' : occasion,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: 'Cairo',
-                fontSize: 11.5,
-                fontWeight:
-                    occasion.isEmpty ? FontWeight.normal : FontWeight.bold,
-                color: occasion.isEmpty
-                    ? Colors.grey.shade400
-                    : brandRed,
-              ),
-            ),
-
-            const SizedBox(height: 14),
-            const Divider(color: Color(0xFFEDEFF3), height: 1),
-            const SizedBox(height: 12),
-
-            // ===== الأسعار =====
-            _priceRow('عريض', w['price_wide'], wide, wideTotal, past),
-            const SizedBox(height: 8),
-            _priceRow('صغير', w['price_small'], small, smallTotal, past),
-
-            const SizedBox(height: 12),
-
-            // ===== الحالة =====
-            Row(
-              children: [
-                Icon(
-                  past
-                      ? Icons.history_rounded
-                      : open
-                          ? Icons.lock_open_rounded
-                          : Icons.lock_outline_rounded,
-                  size: 14,
-                  color: past
-                      ? Colors.grey
-                      : open
-                          ? Colors.green
-                          : Colors.orange,
-                ),
-                const SizedBox(width: 7),
-                Text(
-                  past
-                      ? 'انقضى'
-                      : open
-                          ? 'الحجز مفتوح'
-                          : 'الحجز مغلق',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: past
-                        ? Colors.grey
+                if (exists)
+                  Icon(
+                    past
+                        ? Icons.history_rounded
                         : open
-                            ? Colors.green
-                            : Colors.orange,
+                        ? Icons.lock_open_rounded
+                        : Icons.lock_outline_rounded,
+                    size: 12,
+                    color: stateColor,
                   ),
-                ),
               ],
             ),
+            Text(
+              '${slot.start.day}/${slot.start.month} – ${end.day}/${end.month}',
+              style: TextStyle(fontSize: 9, color: Colors.grey.shade500),
+            ),
+            const Spacer(),
+            if (occasion.isNotEmpty)
+              Text(
+                occasion,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: brandRed,
+                ),
+              ),
+            if (exists) ...[
+              Text(
+                'عريض $wide/$wideTotal',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 9,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              Text(
+                'صغير $small/$smallTotal',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 9,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ] else
+              Text(
+                'غير مفعّل',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 9,
+                  color: Colors.grey.shade400,
+                ),
+              ),
           ],
         ),
       ),
     );
+
+    if (!exists || past) return tile;
+
+    return InkWell(
+      onTap: () => _editDialog(week!),
+      borderRadius: BorderRadius.circular(10),
+      child: tile,
+    );
   }
 
-  Widget _priceRow(
-      String label, dynamic price, int booked, int total, bool past) {
-    final full = booked >= total;
+  static const double _tileSize = 86;
+  static const double _monthCardWidth = 5 * 86 + 4 * 6 + 24 + 2;
 
-    return Row(
-      children: [
-        SizedBox(
-          width: 40,
-          child: Text(label,
-              style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 11.5,
-                  color: Colors.grey.shade600)),
+  Widget _monthButton({
+    required String label,
+    required bool filled,
+    VoidCallback? onTap,
+  }) {
+    return SizedBox(
+      height: 28,
+      child: TextButton(
+        onPressed: onTap,
+        style: TextButton.styleFrom(
+          backgroundColor: filled ? brandRed : Colors.white,
+          foregroundColor: filled ? Colors.white : brandRed,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: brandRed.withValues(alpha: 0.4)),
+          ),
         ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontFamily: 'Cairo',
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _legend(String label, Color fill, Color border) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(
+            color: fill,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: border),
+          ),
+        ),
+        const SizedBox(width: 6),
         Text(
-          '${(price as num?)?.toInt() ?? 0}',
+          label,
           style: TextStyle(
             fontFamily: 'Cairo',
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: past ? Colors.grey : const Color(0xFF1F2937),
-          ),
-        ),
-        Text(' ر.س',
-            style: TextStyle(
-                fontFamily: 'Cairo',
-                fontSize: 10,
-                color: Colors.grey.shade500)),
-        const Spacer(),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-          decoration: BoxDecoration(
-            color: full
-                ? Colors.orange.withValues(alpha: 0.12)
-                : const Color(0xFFF1F2F5),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Text(
-            '$booked/$total',
-            style: TextStyle(
-              fontFamily: 'Cairo',
-              fontSize: 10.5,
-              fontWeight: FontWeight.bold,
-              color: full ? Colors.orange.shade800 : Colors.grey.shade600,
-            ),
+            fontSize: 11,
+            color: Colors.grey.shade600,
           ),
         ),
       ],
     );
   }
+}
 
-  Widget _empty() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 60),
-      child: Column(
-        children: [
-          Icon(Icons.calendar_month_outlined,
-              size: 58, color: Colors.grey.shade300),
-          const SizedBox(height: 14),
-          const Text('لا توجد أسابيع',
-              style: TextStyle(
-                  fontFamily: 'Cairo', fontSize: 15, color: Colors.grey)),
-        ],
-      ),
-    );
-  }
+class _WeekSlot {
+  final int number;
+  final DateTime start;
+  final Map<String, dynamic>? rec;
+  const _WeekSlot(this.number, this.start, this.rec);
 }

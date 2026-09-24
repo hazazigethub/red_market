@@ -984,7 +984,13 @@ class _AdminMerchantBannersScreenState
         if (weeks.isEmpty)
           _emptyMsg('لا أسابيع')
         else
-          ...weeks.map((w) => _weekRow(Map<String, dynamic>.from(w))),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: weeks
+                .map((w) => _weekRow(Map<String, dynamic>.from(w)))
+                .toList(),
+          ),
       ],
     );
   }
@@ -1008,79 +1014,69 @@ class _AdminMerchantBannersScreenState
             : Colors.grey;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      width: 150,
+      height: 150,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFEDEFF3)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text(
-                'أسبوع ${w['week_number']} · ${w['year']}',
-                style: const TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.bold),
-              ),
-              if (occasion.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                Text(occasion,
-                    style: const TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: brandRed)),
-              ],
-              const Spacer(),
-              Text(
-                '${revenue.toStringAsFixed(0)} ر.س',
-                style: const TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green),
-              ),
-            ],
+          Text(
+            'أسبوع ${w['week_number']} · ${w['year']}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 11.5,
+                fontWeight: FontWeight.bold),
           ),
-
-          const SizedBox(height: 10),
-
+          Text(
+            occasion,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: brandRed),
+          ),
+          const Spacer(),
+          Text(
+            '${(rate * 100).toStringAsFixed(0)}%',
+            style: TextStyle(
+                fontSize: 20, fontWeight: FontWeight.bold, color: color),
+          ),
+          const SizedBox(height: 6),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: rate,
-              minHeight: 6,
+              minHeight: 5,
               backgroundColor: const Color(0xFFF1F2F5),
               valueColor: AlwaysStoppedAnimation<Color>(color),
             ),
           ),
-
-          const SizedBox(height: 8),
-
-          Row(
-            children: [
-              Text(
-                'عريض $wideSold/$wideTotal · صغير $smallSold/$smallTotal',
-                style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 11,
-                    color: Colors.grey.shade600),
-              ),
-              const Spacer(),
-              Text(
-                '${(rate * 100).toStringAsFixed(0)}% إشغال',
-                style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: color),
-              ),
-            ],
+          const SizedBox(height: 6),
+          Text(
+            'عريض $wideSold/$wideTotal · صغير $smallSold/$smallTotal',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 9.5,
+                color: Colors.grey.shade600),
+          ),
+          Text(
+            '${revenue.toStringAsFixed(0)} ر.س',
+            style: const TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Colors.green),
           ),
         ],
       ),
