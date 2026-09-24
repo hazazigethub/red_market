@@ -12,7 +12,8 @@
   merchant_id: string | null;
   category: string | null;
   category_id: string | null;
-  store_category: string | null;
+  sub_category_id: string | null;
+    store_category: string | null;
   is_offer: boolean | null;
   is_flash_sale: boolean | null;
   flash_sale_expiry: string | null;

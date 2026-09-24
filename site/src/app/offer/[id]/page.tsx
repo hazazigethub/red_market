@@ -39,7 +39,7 @@ async function getProduct(id: string) {
 
   const p = product as Product;
 
-  const [merchRes, relatedRes] = await Promise.all([
+  const [merchRes, relatedRes, catRes, subCatRes] = await Promise.all([
     p.merchant_id
       ? supabase.from('merchants').select('*').eq('id', p.merchant_id).maybeSingle()
       : Promise.resolve({ data: null }),
@@ -50,12 +50,42 @@ async function getProduct(id: string) {
       .eq('is_available', true)
       .neq('id', id)
       .limit(5),
+    p.category_id
+      ? supabase
+          .from('product_categories')
+          .select('id, name, parent_id')
+          .eq('id', p.category_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    p.sub_category_id
+      ? supabase
+          .from('sup_product_subcategories')
+          .select('id, name')
+          .eq('id', p.sub_category_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
+
+  const category = catRes.data as
+    | { id: string; name: string; parent_id: string }
+    | null;
+
+  // اسم التصنيف الرئيسي — نجلبه فقط إن وُجد فرعي
+  const mainCat = category?.parent_id
+    ? await supabase
+        .from('store_categories')
+        .select('id, name')
+        .eq('id', category.parent_id)
+        .maybeSingle()
+    : { data: null };
 
   return {
     product: p,
     merchant: (merchRes.data as Merchant) ?? null,
     related: (relatedRes.data as Product[]) ?? [],
+    category,
+    mainCategory: mainCat.data as { id: string; name: string } | null,
+    subCategory: subCatRes.data as { id: string; name: string } | null,
   };
 }
 
@@ -102,11 +132,16 @@ function Price({
 
 export default async function ProductPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { id } = await params;
-  const { product, merchant, related } = await getProduct(id);
+  const { from } = await searchParams;
+  const fromCategory = from === 'category';
+  const { product, merchant, related, mainCategory, category, subCategory } =
+    await getProduct(id);
 
   if (!product) notFound();
 
@@ -126,23 +161,76 @@ export default async function ProductPage({
     <main className="max-w-6xl mx-auto px-4 py-8">
       <TrackView productId={product.id} merchantId={product.merchant_id} />
 
-      {/* مسار التنقّل — المتجر ثم العرض */}
+      {/* مسار التنقّل — يختلف حسب مصدر الدخول: متجر أو تصنيف */}
       <nav className="text-sm text-gray-500 mb-5 flex items-center gap-1.5 flex-wrap">
         <Link prefetch={false} href="/" className="hover:text-red-700">
           الرئيسية
         </Link>
 
-        {merchant && (
+        {fromCategory ? (
           <>
-            <span className="text-gray-300">/</span>
-            <Link
-              prefetch={false}
-              href={`/store/${merchant.id}`}
-              className="hover:text-red-700"
-            >
-              {merchant.store_name ?? 'متجر'}
-            </Link>
+            {mainCategory && (
+              <>
+                <span className="text-gray-300">/</span>
+                <Link
+                  prefetch={false}
+                  href={`/category/${mainCategory.id}`}
+                  className="hover:text-red-700"
+                >
+                  {mainCategory.name}
+                </Link>
+              </>
+            )}
+            {category && (
+              <>
+                <span className="text-gray-300">/</span>
+                <Link
+                  prefetch={false}
+                  href={`/category-offers/${category.id}`}
+                  className="hover:text-red-700"
+                >
+                  {category.name}
+                </Link>
+              </>
+            )}
+            {subCategory && (
+              <>
+                <span className="text-gray-300">/</span>
+                <Link
+                  prefetch={false}
+                  href={`/subcategory-offers/${subCategory.id}`}
+                  className="hover:text-red-700"
+                >
+                  {subCategory.name}
+                </Link>
+              </>
+            )}
           </>
+        ) : (
+          merchant && (
+            <>
+              <span className="text-gray-300">/</span>
+              <Link
+                prefetch={false}
+                href={`/store/${merchant.id}`}
+                className="hover:text-red-700"
+              >
+                {merchant.store_name ?? 'متجر'}
+              </Link>
+              {category && (
+                <>
+                  <span className="text-gray-300">/</span>
+                  <Link
+                    prefetch={false}
+                    href={`/category-offers/${category.id}`}
+                    className="hover:text-red-700"
+                  >
+                    {category.name}
+                  </Link>
+                </>
+              )}
+            </>
+          )
         )}
 
         <span className="text-gray-300">/</span>
