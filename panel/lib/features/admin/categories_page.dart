@@ -75,7 +75,9 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
 
         if (subCategories.isNotEmpty) {
           _showSnackBar(
-              "لا يمكن حذف قسم يحتوي على أقسام فرعية!", Colors.orange);
+            "لا يمكن حذف قسم يحتوي على أقسام فرعية!",
+            Colors.orange,
+          );
           return;
         }
         await supabase.from('store_categories').delete().eq('id', id);
@@ -119,20 +121,29 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
         await supabase.from(tableName).update(data).eq('id', id);
       }
       _nameController.clear();
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        Navigator.pop(context);
+        _showSnackBar("تم الحفظ بنجاح", Colors.green);
+      }
     } catch (e) {
-      debugPrint("Error: $e");
+      if (mounted) {
+        _showSnackBar("تعذر الحفظ، تحقق من البيانات", Colors.red);
+      }
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
   }
 
   Future<void> _toggleVisibility(
-      String id, bool currentStatus, bool isGeneral) async {
+    String id,
+    bool currentStatus,
+    bool isGeneral,
+  ) async {
     final tableName = isGeneral ? 'store_categories' : 'product_categories';
     await supabase
         .from(tableName)
-        .update({'is_visible': !currentStatus}).eq('id', id);
+        .update({'is_visible': !currentStatus})
+        .eq('id', id);
     if (mounted) setState(() {});
   }
 
@@ -161,14 +172,15 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
                         _searchController.clear();
                       }),
                       icon: const Icon(Icons.arrow_back_ios_new, size: 15),
-                      label: const Text('الأقسام الرئيسية',
-                          style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.bold)),
-                      style: TextButton.styleFrom(
-                        foregroundColor: brandRed,
+                      label: const Text(
+                        'الأقسام الرئيسية',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
+                      style: TextButton.styleFrom(foregroundColor: brandRed),
                     ),
                   ),
                 ),
@@ -181,8 +193,11 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.grid_view_rounded,
-                            size: 16, color: brandRed.withValues(alpha: 0.7)),
+                        Icon(
+                          Icons.grid_view_rounded,
+                          size: 16,
+                          color: brandRed.withValues(alpha: 0.7),
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           _selectedStoreCategoryId == null
@@ -222,18 +237,21 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
           label: Text(
             _selectedStoreCategoryId == null ? "إضافة قسم" : "إضافة فرع",
             style: const TextStyle(
-                fontFamily: 'Cairo',
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.white),
+              fontFamily: 'Cairo',
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildCategoryGrid(
-      {required bool isGeneral, required Color brandRed}) {
+  Widget _buildCategoryGrid({
+    required bool isGeneral,
+    required Color brandRed,
+  }) {
     final tableName = isGeneral ? 'store_categories' : 'product_categories';
     var query = supabase.from(tableName).select();
     if (!isGeneral) {
@@ -245,8 +263,8 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SliverFillRemaining(
-              child:
-                  Center(child: CircularProgressIndicator(color: Colors.red)));
+            child: Center(child: CircularProgressIndicator(color: Colors.red)),
+          );
         }
         var data = snapshot.data ?? [];
         if (_searchQuery.isNotEmpty) {
@@ -263,21 +281,22 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
             crossAxisSpacing: 12,
             childAspectRatio: 0.85,
           ),
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final item = data[index];
-              final bool isVisible = item['is_visible'] ?? true;
-              return _buildCompactCard(item, isVisible, isGeneral, brandRed);
-            },
-            childCount: data.length,
-          ),
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final item = data[index];
+            final bool isVisible = item['is_visible'] ?? true;
+            return _buildCompactCard(item, isVisible, isGeneral, brandRed);
+          }, childCount: data.length),
         );
       },
     );
   }
 
-  Widget _buildCompactCard(Map<String, dynamic> item, bool isVisible,
-      bool isGeneral, Color brandRed) {
+  Widget _buildCompactCard(
+    Map<String, dynamic> item,
+    bool isVisible,
+    bool isGeneral,
+    Color brandRed,
+  ) {
     return GestureDetector(
       onTap: () {
         if (isGeneral) {
@@ -289,7 +308,10 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
         }
       },
       onLongPress: () => _showAddEditDialog(
-          isGeneral: isGeneral, brandRed: brandRed, category: item),
+        isGeneral: isGeneral,
+        brandRed: brandRed,
+        category: item,
+      ),
       child: Container(
         decoration: BoxDecoration(
           color: isVisible
@@ -357,8 +379,9 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
                         fontFamily: 'Cairo',
                         fontWeight: FontWeight.w700,
                         fontSize: 11,
-                        color:
-                            isVisible ? Colors.black87 : Colors.grey.shade500,
+                        color: isVisible
+                            ? Colors.black87
+                            : Colors.grey.shade500,
                       ),
                     ),
                   ),
@@ -377,17 +400,23 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
       children: [
         Icon(Icons.search_off_rounded, size: 60, color: Colors.grey.shade300),
         const SizedBox(height: 10),
-        Text(_searchQuery.isEmpty ? "لا توجد بيانات" : "لا توجد نتائج لبحثك",
-            style: const TextStyle(
-                fontFamily: 'Cairo', color: Colors.grey, fontSize: 14)),
+        Text(
+          _searchQuery.isEmpty ? "لا توجد بيانات" : "لا توجد نتائج لبحثك",
+          style: const TextStyle(
+            fontFamily: 'Cairo',
+            color: Colors.grey,
+            fontSize: 14,
+          ),
+        ),
       ],
     );
   }
 
-  void _showAddEditDialog(
-      {required bool isGeneral,
-      required Color brandRed,
-      Map<String, dynamic>? category}) {
+  void _showAddEditDialog({
+    required bool isGeneral,
+    required Color brandRed,
+    Map<String, dynamic>? category,
+  }) {
     _nameController.text = category != null ? category['name'] : "";
 
     showModalBottomSheet(
@@ -395,8 +424,9 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        padding:
-            EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
         decoration: const BoxDecoration(
           borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
         ),
@@ -406,30 +436,38 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(10))),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
               const SizedBox(height: 20),
-              Text(category == null ? "إضافة عنصر" : "تعديل البيانات",
-                  style: const TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold)),
+              Text(
+                category == null ? "إضافة عنصر" : "تعديل البيانات",
+                style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 20),
               TextField(
                 controller: _nameController,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                    fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+                  fontFamily: 'Cairo',
+                  fontWeight: FontWeight.bold,
+                ),
                 decoration: InputDecoration(
                   hintText: "الاسم",
                   filled: true,
                   fillColor: Colors.grey.shade100,
                   border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: BorderSide.none),
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -441,23 +479,32 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
                         backgroundColor: brandRed,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15)),
+                          borderRadius: BorderRadius.circular(15),
+                        ),
                       ),
                       onPressed: () => _upsertCategory(
-                          id: category?['id'], isGeneral: isGeneral),
-                      child: const Text("حفظ",
-                          style: TextStyle(
-                              fontFamily: 'Cairo',
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold)),
+                        id: category?['id'],
+                        isGeneral: isGeneral,
+                      ),
+                      child: const Text(
+                        "حفظ",
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                   if (category != null) ...[
                     const SizedBox(width: 8),
                     IconButton(
                       onPressed: () {
-                        _toggleVisibility(category['id'],
-                            category['is_visible'] ?? true, isGeneral);
+                        _toggleVisibility(
+                          category['id'],
+                          category['is_visible'] ?? true,
+                          isGeneral,
+                        );
                         Navigator.pop(context);
                       },
                       icon: Icon(
@@ -471,10 +518,12 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
                     IconButton(
                       onPressed: () =>
                           _deleteCategory(category['id'], isGeneral),
-                      icon: const Icon(Icons.delete_forever_rounded,
-                          color: Colors.red),
+                      icon: const Icon(
+                        Icons.delete_forever_rounded,
+                        color: Colors.red,
+                      ),
                     ),
-                  ]
+                  ],
                 ],
               ),
               const SizedBox(height: 10),
