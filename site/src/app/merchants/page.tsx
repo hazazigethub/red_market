@@ -37,7 +37,7 @@ async function getPlans(yearly: boolean): Promise<Plan[]> {
     .select('*')
     .eq('is_active', true)
     .eq('duration_days', yearly ? 365 : 30)
-    .order('price', { ascending: true });
+    .order('sort_order', { ascending: true });
   return (data as Plan[]) ?? [];
 }
 
