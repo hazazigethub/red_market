@@ -430,104 +430,107 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
       builder: (context) => Dialog(
         backgroundColor: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                category == null ? "إضافة عنصر" : "تعديل البيانات",
-                style: const TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: _nameController,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontFamily: 'Cairo',
-                  fontWeight: FontWeight.bold,
-                ),
-                decoration: InputDecoration(
-                  hintText: "الاسم",
-                  filled: true,
-                  fillColor: Colors.grey.shade100,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide.none,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 380),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: brandRed,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                      ),
-                      onPressed: () => _upsertCategory(
-                        id: category?['id'],
-                        isGeneral: isGeneral,
-                      ),
-                      child: const Text(
-                        "حفظ",
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                const SizedBox(height: 20),
+                Text(
+                  category == null ? "إضافة عنصر" : "تعديل البيانات",
+                  style: const TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: _nameController,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.bold,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: "الاسم",
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: BorderSide.none,
                     ),
                   ),
-                  if (category != null) ...[
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: () {
-                        _toggleVisibility(
-                          category['id'],
-                          category['is_visible'] ?? true,
-                          isGeneral,
-                        );
-                        Navigator.pop(context);
-                      },
-                      icon: Icon(
-                        category['is_visible'] == false
-                            ? Icons.visibility
-                            : Icons.visibility_off,
-                        color: Colors.blueGrey,
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: brandRed,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                        onPressed: () => _upsertCategory(
+                          id: category?['id'],
+                          isGeneral: isGeneral,
+                        ),
+                        child: const Text(
+                          "حفظ",
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: () =>
-                          _deleteCategory(category['id'], isGeneral),
-                      icon: const Icon(
-                        Icons.delete_forever_rounded,
-                        color: Colors.red,
+                    if (category != null) ...[
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () {
+                          _toggleVisibility(
+                            category['id'],
+                            category['is_visible'] ?? true,
+                            isGeneral,
+                          );
+                          Navigator.pop(context);
+                        },
+                        icon: Icon(
+                          category['is_visible'] == false
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Colors.blueGrey,
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () =>
+                            _deleteCategory(category['id'], isGeneral),
+                        icon: const Icon(
+                          Icons.delete_forever_rounded,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
-              ),
-              const SizedBox(height: 10),
-            ],
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
           ),
         ),
       ),
