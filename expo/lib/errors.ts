@@ -20,6 +20,7 @@ const MAP: Record<string, string> = {
   SUBSCRIPTION_REQUIRED: "المشاركة في المعارض متاحة للمتاجر المشتركة فقط.",
   SUBSCRIPTION_EXPIRED: "انتهى اشتراك المتجر. يلزم تجديده للمشاركة.",
   SUBSCRIPTION_NOT_COVERING: "اشتراك المتجر ينتهي قبل نهاية المعرض، فلا يمكن قبوله حتى يجدّد.",
+  EXHIBITION_FULL: "اكتمل عدد الأجنحة في هذا المعرض.",
   FORBIDDEN: "ليست لديك صلاحية لهذا الإجراء.",
   "row-level security": "ليست لديك صلاحية لهذا الإجراء.",
   duplicate: "هذا العنصر موجود مسبقاً.",

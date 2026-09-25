@@ -193,8 +193,12 @@ class _OverviewTabState extends State<OverviewTab> {
               children: [
                 expoGrid([
                   expoStatCard('الزوار', o['visitors']),
-                  expoStatCard('الأجنحة المنشورة',
-                      '${o['booths_published']} / ${o['booths']}'),
+                  expoStatCard(
+                      e['max_booths'] == null ? 'الأجنحة (بلا حد)' : 'الأجنحة المشغولة',
+                      e['max_booths'] == null
+                          ? '${o['booths']}'
+                          : '${o['booths']} / ${e['max_booths']}'),
+                  expoStatCard('الأجنحة المنشورة', o['booths_published']),
                   expoStatCard('طلبات بانتظار المراجعة', o['applications_pending']),
                   expoStatCard('العملاء المحتملون', o['leads']),
                   expoStatCard('المحادثات', o['chats']),

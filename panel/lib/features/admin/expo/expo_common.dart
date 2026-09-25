@@ -112,6 +112,8 @@ String expoError(Object e) {
     'STORE_SUSPENDED': 'العارض موقوف من المعارض',
     'STORE_UNAVAILABLE': 'المتجر غير متاح في Red Market',
     'BAD_MESSAGE': 'نص الإعلان بين 2 و280 حرفاً',
+    'EXHIBITION_FULL': 'اكتمل عدد الأجنحة في هذا المعرض. زِد العدد من «تعديل المعرض» لقبول المزيد.',
+    'max_booths_check': 'عدد الأجنحة يجب أن يكون 1 أو أكثر',
     'row-level security': 'ليست لديك صلاحية لهذا الإجراء',
     'permission denied': 'ليست لديك صلاحية لهذا الإجراء',
   };

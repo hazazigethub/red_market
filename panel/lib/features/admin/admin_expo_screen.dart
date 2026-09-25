@@ -207,7 +207,7 @@ class _AdminExpoScreenState extends State<AdminExpoScreen> {
       future: expoDb
           .from('exhibitions')
           .select(
-              'id, title, slug, status, starts_at, ends_at, is_featured, logo_path, organizers(name), booths(count)')
+              'id, title, slug, status, starts_at, ends_at, is_featured, logo_path, max_booths, organizers(name), booths(count)')
           .order('starts_at', ascending: false),
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) return expoLoader();
@@ -280,7 +280,8 @@ class _AdminExpoScreenState extends State<AdminExpoScreen> {
           Row(children: [
             Expanded(child: expoStat(Icons.apartment_outlined, '${org ?? '—'}')),
             const SizedBox(width: 12),
-            expoStat(Icons.storefront_outlined, '$booths جناح'),
+            expoStat(Icons.storefront_outlined,
+                e['max_booths'] == null ? '$booths جناح' : '$booths / ${e['max_booths']} جناح'),
             const SizedBox(width: 4),
             expoIconAction(
               featured ? Icons.star_rounded : Icons.star_border_rounded,

@@ -63,7 +63,10 @@ export default async function Landing({ params }: { params: Promise<{ slug: stri
               <p className="whitespace-pre-line text-muted">{e.description}</p>
             </div>
             <div className="card grid grid-cols-2 gap-4 p-5 text-center">
-              <div><p className="font-heading text-3xl font-extrabold">{boothCount ?? 0}</p><p className="text-sm text-muted">عارض</p></div>
+              <div>
+                <p className="font-heading text-3xl font-extrabold">{boothCount ?? 0}{e.max_booths ? <span className="text-lg text-muted"> / {e.max_booths}</span> : null}</p>
+                <p className="text-sm text-muted">{e.max_booths ? "جناح مشغول" : "عارض"}</p>
+              </div>
               <div><p className="font-heading text-3xl font-extrabold">{sessions?.length ?? 0}+</p><p className="text-sm text-muted">جلسة</p></div>
             </div>
           </section>

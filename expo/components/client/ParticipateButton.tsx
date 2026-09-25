@@ -4,9 +4,15 @@ import { arabicError } from "@/lib/errors";
 import { BOOTH_TIER, fmtDate } from "@/lib/format";
 import { expoBrowser } from "@/lib/supabase/client";
 
-type Check = { status: "ok" | "not_covering" | "expired" | "none"; expires_at?: string | null; exhibition_ends_at?: string };
+type Check = { status: "ok" | "not_covering" | "expired" | "none" | "full"; expires_at?: string | null; exhibition_ends_at?: string };
 
 function message(c: Check): { title: string; body: string } {
+  if (c.status === "full") {
+    return {
+      title: "اكتمل عدد الأجنحة",
+      body: "اكتمل عدد الأجنحة المتاحة في هذا المعرض. تابع معارض Red Market القادمة للمشاركة فيها.",
+    };
+  }
   if (c.status === "expired") {
     return {
       title: "انتهى اشتراكك",

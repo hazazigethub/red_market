@@ -16,6 +16,7 @@ class _ExpoExhibitionFormPageState extends State<ExpoExhibitionFormPage> {
   final _desc = TextEditingController();
   final _venue = TextEditingController();
   final _city = TextEditingController();
+  final _maxBooths = TextEditingController();
 
   String? _organizerId;
   int? _categoryId;
@@ -43,6 +44,7 @@ class _ExpoExhibitionFormPageState extends State<ExpoExhibitionFormPage> {
       _desc.text = '${e['description'] ?? ''}';
       _venue.text = '${e['venue'] ?? ''}';
       _city.text = '${e['city'] ?? ''}';
+      _maxBooths.text = e['max_booths'] == null ? '' : '${e['max_booths']}';
       _organizerId = e['organizer_id'] as String?;
       _categoryId = (e['category_id'] as num?)?.toInt();
       _locationType = '${e['location_type'] ?? 'virtual'}';
@@ -62,6 +64,7 @@ class _ExpoExhibitionFormPageState extends State<ExpoExhibitionFormPage> {
     _desc.dispose();
     _venue.dispose();
     _city.dispose();
+    _maxBooths.dispose();
     super.dispose();
   }
 
@@ -103,6 +106,11 @@ class _ExpoExhibitionFormPageState extends State<ExpoExhibitionFormPage> {
     if (!_ends!.isAfter(_starts!)) {
       return expoToast(context, 'موعد النهاية قبل البداية', warn: true);
     }
+    final maxText = _maxBooths.text.trim();
+    final maxBooths = maxText.isEmpty ? null : int.tryParse(maxText);
+    if (maxText.isNotEmpty && (maxBooths == null || maxBooths < 1)) {
+      return expoToast(context, 'عدد الأجنحة رقم 1 أو أكثر', warn: true);
+    }
 
     final values = <String, dynamic>{
       'organizer_id': _organizerId,
@@ -118,6 +126,7 @@ class _ExpoExhibitionFormPageState extends State<ExpoExhibitionFormPage> {
       'cover_path': _cover,
       'applications_open': _applicationsOpen,
       'chat_enabled': _chatEnabled,
+      'max_booths': maxBooths,
     };
 
     setState(() => _saving = true);
@@ -219,6 +228,16 @@ class _ExpoExhibitionFormPageState extends State<ExpoExhibitionFormPage> {
                     decoration:
                         expoInput('المدينة', icon: Icons.location_city_outlined))),
           ]),
+
+        // ===== الأجنحة =====
+        expoFormSection('عدد الأجنحة', Icons.grid_view_rounded,
+            note: 'اتركه فارغاً بلا حد'),
+        TextField(
+            controller: _maxBooths,
+            keyboardType: TextInputType.number,
+            style: kExpoFieldText,
+            decoration: expoInput('عدد الأجنحة المتاحة للعارضين',
+                hint: 'مثال: 30', icon: Icons.storefront_outlined)),
 
         // ===== الموعد =====
         expoFormSection('الموعد', Icons.schedule_rounded, note: 'بتوقيت الرياض'),

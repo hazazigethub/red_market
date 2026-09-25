@@ -9,6 +9,7 @@ export interface Exhibition {
   location_type: "virtual" | "hybrid" | "onsite"; venue: string | null; city: string | null;
   starts_at: string; ends_at: string; timezone: string; status: ExhibitionStatus;
   is_featured: boolean; applications_open: boolean; require_approval: boolean; chat_enabled: boolean;
+  max_booths: number | null;
 }
 
 export interface Hall { id: string; exhibition_id: string; name: string; sort_order: number; map_layout: { cols?: number; rows?: number } }

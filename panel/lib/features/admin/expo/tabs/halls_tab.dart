@@ -329,13 +329,19 @@ class _HallsTabState extends State<HallsTab> {
         final halls = snap.data!['halls']!;
         final booths = snap.data!['booths']!;
         final unplaced = booths.where((b) => b['hall_id'] == null || b['map_slot'] == null).toList();
+        var slots = 0;
+        for (final h in halls) {
+          final l = Map<String, dynamic>.from((h['map_layout'] ?? {}) as Map);
+          slots += ((l['cols'] ?? 6) as num).toInt() * ((l['rows'] ?? 4) as num).toInt();
+        }
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             expoHeader('القاعات',
                 count: halls.length,
-                subtitle: 'اضغط أي جناح في الخريطة لتحديد موقعه ونوعه وظهوره',
+                subtitle:
+                    'المواقع في الخرائط: $slots · اضغط أي جناح في الخريطة لتحديد موقعه ونوعه وظهوره',
                 actions: [
                   expoButton('قاعة جديدة', () => _editHall(null),
                       primary: true, icon: Icons.add_rounded),
