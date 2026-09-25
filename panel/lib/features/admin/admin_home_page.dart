@@ -18,6 +18,7 @@ import 'admin_catalog_hub_screen.dart';
 import 'admin_billing_hub_screen.dart';
 import 'admin_messages_hub_screen.dart';
 import 'admin_support_hub_screen.dart';
+import 'admin_expo_screen.dart';
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({super.key});
@@ -75,6 +76,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     {'label': 'البنرات', 'icon': Icons.ad_units_outlined},
     {'label': 'الزيارات', 'icon': Icons.trending_up_outlined},
     {'label': 'شريط الأخبار', 'icon': Icons.campaign_outlined},
+    {'label': 'المعارض', 'icon': Icons.event_available_outlined},
     {'label': 'الإعدادات', 'icon': Icons.settings_outlined},
   ];
 
@@ -109,6 +111,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
       case 13:
         return const AdminTickerScreen();
       case 14:
+        return const AdminExpoScreen();
+      case 15:
         return const AdminSettingsScreen();
       default:
         return _welcome();
