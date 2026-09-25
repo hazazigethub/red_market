@@ -39,7 +39,6 @@ export default async function Home() {
               <Link href={`/e/${hero.slug}${hero.status === "live" ? "/lobby" : ""}`} className="btn-primary">
                 {hero.status === "live" ? "ادخل المعرض" : "تفاصيل المعرض"}
               </Link>
-              <Link href={`/e/${hero.slug}/sessions`} className="btn border border-white/30 text-bg hover:border-white">الأجندة</Link>
             </div>
           </div>
         </section>

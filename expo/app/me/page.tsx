@@ -36,7 +36,7 @@ export default async function Me({ searchParams }: { searchParams: Promise<{ tab
     <div className="container-x py-8">
       <h1 className="section-title mb-5">معرضي</h1>
       <Tabs active={tab} items={[
-        { key: "agenda", label: "أجندتي", href: "/me?tab=agenda", count: sessions.length },
+        { key: "agenda", label: "جلساتي", href: "/me?tab=agenda", count: sessions.length },
         { key: "follows", label: "أتابعهم", href: "/me?tab=follows", count: follows.data?.length ?? 0 },
         { key: "chats", label: "محادثاتي", href: "/me?tab=chats", count: chatList.length },
         { key: "notifications", label: "الإشعارات", href: "/me?tab=notifications", count: unread },
@@ -53,7 +53,7 @@ export default async function Me({ searchParams }: { searchParams: Promise<{ tab
               </li>
             ))}
           </ul>
-        ) : <EmptyState title="لم تسجل في أي جلسة بعد" body="سجّل حضورك من صفحة الأجندة، وسنذكّرك قبل البدء بـ15 دقيقة." />)}
+        ) : <EmptyState title="لم تسجل في أي جلسة بعد" body="سجّل حضورك من صفحة الجلسات، وسنذكّرك قبل البدء بـ15 دقيقة." />)}
 
         {tab === "follows" && ((follows.data?.length ?? 0) ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

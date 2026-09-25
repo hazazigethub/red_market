@@ -36,7 +36,7 @@ export default async function Sessions({ params, searchParams }: {
 
   return (
     <div className="container-x py-8">
-      <h1 className="section-title mb-5">الأجندة</h1>
+      <h1 className="section-title mb-5">الجلسات</h1>
       {rows.length === 0 ? <EmptyState title="لم تُعلن الجلسات بعد" /> : (
         <>
           <div className="mb-6 flex gap-2 overflow-x-auto">

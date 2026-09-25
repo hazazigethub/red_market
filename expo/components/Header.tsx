@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getRoles, getUser, expo } from "@/lib/supabase/server";
 import { loginUrl } from "@/lib/env";
+import { NavLink } from "@/components/client/NavLink";
 
 export async function Header() {
   const user = await getUser();
@@ -20,11 +21,11 @@ export async function Header() {
           <span className="font-heading text-sm font-bold text-ink">Red Market</span>
         </Link>
         <nav className="hidden items-center gap-5 text-sm font-medium md:flex">
-          <Link href="/" className="hover:text-primary">المعارض</Link>
-          <Link href="/search" className="hover:text-primary">بحث</Link>
-          {(roles.isMerchant || roles.hasStore) && <Link href="/merchant" className="hover:text-primary">لوحة العارض</Link>}
-          {roles.isOrganizer && <Link href="/organizer" className="hover:text-primary">لوحة المنظم</Link>}
-          {roles.isAdmin && <Link href="/admin" className="hover:text-primary">الإدارة</Link>}
+          <NavLink href="/" exact also={["/e"]} activeClassName="font-bold text-primary" inactiveClassName="hover:text-primary">المعارض</NavLink>
+          <NavLink href="/search" activeClassName="font-bold text-primary" inactiveClassName="hover:text-primary">بحث</NavLink>
+          {(roles.isMerchant || roles.hasStore) && <NavLink href="/merchant" activeClassName="font-bold text-primary" inactiveClassName="hover:text-primary">لوحة العارض</NavLink>}
+          {roles.isOrganizer && <NavLink href="/organizer" activeClassName="font-bold text-primary" inactiveClassName="hover:text-primary">لوحة المنظم</NavLink>}
+          {roles.isAdmin && <NavLink href="/admin" activeClassName="font-bold text-primary" inactiveClassName="hover:text-primary">الإدارة</NavLink>}
         </nav>
         <div className="ms-auto flex items-center gap-2">
           {user ? (
@@ -47,11 +48,11 @@ export async function Header() {
         </div>
       </div>
       <nav className="container-x flex gap-5 overflow-x-auto pb-2 text-sm md:hidden">
-        <Link href="/">المعارض</Link>
-        <Link href="/search">بحث</Link>
-        {(roles.isMerchant || roles.hasStore) && <Link href="/merchant">لوحة العارض</Link>}
-        {roles.isOrganizer && <Link href="/organizer">المنظم</Link>}
-        {roles.isAdmin && <Link href="/admin">الإدارة</Link>}
+        <NavLink href="/" exact also={["/e"]} activeClassName="font-bold text-primary">المعارض</NavLink>
+        <NavLink href="/search" activeClassName="font-bold text-primary">بحث</NavLink>
+        {(roles.isMerchant || roles.hasStore) && <NavLink href="/merchant" activeClassName="font-bold text-primary">لوحة العارض</NavLink>}
+        {roles.isOrganizer && <NavLink href="/organizer" activeClassName="font-bold text-primary">المنظم</NavLink>}
+        {roles.isAdmin && <NavLink href="/admin" activeClassName="font-bold text-primary">الإدارة</NavLink>}
       </nav>
     </header>
   );

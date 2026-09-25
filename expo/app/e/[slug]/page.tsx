@@ -44,7 +44,9 @@ export default async function Landing({ params }: { params: Promise<{ slug: stri
           {e.status === "scheduled" && <Countdown to={e.starts_at} onDark />}
           <div className="flex flex-wrap gap-3">
             <Link href={`/e/${slug}/lobby`} className="btn-primary">{e.status === "live" ? "ادخل المعرض الآن" : "تصفح الأجنحة"}</Link>
-            <Link href={`/e/${slug}/sessions`} className="btn border border-white/30 text-bg hover:border-white">الأجندة</Link>
+            {(sessions?.length ?? 0) > 0 && (
+              <Link href={`/e/${slug}/sessions`} className="btn border border-white/30 text-bg hover:border-white">الجلسات</Link>
+            )}
           </div>
           <form action={`/e/${slug}/search`} className="mt-2 max-w-xl">
             <label htmlFor="q" className="sr-only">ابحث في المعرض</label>
@@ -91,7 +93,7 @@ export default async function Landing({ params }: { params: Promise<{ slug: stri
 
         {(sessions?.length ?? 0) > 0 && (
           <section>
-            <SectionHead title="الجلسات القادمة" href={`/e/${slug}/sessions`} linkLabel="الأجندة كاملة" />
+            <SectionHead title="الجلسات القادمة" href={`/e/${slug}/sessions`} linkLabel="كل الجلسات" />
             <ol className="card divide-y divide-line">
               {(sessions as Session[]).map((s) => (
                 <li key={s.id} className="flex flex-col gap-1 p-4 sm:flex-row sm:items-center sm:gap-6">

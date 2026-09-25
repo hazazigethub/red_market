@@ -90,7 +90,7 @@ export default async function Lobby({ params, searchParams }: {
           )}
         </div>
         <div className="card p-5">
-          <h2 className="mb-3 font-heading text-lg font-bold">التالي في الأجندة</h2>
+          <h2 className="mb-3 font-heading text-lg font-bold">الجلسات القادمة</h2>
           {(sessions?.length ?? 0) === 0 ? <p className="text-sm text-muted">لا توجد جلسات قادمة.</p> : (
             <ul className="flex flex-col gap-3">
               {(sessions as Session[]).map((s) => (
@@ -101,7 +101,7 @@ export default async function Lobby({ params, searchParams }: {
               ))}
             </ul>
           )}
-          <Link href={`/e/${slug}/sessions`} className="mt-3 inline-block text-sm font-semibold text-primary">الأجندة كاملة</Link>
+          <Link href={`/e/${slug}/sessions`} className="mt-3 inline-block text-sm font-semibold text-primary">كل الجلسات</Link>
         </div>
       </aside>
     </div>

@@ -10,12 +10,6 @@ export function ExhibitionFields({ e, categories, uploadPrefix, isNew }: {
       <section className="card flex flex-col gap-4 p-5">
         <h2 className="font-heading text-lg font-bold">الأساسيات</h2>
         <div><label className="label" htmlFor="t">اسم المعرض</label><input id="t" name="title" className="input" required minLength={3} maxLength={160} defaultValue={e?.title} /></div>
-        {isNew && (
-          <div><label className="label" htmlFor="sl">الرابط المختصر</label>
-            <div className="flex items-center gap-2" dir="ltr"><span className="text-sm text-muted">expo.redmarket.pro/e/</span>
-              <input id="sl" name="slug" className="input" required pattern="[a-z0-9][a-z0-9-]{1,78}[a-z0-9]" placeholder="coffee-expo-2026" /></div>
-            <p className="mt-1 text-xs text-muted">أحرف إنجليزية صغيرة وأرقام وشرطات. لا يمكن تغييره لاحقاً.</p></div>
-        )}
         <div><label className="label" htmlFor="d">الوصف</label><textarea id="d" name="description" rows={5} className="input" defaultValue={e?.description ?? ""} /></div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div><label className="label" htmlFor="c">التصنيف</label>
