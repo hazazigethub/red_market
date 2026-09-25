@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:red_market_core/red_market_core.dart';
 
 import 'expo_common.dart';
 import 'expo_exhibition_form.dart';
@@ -22,6 +21,18 @@ class ExpoManageScreen extends StatefulWidget {
 
 class _ExpoManageScreenState extends State<ExpoManageScreen> {
   Map<String, dynamic>? _e;
+  int _tab = 0;
+  int _version = 0; // يعيد بناء التبويب بعد أي تعديل على المعرض
+
+  static const _tabs = <(String, IconData)>[
+    ('نظرة عامة', Icons.dashboard_outlined),
+    ('طلبات العارضين', Icons.how_to_reg_outlined),
+    ('القاعات والأجنحة', Icons.grid_view_rounded),
+    ('الجلسات', Icons.mic_none_rounded),
+    ('المتحدثون', Icons.record_voice_over_outlined),
+    ('الرعاة', Icons.workspace_premium_outlined),
+    ('غرفة التحكم', Icons.podcasts_rounded),
+  ];
 
   @override
   void initState() {
@@ -36,85 +47,93 @@ class _ExpoManageScreenState extends State<ExpoManageScreen> {
           .select('*, organizers(name)')
           .eq('id', widget.exhibitionId)
           .single();
-      if (mounted) setState(() => _e = row);
+      if (mounted) {
+        setState(() {
+          _e = row;
+          _version++;
+        });
+      }
     } catch (e) {
       if (mounted) expoToast(context, expoError(e), error: true);
     }
   }
 
   Future<void> _edit() async {
-    final saved = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (_) => ExpoExhibitionFormPage(exhibition: _e)),
-    );
+    final saved = await showDialog<bool>(
+        context: context,
+        builder: (_) => ExpoExhibitionFormPage(exhibition: _e));
     if (saved == true) _reload();
+  }
+
+  Widget _body(Map<String, dynamic> e) {
+    final id = widget.exhibitionId;
+    final key = ValueKey('$_tab-$_version');
+    return switch (_tab) {
+      0 => OverviewTab(key: key, exhibition: e, onChanged: _reload, onEdit: _edit),
+      1 => ApplicationsTab(key: key, exhibitionId: id),
+      2 => HallsTab(key: key, exhibitionId: id),
+      3 => SessionsTab(key: key, exhibitionId: id),
+      4 => SpeakersTab(key: key, exhibitionId: id),
+      5 => SponsorsTab(key: key, exhibitionId: id),
+      _ => ControlTab(key: key, exhibition: e),
+    };
   }
 
   @override
   Widget build(BuildContext context) {
     final e = _e;
+    final status = '${e?['status'] ?? ''}';
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: DefaultTabController(
-        length: 7,
-        child: Scaffold(
-          backgroundColor: const Color(0xFFF7F8FA),
-          appBar: AppBar(
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black87,
-            elevation: 0.5,
-            title: Text(e == null ? '…' : '${e['title']}',
-                style: const TextStyle(
-                    fontFamily: kExpoFont, fontWeight: FontWeight.bold)),
-            actions: e == null
-                ? null
-                : [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      child: expoChip(
-                          kExhibitionStatus['${e['status']}'] ?? '${e['status']}',
-                          kExhibitionStatusColor['${e['status']}'] ?? Colors.grey),
-                    ),
-                    IconButton(
-                        tooltip: 'تعديل المعرض',
-                        onPressed: _edit,
-                        icon: const Icon(Icons.edit_outlined)),
-                    IconButton(
-                        tooltip: 'عرض كزائر',
-                        onPressed: () => expoOpen('/e/${e['slug']}'),
-                        icon: const Icon(Icons.open_in_new)),
-                    const SizedBox(width: 8),
-                  ],
-            bottom: TabBar(
-              isScrollable: true,
-              labelColor: AppColors.brand,
-              indicatorColor: AppColors.brand,
-              unselectedLabelColor: Colors.grey.shade600,
-              labelStyle: const TextStyle(
-                  fontFamily: kExpoFont, fontWeight: FontWeight.bold),
-              unselectedLabelStyle: const TextStyle(fontFamily: kExpoFont),
-              tabs: const [
-                Tab(text: 'نظرة عامة'),
-                Tab(text: 'طلبات العارضين'),
-                Tab(text: 'القاعات والأجنحة'),
-                Tab(text: 'الجلسات'),
-                Tab(text: 'المتحدثون'),
-                Tab(text: 'الرعاة'),
-                Tab(text: 'غرفة التحكم'),
-              ],
-            ),
-          ),
-          body: e == null
+      child: Scaffold(
+        backgroundColor: kBg,
+        body: SafeArea(
+          child: e == null
               ? expoLoader()
-              : TabBarView(
+              : ExpoPage(
+                  onRefresh: _reload,
                   children: [
-                    OverviewTab(exhibition: e, onChanged: _reload, onEdit: _edit),
-                    ApplicationsTab(exhibitionId: widget.exhibitionId),
-                    HallsTab(exhibitionId: widget.exhibitionId),
-                    SessionsTab(exhibitionId: widget.exhibitionId),
-                    SpeakersTab(exhibitionId: widget.exhibitionId),
-                    SponsorsTab(exhibitionId: widget.exhibitionId),
-                    ControlTab(exhibition: e),
+                    // ===== الرأس =====
+                    Row(children: [
+                      TextButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back_ios_new, size: 15),
+                        label: const Text('رجوع',
+                            style: TextStyle(
+                                fontFamily: kExpoFont,
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.bold)),
+                        style: TextButton.styleFrom(foregroundColor: kBrand),
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text('${e['title']}',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontFamily: kExpoFont,
+                                fontSize: 19,
+                                fontWeight: FontWeight.bold)),
+                      ),
+                      const SizedBox(width: 10),
+                      expoChip(kExhibitionStatus[status] ?? status,
+                          kExhibitionStatusColor[status] ?? Colors.grey),
+                      const Spacer(),
+                      expoIconAction(Icons.open_in_new_rounded,
+                          () => expoOpen('/e/${e['slug']}'),
+                          tooltip: 'عرض كزائر'),
+                      expoButton('تعديل المعرض', _edit, icon: Icons.edit_outlined),
+                    ]),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12, top: 2, bottom: 16),
+                      child: expoSub(
+                          '${e['organizers']?['name'] ?? ''} · ${expoFmtDateTime(e['starts_at'])} — ${expoFmtDateTime(e['ends_at'])}'),
+                    ),
+                    ExpoTabs(
+                        tabs: _tabs,
+                        index: _tab,
+                        onChanged: (i) => setState(() => _tab = i)),
+                    const SizedBox(height: 18),
+                    _body(e),
                   ],
                 ),
         ),

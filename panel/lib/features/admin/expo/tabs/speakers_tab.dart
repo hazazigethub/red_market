@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:red_market_core/red_market_core.dart';
 
 import '../expo_common.dart';
 
@@ -14,31 +13,74 @@ class SpeakersTab extends StatefulWidget {
 class _SpeakersTabState extends State<SpeakersTab> {
   Future<List<Map<String, dynamic>>> _load() => expoDb
       .from('speakers')
-      .select('*')
+      .select('*, session_speakers(count)')
       .eq('exhibition_id', widget.exhibitionId)
       .order('sort_order')
       .order('full_name');
 
   Future<void> _edit(Map<String, dynamic>? sp) async {
-    final saved = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-          builder: (_) =>
-              _SpeakerEditor(exhibitionId: widget.exhibitionId, speaker: sp)),
-    );
+    final saved = await showDialog<bool>(
+        context: context,
+        builder: (_) =>
+            _SpeakerEditor(exhibitionId: widget.exhibitionId, speaker: sp));
     if (saved == true && mounted) setState(() {});
   }
 
   Future<void> _delete(Map<String, dynamic> sp) async {
     if (!await expoConfirm(context, 'حذف المتحدث',
-        'سيُزال من كل الجلسات المرتبط بها. متابعة؟')) {
+        'سيُحذف «${sp['full_name']}» ويُزال من كل الجلسات المرتبط بها.',
+        danger: true)) {
       return;
     }
     if (!mounted) return;
     final ok = await expoRun(
         context, () => expoDb.from('speakers').delete().eq('id', sp['id']),
-        ok: 'تم الحذف');
+        ok: 'حُذف المتحدث');
     if (ok && mounted) setState(() {});
+  }
+
+  Widget _card(Map<String, dynamic> sp) {
+    final photo = expoPublicUrl(sp['photo_path'] as String?);
+    final sessions = (sp['session_speakers'] is List &&
+            (sp['session_speakers'] as List).isNotEmpty)
+        ? (sp['session_speakers'] as List).first['count']
+        : 0;
+    final role = [sp['job_title'], sp['company']]
+        .where((x) => x != null && '$x'.isNotEmpty)
+        .join(' · ');
+    return ExpoCard(
+      child: Row(children: [
+        CircleAvatar(
+          radius: 24,
+          backgroundColor: kBrand.withValues(alpha: 0.08),
+          backgroundImage: photo != null ? NetworkImage(photo) : null,
+          child: photo == null
+              ? const Icon(Icons.person_outline_rounded, color: kBrand)
+              : null,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${sp['full_name']}',
+                  style: const TextStyle(
+                      fontFamily: kExpoFont,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.bold)),
+              if (role.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                expoSub(role),
+              ],
+              const SizedBox(height: 6),
+              expoStat(Icons.mic_none_rounded, '$sessions جلسة'),
+            ],
+          ),
+        ),
+        expoEdit(() => _edit(sp)),
+        expoDelete(() => _delete(sp)),
+      ]),
+    );
   }
 
   @override
@@ -49,48 +91,17 @@ class _SpeakersTabState extends State<SpeakersTab> {
         if (snap.connectionState == ConnectionState.waiting) return expoLoader();
         if (snap.hasError) return expoFailed(snap.error);
         final list = snap.data ?? [];
-        return ListView(
-          padding: const EdgeInsets.all(20),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(children: [
-              expoTitle('المتحدثون (${list.length})'),
-              const Spacer(),
+            expoHeader('المتحدثون', count: list.length, actions: [
               expoButton('متحدث جديد', () => _edit(null),
-                  primary: true, icon: Icons.add),
+                  primary: true, icon: Icons.add_rounded),
             ]),
-            if (list.isEmpty) expoEmpty('لا يوجد متحدثون'),
-            ...list.map((sp) {
-              final photo = expoPublicUrl(sp['photo_path'] as String?);
-              return ExpoCard(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: Row(children: [
-                  CircleAvatar(
-                    radius: 22,
-                    backgroundColor: AppColors.brand.withValues(alpha: 0.08),
-                    backgroundImage: photo != null ? NetworkImage(photo) : null,
-                    child: photo == null
-                        ? Icon(Icons.person, color: AppColors.brand)
-                        : null,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('${sp['full_name']}',
-                            style: const TextStyle(
-                                fontFamily: kExpoFont, fontWeight: FontWeight.bold)),
-                        expoSub([sp['job_title'], sp['company']]
-                            .where((x) => x != null && '$x'.isNotEmpty)
-                            .join(' · ')),
-                      ],
-                    ),
-                  ),
-                  expoButton('تعديل', () => _edit(sp)),
-                  expoButton('حذف', () => _delete(sp)),
-                ]),
-              );
-            }),
+            if (list.isEmpty)
+              expoEmpty('لا متحدثين بعد', icon: Icons.record_voice_over_outlined)
+            else
+              expoGrid(list.map(_card).toList()),
           ],
         );
       },
@@ -137,12 +148,20 @@ class _SpeakerEditorState extends State<_SpeakerEditor> {
     }
   }
 
+  @override
+  void dispose() {
+    for (final c in [_name, _job, _company, _bio, _linkedin, _x, _website, _order]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
   String? _v(TextEditingController c) =>
       c.text.trim().isEmpty ? null : c.text.trim();
 
   Future<void> _save() async {
     if (_name.text.trim().isEmpty) {
-      return expoToast(context, 'اكتب اسم المتحدث', error: true);
+      return expoToast(context, 'اكتب اسم المتحدث', warn: true);
     }
     final links = <String, String>{};
     if (_v(_linkedin) != null) links['linkedin'] = _v(_linkedin)!;
@@ -164,7 +183,7 @@ class _SpeakerEditorState extends State<_SpeakerEditor> {
         () => widget.speaker == null
             ? expoDb.from('speakers').insert(values)
             : expoDb.from('speakers').update(values).eq('id', widget.speaker!['id']),
-        ok: 'تم الحفظ');
+        ok: widget.speaker == null ? 'أُضيف المتحدث' : 'حُفظ المتحدث');
     if (!mounted) return;
     setState(() => _saving = false);
     if (ok) Navigator.pop(context, true);
@@ -174,37 +193,64 @@ class _SpeakerEditorState extends State<_SpeakerEditor> {
   Widget build(BuildContext context) {
     return ExpoFormPage(
       title: widget.speaker == null ? 'متحدث جديد' : 'تعديل المتحدث',
+      icon: Icons.record_voice_over_outlined,
       saving: _saving,
       onSave: _save,
       children: [
+        TextField(
+            controller: _name,
+            style: kExpoFieldText,
+            decoration: expoInput('الاسم', icon: Icons.person_outline_rounded)),
+        Row(children: [
+          Expanded(
+              child: TextField(
+                  controller: _job,
+                  style: kExpoFieldText,
+                  decoration: expoInput('المسمى الوظيفي', icon: Icons.badge_outlined))),
+          const SizedBox(width: 10),
+          Expanded(
+              child: TextField(
+                  controller: _company,
+                  style: kExpoFieldText,
+                  decoration: expoInput('الجهة', icon: Icons.apartment_outlined))),
+        ]),
+        TextField(
+            controller: _bio,
+            maxLines: 3,
+            style: kExpoFieldText,
+            decoration: expoInput('نبذة', icon: Icons.notes_rounded)),
+        expoFormSection('الصورة', Icons.image_outlined, note: 'مربعة'),
         ExpoImageField(
             label: 'الصورة',
             prefix: 'exhibitions/${widget.exhibitionId}/speakers',
             initial: _photo,
             onChanged: (p) => _photo = p),
-        TextField(controller: _name, decoration: expoInput('الاسم')),
-        Row(children: [
-          Expanded(
-              child: TextField(controller: _job, decoration: expoInput('المسمى الوظيفي'))),
-          const SizedBox(width: 12),
-          Expanded(
-              child: TextField(controller: _company, decoration: expoInput('الجهة'))),
-        ]),
-        TextField(controller: _bio, maxLines: 4, decoration: expoInput('نبذة')),
+        expoFormSection('الروابط', Icons.link_rounded, note: 'اختيارية'),
         TextField(
             controller: _linkedin,
             textDirection: TextDirection.ltr,
-            decoration: expoInput('LinkedIn')),
-        TextField(
-            controller: _x, textDirection: TextDirection.ltr, decoration: expoInput('X')),
-        TextField(
-            controller: _website,
-            textDirection: TextDirection.ltr,
-            decoration: expoInput('الموقع')),
+            style: kExpoFieldText,
+            decoration: expoInput('LinkedIn', icon: Icons.work_outline_rounded)),
+        Row(children: [
+          Expanded(
+              child: TextField(
+                  controller: _x,
+                  textDirection: TextDirection.ltr,
+                  style: kExpoFieldText,
+                  decoration: expoInput('X', icon: Icons.alternate_email_rounded))),
+          const SizedBox(width: 10),
+          Expanded(
+              child: TextField(
+                  controller: _website,
+                  textDirection: TextDirection.ltr,
+                  style: kExpoFieldText,
+                  decoration: expoInput('الموقع', icon: Icons.language_rounded))),
+        ]),
         TextField(
             controller: _order,
             keyboardType: TextInputType.number,
-            decoration: expoInput('الترتيب')),
+            style: kExpoFieldText,
+            decoration: expoInput('ترتيب الظهور', icon: Icons.sort_rounded)),
       ],
     );
   }

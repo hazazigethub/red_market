@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:red_market_core/red_market_core.dart';
 
 import '../expo_common.dart';
 
@@ -12,30 +11,87 @@ class SponsorsTab extends StatefulWidget {
 }
 
 class _SponsorsTabState extends State<SponsorsTab> {
+  static const Map<String, Color> _tierColor = {
+    'platinum': Color(0xFF6B7280),
+    'gold': Color(0xFFB7791F),
+    'silver': Color(0xFF9CA3AF),
+    'partner': Colors.blueGrey,
+  };
+
   Future<List<Map<String, dynamic>>> _load() => expoDb
       .from('sponsors')
-      .select('*')
+      .select('*, booths(name)')
       .eq('exhibition_id', widget.exhibitionId)
       .order('tier')
       .order('sort_order');
 
   Future<void> _edit(Map<String, dynamic>? sp) async {
-    final saved = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-          builder: (_) =>
-              _SponsorEditor(exhibitionId: widget.exhibitionId, sponsor: sp)),
-    );
+    final saved = await showDialog<bool>(
+        context: context,
+        builder: (_) =>
+            _SponsorEditor(exhibitionId: widget.exhibitionId, sponsor: sp));
     if (saved == true && mounted) setState(() {});
   }
 
   Future<void> _delete(Map<String, dynamic> sp) async {
-    if (!await expoConfirm(context, 'حذف الراعي', 'حذف ${sp['name']}؟')) return;
+    if (!await expoConfirm(
+        context, 'حذف الراعي', 'سيُحذف «${sp['name']}» من رعاة المعرض.',
+        danger: true)) {
+      return;
+    }
     if (!mounted) return;
     final ok = await expoRun(
         context, () => expoDb.from('sponsors').delete().eq('id', sp['id']),
-        ok: 'تم الحذف');
+        ok: 'حُذف الراعي');
     if (ok && mounted) setState(() {});
+  }
+
+  Widget _card(Map<String, dynamic> sp) {
+    final logo = expoPublicUrl(sp['logo_path'] as String?);
+    final tier = '${sp['tier']}';
+    final booth = sp['booths'] is Map ? sp['booths']['name'] : null;
+    return ExpoCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(children: [
+            expoChip(kSponsorTier[tier] ?? tier, _tierColor[tier] ?? Colors.grey),
+            const Spacer(),
+            expoEdit(() => _edit(sp)),
+            expoDelete(() => _delete(sp)),
+          ]),
+          const SizedBox(height: 10),
+          Container(
+            height: 70,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+                color: kBg, borderRadius: BorderRadius.circular(11)),
+            child: logo == null
+                ? Icon(Icons.workspace_premium_outlined,
+                    size: 30, color: Colors.grey.shade300)
+                : Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Image.network(logo, fit: BoxFit.contain),
+                  ),
+          ),
+          const SizedBox(height: 10),
+          Text('${sp['name']}',
+              style: const TextStyle(
+                  fontFamily: kExpoFont,
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.bold)),
+          if (booth != null || sp['website_url'] != null) ...[
+            const SizedBox(height: 6),
+            Wrap(spacing: 16, runSpacing: 4, children: [
+              if (booth != null) expoStat(Icons.storefront_outlined, '$booth'),
+              if (sp['website_url'] != null)
+                expoStat(Icons.language_rounded,
+                    '${sp['website_url']}'.replaceFirst(RegExp(r'^https?://'), '')),
+            ]),
+          ],
+        ],
+      ),
+    );
   }
 
   @override
@@ -46,47 +102,17 @@ class _SponsorsTabState extends State<SponsorsTab> {
         if (snap.connectionState == ConnectionState.waiting) return expoLoader();
         if (snap.hasError) return expoFailed(snap.error);
         final list = snap.data ?? [];
-        return ListView(
-          padding: const EdgeInsets.all(20),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(children: [
-              expoTitle('الرعاة (${list.length})'),
-              const Spacer(),
+            expoHeader('الرعاة', count: list.length, actions: [
               expoButton('راعٍ جديد', () => _edit(null),
-                  primary: true, icon: Icons.add),
+                  primary: true, icon: Icons.add_rounded),
             ]),
-            if (list.isEmpty) expoEmpty('لا يوجد رعاة'),
-            ...list.map((sp) {
-              final logo = expoPublicUrl(sp['logo_path'] as String?);
-              return ExpoCard(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: Row(children: [
-                  Container(
-                    width: 64,
-                    height: 40,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF7F8FA),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: logo == null
-                        ? Icon(Icons.workspace_premium_outlined,
-                            color: AppColors.brand)
-                        : Image.network(logo, fit: BoxFit.contain),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text('${sp['name']}',
-                        style: const TextStyle(
-                            fontFamily: kExpoFont, fontWeight: FontWeight.bold)),
-                  ),
-                  expoChip(kSponsorTier['${sp['tier']}'] ?? '', Colors.amber.shade800),
-                  const SizedBox(width: 8),
-                  expoButton('تعديل', () => _edit(sp)),
-                  expoButton('حذف', () => _delete(sp)),
-                ]),
-              );
-            }),
+            if (list.isEmpty)
+              expoEmpty('لا رعاة بعد', icon: Icons.workspace_premium_outlined)
+            else
+              expoGrid(list.map(_card).toList()),
           ],
         );
       },
@@ -111,6 +137,7 @@ class _SponsorEditorState extends State<_SponsorEditor> {
   String? _boothId;
   String? _logo;
   bool _saving = false;
+  bool _loading = true;
   List<Map<String, dynamic>> _booths = [];
 
   @override
@@ -125,19 +152,39 @@ class _SponsorEditorState extends State<_SponsorEditor> {
       _boothId = s['booth_id'] as String?;
       _logo = s['logo_path'] as String?;
     }
-    expoDb
-        .from('booths')
-        .select('id, name')
-        .eq('exhibition_id', widget.exhibitionId)
-        .order('name')
-        .then((v) {
-      if (mounted) setState(() => _booths = v);
-    }).catchError((_) {});
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _website.dispose();
+    _order.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      final booths = await expoDb
+          .from('booths')
+          .select('id, name')
+          .eq('exhibition_id', widget.exhibitionId)
+          .order('name');
+      if (!mounted) return;
+      setState(() {
+        _booths = booths;
+        // القيمة يجب أن تكون ضمن القائمة
+        if (!_booths.any((b) => '${b['id']}' == _boothId)) _boothId = null;
+        _loading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   Future<void> _save() async {
     if (_name.text.trim().isEmpty) {
-      return expoToast(context, 'اكتب اسم الراعي', error: true);
+      return expoToast(context, 'اكتب اسم الراعي', warn: true);
     }
     final values = {
       'exhibition_id': widget.exhibitionId,
@@ -154,61 +201,70 @@ class _SponsorEditorState extends State<_SponsorEditor> {
         () => widget.sponsor == null
             ? expoDb.from('sponsors').insert(values)
             : expoDb.from('sponsors').update(values).eq('id', widget.sponsor!['id']),
-        ok: 'تم الحفظ');
+        ok: widget.sponsor == null ? 'أُضيف الراعي' : 'حُفظ الراعي');
     if (!mounted) return;
     setState(() => _saving = false);
     if (ok) Navigator.pop(context, true);
   }
 
+  DropdownMenuItem<T> _item<T>(T value, String label) => DropdownMenuItem<T>(
+      value: value,
+      child: Text(label, style: const TextStyle(fontFamily: kExpoFont, fontSize: 13)));
+
   @override
   Widget build(BuildContext context) {
+    if (_loading) return const ExpoDialogLoader();
     return ExpoFormPage(
       title: widget.sponsor == null ? 'راعٍ جديد' : 'تعديل الراعي',
+      icon: Icons.workspace_premium_outlined,
       saving: _saving,
       onSave: _save,
       children: [
-        ExpoImageField(
-            label: 'الشعار',
-            prefix: 'exhibitions/${widget.exhibitionId}/sponsors',
-            initial: _logo,
-            wide: true,
-            onChanged: (p) => _logo = p),
-        TextField(controller: _name, decoration: expoInput('الاسم')),
-        DropdownButtonFormField<String>(
-          initialValue: _tier,
-          decoration: expoInput('الفئة'),
-          items: kSponsorTier.entries
-              .map((t) => DropdownMenuItem(
-                  value: t.key,
-                  child: Text(t.value, style: const TextStyle(fontFamily: kExpoFont))))
-              .toList(),
-          onChanged: (v) => setState(() => _tier = v ?? 'partner'),
-        ),
+        TextField(
+            controller: _name,
+            style: kExpoFieldText,
+            decoration: expoInput('اسم الراعي', icon: Icons.title_rounded)),
+        Row(children: [
+          Expanded(
+            child: DropdownButtonFormField<String>(
+              initialValue: _tier,
+              decoration: expoInput('الفئة', icon: Icons.military_tech_outlined),
+              items: kSponsorTier.entries.map((t) => _item(t.key, t.value)).toList(),
+              onChanged: (v) => setState(() => _tier = v ?? 'partner'),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+                controller: _order,
+                keyboardType: TextInputType.number,
+                style: kExpoFieldText,
+                decoration: expoInput('ترتيب الظهور', icon: Icons.sort_rounded)),
+          ),
+        ]),
         DropdownButtonFormField<String?>(
-          key: ValueKey('booths-${_booths.length}'),
-          // القيمة يجب أن تكون ضمن القائمة، وإلا يتوقف الحقل
-          initialValue:
-              _booths.any((b) => '${b['id']}' == _boothId) ? _boothId : null,
-          decoration: expoInput('جناح الراعي في المعرض (اختياري)'),
+          initialValue: _boothId,
+          decoration: expoInput('جناحه في المعرض — اختياري',
+              icon: Icons.storefront_outlined),
           items: [
-            const DropdownMenuItem<String?>(
-                value: null,
-                child: Text('—', style: TextStyle(fontFamily: kExpoFont))),
-            ..._booths.map((b) => DropdownMenuItem<String?>(
-                value: '${b['id']}',
-                child: Text('${b['name']}',
-                    style: const TextStyle(fontFamily: kExpoFont)))),
+            _item<String?>(null, '—'),
+            ..._booths.map((b) => _item<String?>('${b['id']}', '${b['name']}')),
           ],
           onChanged: (v) => setState(() => _boothId = v),
         ),
         TextField(
             controller: _website,
             textDirection: TextDirection.ltr,
-            decoration: expoInput('الموقع الإلكتروني', hint: 'https://')),
-        TextField(
-            controller: _order,
-            keyboardType: TextInputType.number,
-            decoration: expoInput('الترتيب')),
+            style: kExpoFieldText,
+            decoration: expoInput('الموقع الإلكتروني',
+                hint: 'https://', icon: Icons.language_rounded)),
+        expoFormSection('الشعار', Icons.image_outlined, note: 'PNG بخلفية شفافة'),
+        ExpoImageField(
+            label: 'الشعار',
+            prefix: 'exhibitions/${widget.exhibitionId}/sponsors',
+            initial: _logo,
+            wide: true,
+            onChanged: (p) => _logo = p),
       ],
     );
   }

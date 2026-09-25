@@ -13,31 +13,45 @@ class SessionsTab extends StatefulWidget {
 class _SessionsTabState extends State<SessionsTab> {
   Future<List<Map<String, dynamic>>> _load() => expoDb
       .from('exhibition_sessions')
-      .select('*, session_speakers(speaker_id, role, speakers(full_name)), live_streams(id, status)')
+      .select(
+          '*, session_speakers(speaker_id, role, speakers(full_name)), live_streams(id, status)')
       .eq('exhibition_id', widget.exhibitionId)
       .order('starts_at');
 
   Future<void> _edit(Map<String, dynamic>? s) async {
-    final saved = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-          builder: (_) =>
-              _SessionEditor(exhibitionId: widget.exhibitionId, session: s)),
-    );
+    final saved = await showDialog<bool>(
+        context: context,
+        builder: (_) =>
+            _SessionEditor(exhibitionId: widget.exhibitionId, session: s));
     if (saved == true && mounted) setState(() {});
   }
 
   Future<void> _cancel(Map<String, dynamic> s) async {
     if (!await expoConfirm(context, 'إلغاء الجلسة',
-        'تبقى ظاهرة في السجل كملغاة، ولا يمكن التسجيل فيها.')) {
+        'تبقى «${s['title']}» ظاهرة في الأجندة كملغاة، ولا يمكن التسجيل فيها.',
+        confirmLabel: 'إلغاء الجلسة')) {
+      return;
+    }
+    if (!mounted) return;
+    final ok = await expoRun(
+        context,
+        () => expoDb
+            .from('exhibition_sessions')
+            .update({'status': 'cancelled'}).eq('id', s['id']),
+        ok: 'أُلغيت الجلسة');
+    if (ok && mounted) setState(() {});
+  }
+
+  Future<void> _delete(Map<String, dynamic> s) async {
+    if (!await expoConfirm(context, 'حذف الجلسة',
+        'ستُحذف «${s['title']}» نهائياً مع تسجيلات الحضور.',
+        danger: true)) {
       return;
     }
     if (!mounted) return;
     final ok = await expoRun(context,
-        () => expoDb
-            .from('exhibition_sessions')
-            .update({'status': 'cancelled'}).eq('id', s['id']),
-        ok: 'تم إلغاء الجلسة');
+        () => expoDb.from('exhibition_sessions').delete().eq('id', s['id']),
+        ok: 'حُذفت الجلسة');
     if (ok && mounted) setState(() {});
   }
 
@@ -47,8 +61,95 @@ class _SessionsTabState extends State<SessionsTab> {
         () => expoDb
             .from('live_streams')
             .insert({'session_id': s['id'], 'title': s['title']}),
-        ok: 'تم إنشاء البث. افتح الاستوديو عند موعد الجلسة.');
+        ok: 'جُهّز البث. افتح الاستوديو عند موعد الجلسة');
     if (ok && mounted) setState(() {});
+  }
+
+  Widget _card(Map<String, dynamic> s) {
+    final speakers = (s['session_speakers'] as List? ?? [])
+        .map((x) => '${x['speakers']?['full_name'] ?? ''}')
+        .where((n) => n.isNotEmpty)
+        .join('، ');
+    final streams = s['live_streams'] as List? ?? [];
+    final stream = streams.isNotEmpty ? streams.first : null;
+    final status = '${s['status']}';
+    final cancelled = status == 'cancelled';
+    final (String label, Color color) = switch (status) {
+      'live' => ('مباشرة', Colors.green),
+      'ended' => ('انتهت', Colors.orange),
+      'cancelled' => ('ملغاة', Colors.grey),
+      _ => ('مجدولة', Colors.blue),
+    };
+
+    return ExpoCard(
+      borderColor: status == 'live' ? Colors.green.withValues(alpha: 0.35) : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${s['title']}',
+                      style: TextStyle(
+                          fontFamily: kExpoFont,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          decoration: cancelled ? TextDecoration.lineThrough : null)),
+                  const SizedBox(height: 4),
+                  Text(
+                      '${expoFmtDateTime(s['starts_at'])} — ${expoFmtDateTime(s['ends_at']).split(' ').last}',
+                      style: TextStyle(
+                          fontFamily: kExpoFont,
+                          fontSize: 11.5,
+                          color: Colors.grey.shade600)),
+                ],
+              ),
+            ),
+            expoChip(label, color),
+            const SizedBox(width: 6),
+            if (!cancelled) expoEdit(() => _edit(s)),
+            expoDelete(() => _delete(s)),
+          ]),
+          const SizedBox(height: 12),
+          kExpoDivider,
+          const SizedBox(height: 10),
+          Wrap(spacing: 18, runSpacing: 6, children: [
+            expoStat(Icons.category_outlined, kSessionType['${s['type']}'] ?? ''),
+            expoStat(Icons.people_outline_rounded,
+                '${s['registered_count'] ?? 0}${s['capacity'] != null ? ' / ${s['capacity']}' : ''} مسجل'),
+            if (speakers.isNotEmpty)
+              expoStat(Icons.record_voice_over_outlined, speakers),
+          ]),
+          if (!cancelled) ...[
+            const SizedBox(height: 12),
+            Row(children: [
+              if (status == 'scheduled')
+                TextButton(
+                  onPressed: () => _cancel(s),
+                  child: Text('إلغاء الجلسة',
+                      style: TextStyle(
+                          fontFamily: kExpoFont,
+                          fontSize: 12,
+                          color: Colors.grey.shade600)),
+                ),
+              const Spacer(),
+              if (stream == null)
+                expoButton('تجهيز بث', () => _createStream(s),
+                    icon: Icons.videocam_outlined)
+              else
+                expoButton(
+                    stream['status'] == 'live' ? 'البث مباشر · الاستوديو' : 'فتح الاستوديو',
+                    () => expoOpen(
+                        '/organizer/e/${widget.exhibitionId}/studio/${stream['id']}'),
+                    primary: true,
+                    icon: Icons.videocam_rounded),
+            ]),
+          ],
+        ],
+      ),
+    );
   }
 
   @override
@@ -59,76 +160,21 @@ class _SessionsTabState extends State<SessionsTab> {
         if (snap.connectionState == ConnectionState.waiting) return expoLoader();
         if (snap.hasError) return expoFailed(snap.error);
         final list = snap.data ?? [];
-        return ListView(
-          padding: const EdgeInsets.all(20),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(children: [
-              expoTitle('الجلسات (${list.length})'),
-              const Spacer(),
-              expoButton('جلسة جديدة', () => _edit(null),
-                  primary: true, icon: Icons.add),
-            ]),
-            if (list.isEmpty) expoEmpty('لا توجد جلسات'),
-            ...list.map((s) {
-              final speakers = (s['session_speakers'] as List? ?? [])
-                  .map((x) => '${x['speakers']?['full_name'] ?? ''}')
-                  .where((n) => n.isNotEmpty)
-                  .join('، ');
-              final streams = s['live_streams'] as List? ?? [];
-              final stream = streams.isNotEmpty ? streams.first : null;
-              final cancelled = s['status'] == 'cancelled';
-              return ExpoCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text('${s['title']}',
-                            style: const TextStyle(
-                                fontFamily: kExpoFont,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14)),
-                        expoChip(kSessionType['${s['type']}'] ?? '', Colors.blueGrey),
-                        if (cancelled) expoChip('ملغاة', Colors.grey),
-                        if (s['status'] == 'live') expoChip('مباشر', Colors.red),
-                        if (stream != null)
-                          expoChip(
-                              stream['status'] == 'live' ? 'البث مباشر' : 'بث مُعدّ',
-                              Colors.red),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    expoSub(
-                        '${expoFmtDateTime(s['starts_at'])} — ${expoFmtDateTime(s['ends_at'])}'
-                        ' · ${s['registered_count'] ?? 0}${s['capacity'] != null ? '/${s['capacity']}' : ''} مسجل'),
-                    if (speakers.isNotEmpty) expoSub('المتحدثون: $speakers'),
-                    if (!cancelled) ...[
-                      const SizedBox(height: 10),
-                      Wrap(runSpacing: 6, children: [
-                        expoButton('تعديل', () => _edit(s)),
-                        if (stream == null)
-                          expoButton('إنشاء بث', () => _createStream(s))
-                        else
-                          expoButton('فتح استوديو البث', () =>
-                              expoOpen('/organizer/e/${widget.exhibitionId}/studio/${stream['id']}'),
-                              primary: true, icon: Icons.videocam_outlined),
-                        if (s['status'] == 'scheduled')
-                          expoButton('إلغاء الجلسة', () => _cancel(s)),
-                      ]),
-                    ],
-                  ],
-                ),
-              );
-            }),
-            if (list.any((s) => (s['live_streams'] as List? ?? []).isNotEmpty))
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: expoSub(
-                    'استوديو البث يفتح في المتصفح لأنه يستخدم الكاميرا والميكروفون مباشرة. يلزم تسجيل الدخول في موقع المعارض بحساب الأدمن.'),
-              ),
+            expoHeader('الجلسات',
+                count: list.length,
+                subtitle:
+                    'استوديو البث يفتح في المتصفح لأنه يستخدم الكاميرا والميكروفون — ادخل موقع المعارض بحساب الأدمن',
+                actions: [
+                  expoButton('جلسة جديدة', () => _edit(null),
+                      primary: true, icon: Icons.add_rounded),
+                ]),
+            if (list.isEmpty)
+              expoEmpty('لا جلسات بعد', icon: Icons.mic_none_rounded)
+            else
+              expoGrid(list.map(_card).toList(), maxCols: 2),
           ],
         );
       },
@@ -136,7 +182,7 @@ class _SessionsTabState extends State<SessionsTab> {
   }
 }
 
-// ===================== محرر الجلسة =====================
+// ===================== نافذة الجلسة =====================
 
 class _SessionEditor extends StatefulWidget {
   final String exhibitionId;
@@ -183,6 +229,14 @@ class _SessionEditorState extends State<_SessionEditor> {
     _load();
   }
 
+  @override
+  void dispose() {
+    _title.dispose();
+    _desc.dispose();
+    _capacity.dispose();
+    super.dispose();
+  }
+
   Future<void> _load() async {
     try {
       final halls = await expoDb
@@ -212,10 +266,13 @@ class _SessionEditorState extends State<_SessionEditor> {
 
   Future<void> _save() async {
     if (_title.text.trim().isEmpty) {
-      return expoToast(context, 'اكتب عنوان الجلسة', error: true);
+      return expoToast(context, 'اكتب عنوان الجلسة', warn: true);
     }
-    if (_starts == null || _ends == null || !_ends!.isAfter(_starts!)) {
-      return expoToast(context, 'حدد بداية ونهاية صحيحتين', error: true);
+    if (_starts == null || _ends == null) {
+      return expoToast(context, 'حدّد البداية والنهاية', warn: true);
+    }
+    if (!_ends!.isAfter(_starts!)) {
+      return expoToast(context, 'النهاية قبل البداية', warn: true);
     }
     final values = {
       'exhibition_id': widget.exhibitionId,
@@ -248,118 +305,134 @@ class _SessionEditorState extends State<_SessionEditor> {
             .map((e) => {'session_id': id, 'speaker_id': e.key, 'role': e.value})
             .toList());
       }
-    }, ok: 'تم حفظ الجلسة');
+    }, ok: widget.session == null ? 'أُضيفت الجلسة' : 'حُفظت الجلسة');
     if (!mounted) return;
     setState(() => _saving = false);
     if (ok) Navigator.pop(context, true);
   }
 
+  DropdownMenuItem<T> _item<T>(T value, String label) => DropdownMenuItem<T>(
+      value: value,
+      child: Text(label, style: const TextStyle(fontFamily: kExpoFont, fontSize: 13)));
+
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    if (_loading) return const ExpoDialogLoader();
     return ExpoFormPage(
       title: widget.session == null ? 'جلسة جديدة' : 'تعديل الجلسة',
+      icon: Icons.mic_none_rounded,
       saving: _saving,
       onSave: _save,
       children: [
-        TextField(controller: _title, decoration: expoInput('العنوان')),
+        TextField(
+            controller: _title,
+            style: kExpoFieldText,
+            decoration: expoInput('عنوان الجلسة', icon: Icons.title_rounded)),
         Row(children: [
           Expanded(
             child: DropdownButtonFormField<String>(
               initialValue: _type,
-              decoration: expoInput('النوع'),
-              items: kSessionType.entries
-                  .map((t) => DropdownMenuItem(
-                      value: t.key,
-                      child: Text(t.value,
-                          style: const TextStyle(fontFamily: kExpoFont))))
-                  .toList(),
+              decoration: expoInput('النوع', icon: Icons.category_outlined),
+              items: kSessionType.entries.map((t) => _item(t.key, t.value)).toList(),
               onChanged: (v) => setState(() => _type = v ?? 'talk'),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: DropdownButtonFormField<String?>(
               initialValue: _hallId,
-              decoration: expoInput('القاعة'),
+              decoration: expoInput('القاعة', icon: Icons.grid_view_rounded),
               items: [
-                const DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text('—', style: TextStyle(fontFamily: kExpoFont))),
-                ..._halls.map((h) => DropdownMenuItem<String?>(
-                    value: '${h['id']}',
-                    child: Text('${h['name']}',
-                        style: const TextStyle(fontFamily: kExpoFont)))),
+                _item<String?>(null, '—'),
+                ..._halls.map((h) => _item<String?>('${h['id']}', '${h['name']}')),
               ],
               onChanged: (v) => setState(() => _hallId = v),
             ),
           ),
         ]),
+        expoFormSection('الموعد', Icons.schedule_rounded, note: 'بتوقيت الرياض'),
         Row(children: [
           Expanded(
               child: ExpoDateTimeField(
-                  label: 'البداية',
+                  label: 'تبدأ',
                   value: _starts,
                   onChanged: (v) => setState(() => _starts = v))),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
               child: ExpoDateTimeField(
-                  label: 'النهاية',
+                  label: 'تنتهي',
                   value: _ends,
                   onChanged: (v) => setState(() => _ends = v))),
         ]),
         TextField(
             controller: _capacity,
             keyboardType: TextInputType.number,
-            decoration: expoInput('السعة (اختياري)')),
-        TextField(controller: _desc, maxLines: 4, decoration: expoInput('الوصف')),
+            style: kExpoFieldText,
+            decoration: expoInput('السعة — اتركها فارغة بلا حد',
+                icon: Icons.people_outline_rounded)),
+        TextField(
+            controller: _desc,
+            maxLines: 3,
+            style: kExpoFieldText,
+            decoration: expoInput('الوصف', icon: Icons.notes_rounded)),
+        expoFormSection('صورة الجلسة', Icons.image_outlined, note: 'اختيارية'),
         ExpoImageField(
-            label: 'صورة الجلسة (اختياري)',
+            label: 'صورة الجلسة',
             prefix: 'exhibitions/${widget.exhibitionId}/sessions',
             initial: _cover,
             wide: true,
             onChanged: (p) => _cover = p),
-        expoTitle('المتحدثون'),
+        expoFormSection('المتحدثون', Icons.record_voice_over_outlined),
         if (_speakers.isEmpty)
           expoSub('أضف المتحدثين أولاً من تبويب «المتحدثون».')
         else
-          ..._speakers.map((sp) {
-            final id = '${sp['id']}';
-            final on = _chosen.containsKey(id);
-            return Row(children: [
-              Expanded(
-                child: CheckboxListTile(
-                  value: on,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  title: Text('${sp['full_name']}',
-                      style: const TextStyle(fontFamily: kExpoFont)),
-                  subtitle: sp['job_title'] == null
-                      ? null
-                      : Text('${sp['job_title']}',
-                          style: const TextStyle(fontFamily: kExpoFont)),
-                  onChanged: (v) => setState(() {
-                    if (v == true) {
-                      _chosen[id] = 'speaker';
-                    } else {
-                      _chosen.remove(id);
-                    }
-                  }),
-                ),
-              ),
-              if (on)
-                Row(children: [
+          Container(
+            decoration: BoxDecoration(
+              color: kBg,
+              borderRadius: BorderRadius.circular(11),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Column(
+              children: _speakers.map((sp) {
+                final id = '${sp['id']}';
+                final on = _chosen.containsKey(id);
+                return Row(children: [
                   Checkbox(
-                    value: _chosen[id] == 'moderator',
-                    onChanged: (v) => setState(
-                        () => _chosen[id] = v == true ? 'moderator' : 'speaker'),
+                    value: on,
+                    activeColor: kBrand,
+                    onChanged: (v) => setState(() {
+                      if (v == true) {
+                        _chosen[id] = 'speaker';
+                      } else {
+                        _chosen.remove(id);
+                      }
+                    }),
                   ),
-                  const Text('مدير الجلسة',
-                      style: TextStyle(fontFamily: kExpoFont, fontSize: 12)),
-                ]),
-            ]);
-          }),
+                  Expanded(
+                    child: Text(
+                        '${sp['full_name']}${sp['job_title'] != null ? ' · ${sp['job_title']}' : ''}',
+                        style: const TextStyle(fontFamily: kExpoFont, fontSize: 12.5)),
+                  ),
+                  if (on) ...[
+                    Text('مدير الجلسة',
+                        style: TextStyle(
+                            fontFamily: kExpoFont,
+                            fontSize: 11,
+                            color: Colors.grey.shade600)),
+                    Transform.scale(
+                      scale: 0.7,
+                      child: Switch(
+                        value: _chosen[id] == 'moderator',
+                        activeTrackColor: Colors.green,
+                        onChanged: (v) => setState(
+                            () => _chosen[id] = v ? 'moderator' : 'speaker'),
+                      ),
+                    ),
+                  ],
+                ]);
+              }).toList(),
+            ),
+          ),
       ],
     );
   }

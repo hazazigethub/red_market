@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'expo_common.dart';
 
-/// إنشاء معرض أو تعديله. يعيد true عند الحفظ.
+/// نافذة إنشاء معرض أو تعديله. تُفتح بـ showDialog وتعيد true عند الحفظ.
 class ExpoExhibitionFormPage extends StatefulWidget {
   final Map<String, dynamic>? exhibition; // null = معرض جديد
   const ExpoExhibitionFormPage({super.key, this.exhibition});
@@ -13,7 +13,6 @@ class ExpoExhibitionFormPage extends StatefulWidget {
 
 class _ExpoExhibitionFormPageState extends State<ExpoExhibitionFormPage> {
   final _title = TextEditingController();
-  final _slug = TextEditingController();
   final _desc = TextEditingController();
   final _venue = TextEditingController();
   final _city = TextEditingController();
@@ -41,7 +40,6 @@ class _ExpoExhibitionFormPageState extends State<ExpoExhibitionFormPage> {
     final e = widget.exhibition;
     if (e != null) {
       _title.text = '${e['title'] ?? ''}';
-      _slug.text = '${e['slug'] ?? ''}';
       _desc.text = '${e['description'] ?? ''}';
       _venue.text = '${e['venue'] ?? ''}';
       _city.text = '${e['city'] ?? ''}';
@@ -58,14 +56,25 @@ class _ExpoExhibitionFormPageState extends State<ExpoExhibitionFormPage> {
     _load();
   }
 
+  @override
+  void dispose() {
+    _title.dispose();
+    _desc.dispose();
+    _venue.dispose();
+    _city.dispose();
+    super.dispose();
+  }
+
   Future<void> _load() async {
     try {
       final orgs = await expoDb
           .from('organizers')
           .select('id, name, is_verified, is_suspended')
           .order('name');
-      final cats =
-          await expoDb.from('exhibition_categories').select('id, name_ar').order('id');
+      final cats = await expoDb
+          .from('exhibition_categories')
+          .select('id, name_ar')
+          .order('id');
       if (!mounted) return;
       setState(() {
         _organizers = orgs;
@@ -82,26 +91,21 @@ class _ExpoExhibitionFormPageState extends State<ExpoExhibitionFormPage> {
   }
 
   Future<void> _save() async {
-    final slug = _slug.text.trim().toLowerCase();
     if (_title.text.trim().length < 3) {
-      return expoToast(context, 'اسم المعرض 3 أحرف على الأقل', error: true);
-    }
-    if (_isNew && !RegExp(r'^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$').hasMatch(slug)) {
-      return expoToast(context,
-          'الرابط: أحرف إنجليزية صغيرة وأرقام وشرطات فقط، مثل coffee-expo-2026',
-          error: true);
+      return expoToast(context, 'اكتب اسم المعرض', warn: true);
     }
     if (_organizerId == null) {
-      return expoToast(context, 'أنشئ جهة منظمة أولاً', error: true);
+      return expoToast(context, 'أنشئ جهة منظمة أولاً', warn: true);
     }
     if (_starts == null || _ends == null) {
-      return expoToast(context, 'حدد موعد البداية والنهاية', error: true);
+      return expoToast(context, 'حدّد موعد البداية والنهاية', warn: true);
     }
     if (!_ends!.isAfter(_starts!)) {
-      return expoToast(context, 'النهاية يجب أن تكون بعد البداية', error: true);
+      return expoToast(context, 'موعد النهاية قبل البداية', warn: true);
     }
 
     final values = <String, dynamic>{
+      'organizer_id': _organizerId,
       'title': _title.text.trim(),
       'description': _desc.text.trim().isEmpty ? null : _desc.text.trim(),
       'category_id': _categoryId,
@@ -119,32 +123,33 @@ class _ExpoExhibitionFormPageState extends State<ExpoExhibitionFormPage> {
     setState(() => _saving = true);
     final ok = await expoRun(context, () async {
       if (_isNew) {
-        final row = await expoDb
-            .from('exhibitions')
-            .insert({...values, 'organizer_id': _organizerId, 'slug': slug})
-            .select('id')
-            .single();
-        // قاعة افتراضية لكل معرض جديد
+        // الرابط يُولَّد تلقائياً في قاعدة البيانات
+        final row =
+            await expoDb.from('exhibitions').insert(values).select('id').single();
         await expoDb
             .from('exhibition_halls')
             .insert({'exhibition_id': row['id'], 'name': 'القاعة الرئيسية'});
       } else {
         await expoDb
             .from('exhibitions')
-            .update({...values, 'organizer_id': _organizerId})
+            .update(values)
             .eq('id', widget.exhibition!['id']);
       }
-    }, ok: _isNew ? 'تم إنشاء المعرض كمسودة' : 'تم حفظ التعديلات');
+    }, ok: _isNew ? 'أُنشئ المعرض كمسودة' : 'حُفظ المعرض');
     if (!mounted) return;
     setState(() => _saving = false);
     if (ok) Navigator.pop(context, true);
   }
 
+  DropdownMenuItem<T> _item<T>(T value, String label) => DropdownMenuItem<T>(
+      value: value,
+      child: Text(label,
+          style: const TextStyle(fontFamily: kExpoFont, fontSize: 13)));
+
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    if (_loading) return const ExpoDialogLoader();
+
     // الصور قبل إنشاء المعرض تُرفع في مجلد الجهة المنظمة
     final prefix = _isNew
         ? 'organizers/${_organizerId ?? 'none'}/brand'
@@ -152,114 +157,111 @@ class _ExpoExhibitionFormPageState extends State<ExpoExhibitionFormPage> {
 
     return ExpoFormPage(
       title: _isNew ? 'معرض جديد' : 'تعديل المعرض',
+      icon: Icons.event_available_outlined,
       saving: _saving,
       onSave: _save,
+      maxWidth: 560,
       children: [
         if (_organizers.isEmpty)
-          expoSub('لا توجد جهة منظمة. أنشئ واحدة من زر «منظم جديد» أولاً.')
+          expoSub('لا توجد جهة منظمة. أنشئ واحدة من زر «جهة منظمة» أولاً.')
         else
           DropdownButtonFormField<String>(
             initialValue: _organizerId,
-            decoration: expoInput('الجهة المنظمة'),
+            decoration: expoInput('الجهة المنظمة', icon: Icons.apartment_outlined),
             items: _organizers
-                .map((o) => DropdownMenuItem(
-                    value: '${o['id']}',
-                    child: Text(
-                        '${o['name']}${o['is_verified'] == true ? '' : ' (غير موثّقة)'}',
-                        style: const TextStyle(fontFamily: kExpoFont))))
+                .map((o) => _item('${o['id']}',
+                    '${o['name']}${o['is_verified'] == true ? '' : ' (غير موثّقة)'}'))
                 .toList(),
             onChanged: (v) => setState(() => _organizerId = v),
           ),
-        TextField(controller: _title, decoration: expoInput('اسم المعرض')),
-        if (_isNew)
-          TextField(
-            controller: _slug,
-            textDirection: TextDirection.ltr,
-            decoration: expoInput('الرابط المختصر',
-                hint: 'coffee-expo-2026  ←  expo.redmarket.pro/e/coffee-expo-2026'),
-          )
-        else
-          expoSub('الرابط: expo.redmarket.pro/e/${_slug.text}'),
+        TextField(
+            controller: _title,
+            style: kExpoFieldText,
+            decoration: expoInput('اسم المعرض', icon: Icons.title_rounded)),
         TextField(
             controller: _desc,
-            maxLines: 5,
-            decoration: expoInput('الوصف')),
+            maxLines: 3,
+            style: kExpoFieldText,
+            decoration: expoInput('الوصف', icon: Icons.notes_rounded)),
         Row(children: [
           Expanded(
             child: DropdownButtonFormField<int>(
               initialValue: _categoryId,
-              decoration: expoInput('التصنيف'),
+              decoration: expoInput('التصنيف', icon: Icons.category_outlined),
               items: _categories
-                  .map((c) => DropdownMenuItem(
-                      value: (c['id'] as num).toInt(),
-                      child: Text('${c['name_ar']}',
-                          style: const TextStyle(fontFamily: kExpoFont))))
+                  .map((c) => _item((c['id'] as num).toInt(), '${c['name_ar']}'))
                   .toList(),
               onChanged: (v) => setState(() => _categoryId = v),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: DropdownButtonFormField<String>(
               initialValue: _locationType,
-              decoration: expoInput('النوع'),
-              items: kLocationType.entries
-                  .map((e) => DropdownMenuItem(
-                      value: e.key,
-                      child: Text(e.value,
-                          style: const TextStyle(fontFamily: kExpoFont))))
-                  .toList(),
+              decoration: expoInput('النوع', icon: Icons.videocam_outlined),
+              items: kLocationType.entries.map((e) => _item(e.key, e.value)).toList(),
               onChanged: (v) => setState(() => _locationType = v ?? 'virtual'),
             ),
           ),
         ]),
-        Row(children: [
-          Expanded(
-              child: TextField(
-                  controller: _venue,
-                  decoration: expoInput('المكان (للحضوري/الهجين)'))),
-          const SizedBox(width: 12),
-          Expanded(
-              child: TextField(controller: _city, decoration: expoInput('المدينة'))),
-        ]),
+        if (_locationType != 'virtual')
+          Row(children: [
+            Expanded(
+                child: TextField(
+                    controller: _venue,
+                    style: kExpoFieldText,
+                    decoration: expoInput('المكان', icon: Icons.place_outlined))),
+            const SizedBox(width: 10),
+            Expanded(
+                child: TextField(
+                    controller: _city,
+                    style: kExpoFieldText,
+                    decoration:
+                        expoInput('المدينة', icon: Icons.location_city_outlined))),
+          ]),
+
+        // ===== الموعد =====
+        expoFormSection('الموعد', Icons.schedule_rounded, note: 'بتوقيت الرياض'),
         Row(children: [
           Expanded(
               child: ExpoDateTimeField(
-                  label: 'البداية',
+                  label: 'يبدأ',
                   value: _starts,
                   onChanged: (v) => setState(() => _starts = v))),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
               child: ExpoDateTimeField(
-                  label: 'النهاية',
+                  label: 'ينتهي',
                   value: _ends,
                   onChanged: (v) => setState(() => _ends = v))),
         ]),
+
+        // ===== الهوية =====
+        expoFormSection('الشعار', Icons.image_outlined, note: 'مربع · 512 × 512'),
         ExpoImageField(
             key: ValueKey('logo-$prefix'),
-            label: 'الشعار (مربع)',
+            label: 'الشعار',
             prefix: prefix,
             initial: _logo,
             onChanged: (p) => _logo = p),
+        expoFormSection('صورة الغلاف', Icons.panorama_outlined,
+            note: '1920 × 800'),
         ExpoImageField(
             key: ValueKey('cover-$prefix'),
-            label: 'صورة الغلاف (1920×800)',
+            label: 'صورة الغلاف',
             prefix: prefix,
             initial: _cover,
             wide: true,
             onChanged: (p) => _cover = p),
-        SwitchListTile(
-          value: _applicationsOpen,
-          onChanged: (v) => setState(() => _applicationsOpen = v),
-          title: const Text('استقبال طلبات مشاركة العارضين',
-              style: TextStyle(fontFamily: kExpoFont)),
-        ),
-        SwitchListTile(
-          value: _chatEnabled,
-          onChanged: (v) => setState(() => _chatEnabled = v),
-          title: const Text('تفعيل المحادثات بين الزوار والعارضين',
-              style: TextStyle(fontFamily: kExpoFont)),
-        ),
+
+        // ===== الإعدادات =====
+        expoFormSection('الإعدادات', Icons.tune_rounded),
+        Column(children: [
+          expoSwitch('استقبال طلبات مشاركة العارضين', _applicationsOpen,
+              (v) => setState(() => _applicationsOpen = v)),
+          expoSwitch('المحادثات بين الزوار والعارضين', _chatEnabled,
+              (v) => setState(() => _chatEnabled = v)),
+        ]),
       ],
     );
   }

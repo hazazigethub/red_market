@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:red_market_core/red_market_core.dart';
+import 'package:flutter/services.dart';
 
 import '../expo_common.dart';
 
@@ -19,108 +19,156 @@ class OverviewTab extends StatefulWidget {
 
 class _OverviewTabState extends State<OverviewTab> {
   Map<String, dynamic> get e => widget.exhibition;
+  String get _link => '$kExpoSite/e/${e['slug']}';
 
-  Future<void> _setStatus(String status, String question) async {
-    if (!await expoConfirm(context, 'حالة المعرض', question)) return;
+  Future<void> _setStatus(String status, String title, String question) async {
+    if (!await expoConfirm(context, title, question)) return;
     if (!mounted) return;
-    final ok = await expoRun(context,
-        () => expoDb.from('exhibitions').update({'status': status}).eq('id', e['id']),
-        ok: 'تم تغيير الحالة');
+    final ok = await expoRun(
+        context,
+        () => expoDb
+            .from('exhibitions')
+            .update({'status': status}).eq('id', e['id']),
+        ok: 'تم تغيير حالة المعرض');
     if (ok) await widget.onChanged();
   }
 
   Future<void> _delete() async {
     if (!await expoConfirm(context, 'حذف المعرض',
-        'سيُحذف المعرض وكل محتواه نهائياً. يُسمح بالحذف للمسودات فقط.')) {
+        'سيُحذف «${e['title']}» نهائياً بكل قاعاته وجلساته ومتحدثيه ورعاته.',
+        danger: true)) {
       return;
     }
     if (!mounted) return;
     final ok = await expoRun(context,
         () => expoDb.from('exhibitions').delete().eq('id', e['id']),
-        ok: 'تم حذف المعرض');
+        ok: 'حُذف المعرض');
     if (ok && mounted) Navigator.pop(context);
   }
 
-  Widget _stat(String label, dynamic value) => ExpoCard(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            expoSub(label),
-            const SizedBox(height: 6),
-            Text('${value ?? 0}',
-                style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.brand)),
-          ],
+  Widget _statusCard() {
+    final status = '${e['status']}';
+    final (String hint, List<Widget> actions) = switch (status) {
+      'draft' => (
+          'المعرض مسودة ولا يراه أحد. انشره ليظهر للزوار ويبدأ استقبال طلبات العارضين.',
+          [
+            expoDelete(_delete),
+            expoButton('نشر المعرض',
+                () => _setStatus('scheduled', 'نشر المعرض', 'نشر المعرض للزوار والعارضين؟'),
+                primary: true, icon: Icons.publish_rounded),
+          ]
         ),
+      'scheduled' => (
+          'منشور. يتحول تلقائياً إلى «مباشر» عند موعد البداية.',
+          [
+            expoButton('إرجاع لمسودة',
+                () => _setStatus('draft', 'إلغاء النشر', 'إخفاء المعرض وإعادته مسودة؟'),
+                icon: Icons.undo_rounded),
+            expoButton('ابدأ الآن',
+                () => _setStatus('live', 'بدء المعرض', 'بدء المعرض الآن قبل موعده؟'),
+                primary: true, icon: Icons.play_arrow_rounded),
+          ]
+        ),
+      'live' => (
+          'المعرض مباشر الآن. ينتهي تلقائياً عند موعد النهاية.',
+          [
+            expoButton('إنهاء المعرض',
+                () => _setStatus('ended', 'إنهاء المعرض', 'إنهاء المعرض الآن قبل موعده؟'),
+                icon: Icons.stop_rounded),
+          ]
+        ),
+      'ended' => ('انتهى المعرض، ومحتواه متاح للتصفح. يُؤرشف تلقائياً بعد 7 أيام.', <Widget>[]),
+      _ => ('المعرض مؤرشف.', <Widget>[]),
+    };
+    return ExpoCard(
+      child: Row(children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: (kExhibitionStatusColor[status] ?? Colors.grey)
+                .withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(Icons.flag_outlined,
+              size: 20, color: kExhibitionStatusColor[status] ?? Colors.grey),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('الحالة: ${kExhibitionStatus[status] ?? status}',
+                  style: const TextStyle(
+                      fontFamily: kExpoFont,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 3),
+              expoSub(hint),
+            ],
+          ),
+        ),
+        ...actions,
+      ]),
+    );
+  }
+
+  Widget _linkCard() => ExpoCard(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        child: Row(children: [
+          Icon(Icons.link_rounded, size: 18, color: Colors.grey.shade500),
+          const SizedBox(width: 10),
+          Expanded(
+            child: SelectableText(_link,
+                textDirection: TextDirection.ltr,
+                textAlign: TextAlign.right,
+                style: const TextStyle(fontSize: 13, color: kInk)),
+          ),
+          expoIconAction(Icons.copy_rounded, () async {
+            await Clipboard.setData(ClipboardData(text: _link));
+            if (mounted) expoToast(context, 'نُسخ رابط المعرض');
+          }, tooltip: 'نسخ الرابط — للبنرات والمشاركة'),
+          expoIconAction(Icons.open_in_new_rounded, () => expoOpen('/e/${e['slug']}'),
+              tooltip: 'فتح'),
+        ]),
       );
 
   @override
   Widget build(BuildContext context) {
-    final status = '${e['status']}';
-    return ListView(
-      padding: const EdgeInsets.all(20),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ===== الحالة =====
-        ExpoCard(
-          child: Wrap(
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('${e['organizers']?['name'] ?? ''}',
-                      style: const TextStyle(
-                          fontFamily: kExpoFont, fontWeight: FontWeight.bold)),
-                  expoSub(
-                      '${expoFmtDateTime(e['starts_at'])}  —  ${expoFmtDateTime(e['ends_at'])}'),
-                  expoSub(
-                      'ينتقل تلقائياً إلى «مباشر» عند البداية، و«انتهى» عند النهاية، ويُؤرشف بعد 7 أيام'),
-                ],
-              ),
-              const SizedBox(width: 16),
-              if (status == 'draft')
-                expoButton('نشر المعرض',
-                    () => _setStatus('scheduled', 'نشر المعرض للزوار والعارضين؟'),
-                    primary: true, icon: Icons.publish),
-              if (status == 'scheduled')
-                expoButton('إلغاء النشر',
-                    () => _setStatus('draft', 'إعادة المعرض إلى مسودة؟')),
-              if (status == 'scheduled')
-                expoButton('ابدأ الآن',
-                    () => _setStatus('live', 'بدء المعرض الآن قبل موعده؟'),
-                    primary: true, icon: Icons.play_arrow),
-              if (status == 'live')
-                expoButton('إنهاء المعرض',
-                    () => _setStatus('ended', 'إنهاء المعرض الآن؟')),
-              expoButton('تعديل البيانات', widget.onEdit),
-              if (status == 'draft') expoButton('حذف', _delete),
-            ],
-          ),
-        ),
+        _statusCard(),
+        _linkCard(),
 
         // ===== تنبيه الاشتراكات =====
-        FutureBuilder<List<Map<String, dynamic>>>(
-          future: expoDb
-              .rpc('exhibition_subscription_check', params: {'p_exhibition': e['id']})
-              .then((v) => List<Map<String, dynamic>>.from(v as List)),
+        FutureBuilder<dynamic>(
+          future: expoDb.rpc('exhibition_subscription_check',
+              params: {'p_exhibition': e['id']}),
           builder: (context, snap) {
-            final bad = (snap.data ?? [])
+            final rows = snap.data is List
+                ? List<Map<String, dynamic>>.from(snap.data as List)
+                : <Map<String, dynamic>>[];
+            final bad = rows
                 .where((x) => x['booth_id'] != null && x['status'] != 'ok')
                 .toList();
             if (bad.isEmpty) return const SizedBox.shrink();
-            return ExpoCard(
-              child: Row(children: [
-                const Icon(Icons.warning_amber_rounded, color: Colors.orange),
-                const SizedBox(width: 10),
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+              ),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Icon(Icons.warning_amber_rounded,
+                    size: 16, color: Colors.orange),
+                const SizedBox(width: 9),
                 Expanded(
                   child: Text(
                     'اشتراك ${bad.map((x) => x['store_name']).join('، ')} لا يغطي فترة المعرض حتى نهايته.',
-                    style: const TextStyle(fontFamily: kExpoFont, fontSize: 12.5),
+                    style: const TextStyle(
+                        fontFamily: kExpoFont, fontSize: 12, height: 1.9),
                   ),
                 ),
               ]),
@@ -128,51 +176,69 @@ class _OverviewTabState extends State<OverviewTab> {
           },
         ),
 
+        const SizedBox(height: 8),
+
         // ===== الأرقام =====
         FutureBuilder<dynamic>(
-          future: expoDb.rpc('organizer_overview', params: {'p_exhibition': e['id']}),
+          future:
+              expoDb.rpc('organizer_overview', params: {'p_exhibition': e['id']}),
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) return expoLoader();
             if (snap.hasError) return expoFailed(snap.error);
             final o = Map<String, dynamic>.from(snap.data as Map);
-            final stats = [
-              ['الزوار', o['visitors']],
-              ['الأجنحة المنشورة', '${o['booths_published']}/${o['booths']}'],
-              ['طلبات معلقة', o['applications_pending']],
-              ['العملاء المحتملون', o['leads']],
-              ['المحادثات', o['chats']],
-              ['تسجيلات الجلسات', o['registrations']],
-              ['بث مباشر الآن', o['live_streams']],
-              ['مشاهدون الآن', o['live_viewers']],
-            ];
-            final top = List<Map<String, dynamic>>.from(
-                (o['top_booths'] ?? []) as List);
+            final top =
+                List<Map<String, dynamic>>.from((o['top_booths'] ?? []) as List);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                LayoutBuilder(builder: (context, c) {
-                  const gap = 12.0;
-                  final cols = c.maxWidth >= 1000 ? 4 : (c.maxWidth >= 620 ? 2 : 1);
-                  final w = (c.maxWidth - gap * (cols - 1)) / cols;
-                  return Wrap(
-                    spacing: gap,
-                    children: stats
-                        .map((s) => SizedBox(width: w, child: _stat('${s[0]}', s[1])))
-                        .toList(),
-                  );
-                }),
+                expoGrid([
+                  expoStatCard('الزوار', o['visitors']),
+                  expoStatCard('الأجنحة المنشورة',
+                      '${o['booths_published']} / ${o['booths']}'),
+                  expoStatCard('طلبات بانتظار المراجعة', o['applications_pending']),
+                  expoStatCard('العملاء المحتملون', o['leads']),
+                  expoStatCard('المحادثات', o['chats']),
+                  expoStatCard('تسجيلات الجلسات', o['registrations']),
+                  expoStatCard('بث مباشر الآن', o['live_streams']),
+                  expoStatCard('مشاهدون الآن', o['live_viewers']),
+                ], maxCols: 4),
                 if (top.isNotEmpty) ...[
+                  const SizedBox(height: 14),
                   expoTitle('الأجنحة الأكثر زيارة'),
-                  ...top.map((b) => ExpoCard(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        child: Row(children: [
-                          Expanded(
-                              child: Text('${b['name']}',
-                                  style: const TextStyle(fontFamily: kExpoFont))),
-                          expoSub(
-                              '${b['views_count']} زيارة · ${b['follows_count']} متابع · ${b['leads']} عميل'),
-                        ]),
-                      )),
+                  ExpoCard(
+                    child: Column(
+                      children: [
+                        for (var i = 0; i < top.length; i++) ...[
+                          if (i > 0)
+                            const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 10),
+                                child: kExpoDivider),
+                          Row(children: [
+                            Text('${i + 1}',
+                                style: const TextStyle(
+                                    fontFamily: kExpoFont,
+                                    fontWeight: FontWeight.bold,
+                                    color: kBrand)),
+                            const SizedBox(width: 12),
+                            Expanded(
+                                child: Text('${top[i]['name']}',
+                                    style: const TextStyle(
+                                        fontFamily: kExpoFont,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600))),
+                            expoStat(Icons.visibility_outlined,
+                                '${top[i]['views_count']}'),
+                            const SizedBox(width: 16),
+                            expoStat(Icons.favorite_border_rounded,
+                                '${top[i]['follows_count']}'),
+                            const SizedBox(width: 16),
+                            expoStat(Icons.person_add_alt_outlined,
+                                '${top[i]['leads']}'),
+                          ]),
+                        ],
+                      ],
+                    ),
+                  ),
                 ],
               ],
             );
