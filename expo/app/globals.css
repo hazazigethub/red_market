@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  /* Red Market brand — unchanged */
+  --color-primary: #C21815;
+  --color-primary-dark: #8E0F0D;
+  --color-ink: #191413;
+  --color-bg: #F0EEE9;
+  /* supporting neutrals derived from the brand */
+  --color-surface: #FFFFFF;
+  --color-line: #DDD8CF;
+  --color-muted: #6B625F;
+  --color-tint: #F7E4E3;
+  --color-success: #1F7A4D;
+  --color-warning: #B7791F;
+
+  --font-heading: var(--font-tajawal), "Tajawal", system-ui, sans-serif;
+  --font-sans: var(--font-plex), "IBM Plex Sans Arabic", system-ui, sans-serif;
+}
+
+html { background: var(--color-bg); color: var(--color-ink); }
+body { font-family: var(--font-sans); line-height: 1.7; -webkit-font-smoothing: antialiased; }
+h1, h2, h3, h4 { font-family: var(--font-heading); line-height: 1.3; }
+:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+@utility container-x { @apply mx-auto w-full max-w-7xl px-4 sm:px-6; }
+@utility btn { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] px-5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50; }
+@utility btn-primary { @apply btn bg-primary text-white hover:bg-primary-dark; }
+@utility btn-ink { @apply btn bg-ink text-bg hover:bg-black; }
+@utility btn-ghost { @apply btn border border-line bg-surface text-ink hover:border-ink; }
+@utility btn-sm { @apply min-h-9 px-3 text-xs; }
+@utility card { @apply rounded-2xl border border-line bg-surface; }
+@utility input { @apply block w-full rounded-[10px] border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted/70 focus:border-ink focus:outline-none; }
+@utility label { @apply mb-1.5 block text-sm font-medium text-ink; }
+@utility badge { @apply inline-flex items-center gap-1 rounded-full bg-bg px-2.5 py-0.5 text-xs font-medium text-muted; }
+@utility badge-live { @apply inline-flex items-center gap-1.5 rounded-full bg-primary px-2.5 py-0.5 text-xs font-bold text-white; }
+@utility section-title { @apply font-heading text-2xl font-extrabold text-ink sm:text-[28px]; }
+@utility tab { @apply whitespace-nowrap border-b-2 border-transparent px-1 pb-3 text-sm font-medium text-muted hover:text-ink; }
+@utility tab-active { @apply border-primary text-ink; }
+@utility table-x { @apply w-full text-sm; }
+
+@layer components {
+  .table-x th { @apply border-b border-line bg-bg/60 px-4 py-3 text-right font-heading font-bold text-ink; }
+  .table-x td { @apply border-b border-line px-4 py-3 align-top; }
+}
+
+.live-dot { width: 7px; height: 7px; border-radius: 9999px; background: currentColor; animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: .35 } }

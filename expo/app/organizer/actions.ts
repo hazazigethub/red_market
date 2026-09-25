@@ -1,0 +1,191 @@
+"use server";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { expo } from "@/lib/supabase/server";
+import { bool, failTo, num, str } from "@/lib/actions";
+import { riyadhLocalToIso } from "@/lib/format";
+
+const E = (id: string, p = "") => `/organizer/e/${id}${p}`;
+const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
+
+export async function createOrganizer(form: FormData) {
+  const db = await expo();
+  const { error } = await db.from("organizers").insert({ name: str(form, "name"), logo_path: str(form, "logo_path") });
+  failTo("/organizer", error);
+  revalidatePath("/", "layout");
+  redirect("/organizer?ok=org");
+}
+
+export async function createExhibition(form: FormData) {
+  const db = await expo();
+  const starts = str(form, "starts_at"), ends = str(form, "ends_at");
+  const { data, error } = await db.from("exhibitions").insert({
+    organizer_id: str(form, "organizer_id"), title: str(form, "title"), slug: slugify(str(form, "slug") ?? ""),
+    description: str(form, "description"), category_id: num(form, "category_id"),
+    location_type: str(form, "location_type") ?? "virtual", venue: str(form, "venue"), city: str(form, "city"),
+    starts_at: starts ? riyadhLocalToIso(starts) : null, ends_at: ends ? riyadhLocalToIso(ends) : null,
+    logo_path: str(form, "logo_path"), cover_path: str(form, "cover_path"),
+  }).select("id").single();
+  failTo("/organizer/new", error);
+  await db.from("exhibition_halls").insert({ exhibition_id: data!.id, name: "القاعة الرئيسية" });
+  redirect(E(data!.id, "?ok=created"));
+}
+
+export async function updateExhibition(id: string, form: FormData) {
+  const db = await expo();
+  const starts = str(form, "starts_at"), ends = str(form, "ends_at");
+  const { error } = await db.from("exhibitions").update({
+    title: str(form, "title"), description: str(form, "description"), category_id: num(form, "category_id"),
+    location_type: str(form, "location_type"), venue: str(form, "venue"), city: str(form, "city"),
+    starts_at: starts ? riyadhLocalToIso(starts) : undefined, ends_at: ends ? riyadhLocalToIso(ends) : undefined,
+    logo_path: str(form, "logo_path"), cover_path: str(form, "cover_path"),
+    applications_open: bool(form, "applications_open"), chat_enabled: bool(form, "chat_enabled"),
+  }).eq("id", id);
+  failTo(E(id), error);
+  revalidatePath(E(id), "layout");
+  redirect(E(id, "?ok=saved"));
+}
+
+export async function setStatus(id: string, status: string) {
+  const db = await expo();
+  const { error } = await db.from("exhibitions").update({ status }).eq("id", id);
+  failTo(E(id), error);
+  revalidatePath(E(id), "layout");
+}
+
+export async function reviewApplication(exId: string, appId: string, approve: boolean, form: FormData) {
+  const db = await expo();
+  const { error } = await db.rpc("review_application", {
+    p_application: appId, p_approve: approve, p_note: str(form, "note"),
+    p_hall: str(form, "hall_id"), p_slot: str(form, "map_slot")?.toUpperCase() ?? null, p_tier: str(form, "tier"),
+  });
+  failTo(E(exId, "/applications"), error);
+  revalidatePath(E(exId), "layout");
+}
+
+export async function saveHall(exId: string, hallId: string | null, form: FormData) {
+  const db = await expo();
+  const row = {
+    exhibition_id: exId, name: str(form, "name"), sort_order: num(form, "sort_order") ?? 0,
+    map_layout: { cols: num(form, "cols") ?? 6, rows: num(form, "rows") ?? 4 },
+  };
+  const { error } = hallId ? await db.from("exhibition_halls").update(row).eq("id", hallId) : await db.from("exhibition_halls").insert(row);
+  failTo(E(exId, "/halls"), error);
+  revalidatePath(E(exId, "/halls"));
+}
+
+export async function deleteHall(exId: string, hallId: string) {
+  const db = await expo();
+  const { error } = await db.from("exhibition_halls").delete().eq("id", hallId);
+  failTo(E(exId, "/halls"), error);
+  revalidatePath(E(exId, "/halls"));
+}
+
+export async function placeBooth(exId: string, boothId: string, form: FormData) {
+  const db = await expo();
+  const { error } = await db.from("booths").update({
+    hall_id: str(form, "hall_id"), map_slot: str(form, "map_slot")?.toUpperCase() ?? null,
+    tier: str(form, "tier"), status: str(form, "status"),
+  }).eq("id", boothId);
+  failTo(E(exId, "/halls"), error);
+  revalidatePath(E(exId, "/halls"));
+}
+
+export async function saveSession(exId: string, sessionId: string | null, form: FormData) {
+  const db = await expo();
+  const row = {
+    exhibition_id: exId, title: str(form, "title"), description: str(form, "description"), type: str(form, "type") ?? "talk",
+    starts_at: riyadhLocalToIso(str(form, "starts_at")!), ends_at: riyadhLocalToIso(str(form, "ends_at")!),
+    capacity: num(form, "capacity"), hall_id: str(form, "hall_id"), cover_path: str(form, "cover_path"),
+  };
+  const res = sessionId
+    ? await db.from("exhibition_sessions").update(row).eq("id", sessionId).select("id").single()
+    : await db.from("exhibition_sessions").insert(row).select("id").single();
+  failTo(E(exId, "/sessions"), res.error);
+  const sid = res.data!.id;
+  const speakers = form.getAll("speaker_ids").map(String);
+  await db.from("session_speakers").delete().eq("session_id", sid);
+  if (speakers.length) {
+    const { error } = await db.from("session_speakers").insert(speakers.map((speaker_id) => ({
+      session_id: sid, speaker_id, role: form.get(`moderator_${speaker_id}`) ? "moderator" : "speaker",
+    })));
+    failTo(E(exId, "/sessions"), error);
+  }
+  revalidatePath(E(exId, "/sessions"));
+  redirect(E(exId, "/sessions?ok=saved"));
+}
+
+export async function cancelSession(exId: string, sessionId: string) {
+  const db = await expo();
+  const { error } = await db.from("exhibition_sessions").update({ status: "cancelled" }).eq("id", sessionId);
+  failTo(E(exId, "/sessions"), error);
+  revalidatePath(E(exId, "/sessions"));
+}
+
+export async function createSessionStream(exId: string, sessionId: string, title: string) {
+  const db = await expo();
+  const { data, error } = await db.from("live_streams").insert({ session_id: sessionId, title }).select("id").single();
+  failTo(E(exId, "/sessions"), error);
+  redirect(E(exId, `/studio/${data!.id}`));
+}
+
+export async function saveSpeaker(exId: string, speakerId: string | null, form: FormData) {
+  const db = await expo();
+  const links: Record<string, string> = {};
+  for (const k of ["linkedin", "x", "website"]) { const v = str(form, k); if (v) links[k] = v; }
+  const row = {
+    exhibition_id: exId, full_name: str(form, "full_name"), job_title: str(form, "job_title"), company: str(form, "company"),
+    bio: str(form, "bio"), photo_path: str(form, "photo_path"), sort_order: num(form, "sort_order") ?? 0, links,
+  };
+  const { error } = speakerId ? await db.from("speakers").update(row).eq("id", speakerId) : await db.from("speakers").insert(row);
+  failTo(E(exId, "/speakers"), error);
+  revalidatePath(E(exId, "/speakers"));
+  redirect(E(exId, "/speakers"));
+}
+
+export async function deleteSpeaker(exId: string, id: string) {
+  const db = await expo();
+  const { error } = await db.from("speakers").delete().eq("id", id);
+  failTo(E(exId, "/speakers"), error);
+  revalidatePath(E(exId, "/speakers"));
+}
+
+export async function saveSponsor(exId: string, sponsorId: string | null, form: FormData) {
+  const db = await expo();
+  const row = {
+    exhibition_id: exId, name: str(form, "name"), tier: str(form, "tier") ?? "partner", website_url: str(form, "website_url"),
+    booth_id: str(form, "booth_id"), logo_path: str(form, "logo_path"), sort_order: num(form, "sort_order") ?? 0,
+  };
+  const { error } = sponsorId ? await db.from("sponsors").update(row).eq("id", sponsorId) : await db.from("sponsors").insert(row);
+  failTo(E(exId, "/sponsors"), error);
+  revalidatePath(E(exId, "/sponsors"));
+  redirect(E(exId, "/sponsors"));
+}
+
+export async function deleteSponsor(exId: string, id: string) {
+  const db = await expo();
+  const { error } = await db.from("sponsors").delete().eq("id", id);
+  failTo(E(exId, "/sponsors"), error);
+  revalidatePath(E(exId, "/sponsors"));
+}
+
+export async function announce(exId: string, form: FormData) {
+  const db = await expo();
+  const { error } = await db.rpc("announce", { p_exhibition: exId, p_message: str(form, "message") });
+  failTo(E(exId, "/control"), error);
+  redirect(E(exId, "/control?ok=sent"));
+}
+
+export async function unban(exId: string, userId: string) {
+  const db = await expo();
+  const { error } = await db.from("exhibition_bans").delete().eq("exhibition_id", exId).eq("user_id", userId);
+  failTo(E(exId, "/control"), error);
+  revalidatePath(E(exId, "/control"));
+}
+
+export async function banUser(exId: string, userId: string, hours: number | null) {
+  const db = await expo();
+  const { error } = await db.rpc("ban_user", { p_exhibition: exId, p_user: userId, p_reason: null, p_hours: hours });
+  if (error) throw new Error(error.message);
+  revalidatePath(E(exId, "/control"));
+}
