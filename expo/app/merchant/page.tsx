@@ -5,7 +5,7 @@ import type { Exhibition } from "@/lib/types";
 import { Flash } from "@/components/Flash";
 import { EmptyState, Logo, StatusBadge } from "@/components/ui";
 import { ParticipateButton } from "@/components/client/ParticipateButton";
-import { applyToExhibition, withdrawApplication } from "./actions";
+import { withdrawApplication } from "./actions";
 
 export const metadata = { title: "لوحة العارض" };
 
@@ -98,7 +98,7 @@ export default async function MerchantHome({ searchParams }: { searchParams: Pro
                 <Logo path={e.logo_path} name={e.title} size={48} />
                 <div className="min-w-0 flex-1"><p className="font-heading font-bold">{e.title}</p>
                   <p className="text-sm text-muted">{fmtDate(e.starts_at, e.timezone)} — {fmtDate(e.ends_at, e.timezone)}</p></div>
-                <ParticipateButton exhibitionId={e.id} merchantId={storeList[0].id} action={applyToExhibition} />
+                <ParticipateButton exhibitionId={e.id} merchantId={storeList[0].id} />
               </div>
             ))}
           </div>

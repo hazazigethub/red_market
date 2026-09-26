@@ -19,6 +19,7 @@ import 'admin_billing_hub_screen.dart';
 import 'admin_messages_hub_screen.dart';
 import 'admin_support_hub_screen.dart';
 import 'admin_expo_screen.dart';
+import 'expo/expo_common.dart' show expoDb;
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({super.key});
@@ -32,6 +33,18 @@ class _AdminHomePageState extends State<AdminHomePage> {
   int _index = -1;
 
   static const String _secKey = 'rm_sec_admin';
+
+  /// عدد المشاركين الجدد في المعارض (يظهر على قسم «المعارض»)
+  int _expoNew = 0;
+
+  Future<void> _loadExpoNew() async {
+    try {
+      final n = await expoDb.rpc('admin_new_participants');
+      if (mounted) setState(() => _expoNew = (n as num).toInt());
+    } catch (_) {
+      // لا نعطّل اللوحة إن تعذر الجلب
+    }
+  }
 
   /// يعيدك للقسم الذي كنت فيه قبل تحديث الصفحة
   Future<void> _restoreSection() async {
@@ -49,6 +62,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
   void _setSection(int i) {
     if (i < -1 || i >= _sections.length) return;
     setState(() => _index = i);
+    _loadExpoNew();
     SharedPreferences.getInstance()
         .then((p) => p.setInt(_secKey, i))
         .catchError((_) => false);
@@ -58,6 +72,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
   void initState() {
     super.initState();
     _restoreSection();
+    _loadExpoNew();
   }
 
 
@@ -111,7 +126,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
       case 13:
         return const AdminTickerScreen();
       case 14:
-        return const AdminExpoScreen();
+        return AdminExpoScreen(onSeen: _loadExpoNew);
       case 15:
         return const AdminSettingsScreen();
       default:
@@ -271,6 +286,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             icon: s['icon'] as IconData,
             selected: _index == i - 1,
             onTap: () => _setSection(i - 1),
+            badge: s['label'] == 'المعارض' ? _expoNew : 0,
           );
         },
       ),
@@ -282,6 +298,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     required IconData icon,
     required bool selected,
     required VoidCallback onTap,
+    int badge = 0,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -316,6 +333,25 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     ),
                   ),
                 ),
+                if (badge > 0)
+                  Container(
+                    constraints: const BoxConstraints(minWidth: 20),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: selected ? Colors.white : AppColors.brand,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      badge > 99 ? '99+' : '$badge',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: selected ? AppColors.brand : Colors.white,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -351,9 +387,12 @@ class _AdminHomePageState extends State<AdminHomePage> {
                         itemBuilder: (context, i) {
                           final selected =
                               (i == 0 && _index == -1) || _index == i - 1;
-                          final label = i == 0
+                          final base = i == 0
                               ? 'الرئيسية'
                               : _sections[i - 1]['label'] as String;
+                          final label = base == 'المعارض' && _expoNew > 0
+                              ? '$base ($_expoNew)'
+                              : base;
 
                           return Padding(
                             padding: const EdgeInsets.only(left: 8),

@@ -26,7 +26,7 @@ class _ExpoManageScreenState extends State<ExpoManageScreen> {
 
   static const _tabs = <(String, IconData)>[
     ('نظرة عامة', Icons.dashboard_outlined),
-    ('طلبات العارضين', Icons.how_to_reg_outlined),
+    ('المشاركون', Icons.how_to_reg_outlined),
     ('القاعات والأجنحة', Icons.grid_view_rounded),
     ('الجلسات', Icons.mic_none_rounded),
     ('المتحدثون', Icons.record_voice_over_outlined),

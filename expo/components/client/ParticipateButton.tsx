@@ -1,10 +1,11 @@
 "use client";
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { arabicError } from "@/lib/errors";
-import { BOOTH_TIER, fmtDate } from "@/lib/format";
+import { fmtDate } from "@/lib/format";
 import { expoBrowser } from "@/lib/supabase/client";
 
-type Check = { status: "ok" | "not_covering" | "expired" | "none" | "full"; expires_at?: string | null; exhibition_ends_at?: string };
+type Check = { status: "ok" | "not_covering" | "expired" | "none" | "full" | "joined"; expires_at?: string | null; exhibition_ends_at?: string };
 
 function message(c: Check): { title: string; body: string } {
   if (c.status === "full") {
@@ -31,46 +32,76 @@ function message(c: Check): { title: string; body: string } {
   };
 }
 
-/** "Participate" button: checks the paid subscription at click time, then opens the form or a popup. */
-export function ParticipateButton({ exhibitionId, merchantId, action }: {
-  exhibitionId: string; merchantId: string; action: (form: FormData) => Promise<void>;
-}) {
-  const [state, setState] = useState<"idle" | "checking" | "form">("idle");
+/** "Participate" button: checks subscription + capacity at click time, shows the price,
+ *  then pays (free / 100% code) and creates the booth immediately. */
+export function ParticipateButton({ exhibitionId, merchantId }: { exhibitionId: string; merchantId: string }) {
+  const router = useRouter();
+  const [checking, setChecking] = useState(false);
   const [popup, setPopup] = useState<{ title: string; body: string } | null>(null);
+  const [offer, setOffer] = useState<{ free: boolean; fee: number } | null>(null);
+  const [code, setCode] = useState("");
+  const [joining, setJoining] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
   const okRef = useRef<HTMLButtonElement>(null);
 
   async function click() {
-    setState("checking");
+    setChecking(true);
     const { data, error } = await expoBrowser().rpc("check_participation", { p_exhibition: exhibitionId, p_merchant: merchantId });
-    if (error) { setState("idle"); setPopup({ title: "تعذر التحقق", body: arabicError(error.message) }); return; }
-    const c = data as Check;
-    if (c.status === "ok") { setState("form"); return; }
-    setState("idle");
+    setChecking(false);
+    if (error) { setPopup({ title: "تعذر التحقق", body: arabicError(error.message) }); return; }
+    const c = data as Check & { free?: boolean; fee?: number };
+    if (c.status === "joined") {
+      setPopup({ title: "أنت مشارك في هذا المعرض", body: "جناحك جاهز. ادخل «أجنحتي» لإكمال بنائه." });
+      return;
+    }
+    if (c.status === "ok") { setErr(null); setCode(""); setOffer({ free: !!c.free, fee: Number(c.fee ?? 0) }); return; }
     setPopup(message(c));
     setTimeout(() => okRef.current?.focus(), 0);
   }
 
+  async function join() {
+    setJoining(true); setErr(null);
+    const { data, error } = await expoBrowser().rpc("join_exhibition", {
+      p_exhibition: exhibitionId, p_merchant: merchantId, p_promo_code: code.trim() || null,
+    });
+    setJoining(false);
+    if (error) { setErr(arabicError(error.message)); return; }
+    router.push(`/merchant/booths/${(data as { booth_id: string }).booth_id}/edit`);
+  }
+
   return (
     <>
-      {state !== "form" ? (
-        <button type="button" className="btn-primary btn-sm" disabled={state === "checking"} onClick={click}>
-          {state === "checking" ? "جارٍ التحقق…" : "المشاركة في المعرض"}
-        </button>
-      ) : (
-        <form action={action} className="mt-4 flex w-full flex-col gap-3 border-t border-line pt-4">
-          <input type="hidden" name="exhibition_id" value={exhibitionId} />
-          <input type="hidden" name="merchant_id" value={merchantId} />
-          <div><label className="label" htmlFor={`tier-${exhibitionId}`}>نوع الجناح المطلوب</label>
-            <select id={`tier-${exhibitionId}`} name="tier" className="input">
-              {Object.entries(BOOTH_TIER).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select></div>
-          <div><label className="label" htmlFor={`msg-${exhibitionId}`}>رسالة للمنظم</label>
-            <textarea id={`msg-${exhibitionId}`} name="message" rows={3} className="input" maxLength={2000} /></div>
-          <div className="flex gap-2">
-            <button className="btn-primary">إرسال الطلب</button>
-            <button type="button" className="btn-ghost" onClick={() => setState("idle")}>إلغاء</button>
+      <button type="button" className="btn-primary btn-sm" disabled={checking} onClick={click}>
+        {checking ? "جارٍ التحقق…" : "المشاركة في المعرض"}
+      </button>
+
+      {offer && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink/50 p-4" onClick={() => !joining && setOffer(null)}>
+          <div role="dialog" aria-modal="true" aria-labelledby="join-title"
+            className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 id="join-title" className="font-heading text-xl font-extrabold">المشاركة في المعرض</h2>
+            {offer.free ? (
+              <p className="mt-3 rounded-[10px] bg-tint p-3 text-sm leading-7">
+                مشاركتك <b>مجانية</b> ضمن باقتك الاحترافية السنوية.
+              </p>
+            ) : (
+              <>
+                <p className="mt-3 text-sm text-muted">رسوم المشاركة</p>
+                <p className="font-heading text-3xl font-extrabold">{offer.fee} <span className="text-base">ريال</span></p>
+                <label className="label mt-4" htmlFor={`code-${exhibitionId}`}>كود الدفع</label>
+                <input id={`code-${exhibitionId}`} className="input" dir="ltr" value={code}
+                  onChange={(e) => setCode(e.target.value)} autoComplete="off" />
+              </>
+            )}
+            {err && <p role="alert" className="mt-3 text-sm text-primary">{err}</p>}
+            <div className="mt-6 flex gap-2">
+              <button className="btn-primary flex-1" disabled={joining || (!offer.free && offer.fee > 0 && !code.trim())} onClick={join}>
+                {joining ? "جارٍ التسجيل…" : "تأكيد المشاركة"}
+              </button>
+              <button className="btn-ghost" disabled={joining} onClick={() => setOffer(null)}>إلغاء</button>
+            </div>
           </div>
-        </form>
+        </div>
       )}
 
       {popup && (

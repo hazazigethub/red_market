@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'expo/expo_common.dart';
 import 'expo/expo_exhibition_form.dart';
 import 'expo/expo_manage_screen.dart';
+import 'expo/tabs/applications_tab.dart' show expoParticipantCard;
 
 /// قسم المعارض في لوحة الأدمن — التحكم الكامل بمنصة Expo Red Market.
 /// الصلاحيات تُفحص في قاعدة البيانات نفسها (expo.is_admin).
 class AdminExpoScreen extends StatefulWidget {
-  const AdminExpoScreen({super.key});
+  /// يُستدعى بعد اطلاع الأدمن على المشاركين الجدد (لتحديث الرقم في القائمة الجانبية)
+  final VoidCallback? onSeen;
+  const AdminExpoScreen({super.key, this.onSeen});
 
   @override
   State<AdminExpoScreen> createState() => _AdminExpoScreenState();
@@ -18,6 +21,7 @@ class _AdminExpoScreenState extends State<AdminExpoScreen> {
 
   static const _tabs = <(String, IconData)>[
     ('المعارض', Icons.event_available_outlined),
+    ('المشاركون', Icons.how_to_reg_outlined),
     ('المنظمون', Icons.apartment_outlined),
     ('العارضون', Icons.storefront_outlined),
     ('الإحصاءات', Icons.insights_outlined),
@@ -299,6 +303,43 @@ class _AdminExpoScreenState extends State<AdminExpoScreen> {
     );
   }
 
+  // ===================== تبويب المشاركين =====================
+
+  Future<List<Map<String, dynamic>>> _loadParticipants() async {
+    final rows = await expoDb
+        .from('participation_purchases')
+        .select(
+            '*, store(name, logo_url), exhibitions(title), booths(map_slot, exhibition_halls(name))')
+        .order('created_at', ascending: false)
+        .limit(200);
+    // الاطلاع يمسح الرقم
+    if (rows.any((r) => r['admin_seen_at'] == null)) {
+      await expoDb
+          .from('participation_purchases')
+          .update({'admin_seen_at': DateTime.now().toUtc().toIso8601String()})
+          .filter('admin_seen_at', 'is', null);
+      widget.onSeen?.call();
+    }
+    return rows;
+  }
+
+  Widget _participantsTab() {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _loadParticipants(),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) return expoLoader();
+        if (snap.hasError) return expoFailed(snap.error);
+        final list = snap.data ?? [];
+        if (list.isEmpty) {
+          return expoEmpty('لا مشاركين بعد', icon: Icons.how_to_reg_outlined);
+        }
+        return expoGrid(
+            list.map((p) => expoParticipantCard(p, showExhibition: true)).toList(),
+            maxCols: 2);
+      },
+    );
+  }
+
   // ===================== تبويب المنظمين =====================
 
   Widget _organizersTab() {
@@ -501,8 +542,9 @@ class _AdminExpoScreenState extends State<AdminExpoScreen> {
   Widget build(BuildContext context) {
     final body = switch (_tab) {
       0 => _exhibitionsTab(),
-      1 => _organizersTab(),
-      2 => _exhibitorsTab(),
+      1 => _participantsTab(),
+      2 => _organizersTab(),
+      3 => _exhibitorsTab(),
       _ => _statsTab(),
     };
     return Directionality(
