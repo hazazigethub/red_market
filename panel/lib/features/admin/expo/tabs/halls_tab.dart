@@ -11,7 +11,15 @@ class HallsTab extends StatefulWidget {
 }
 
 class _HallsTabState extends State<HallsTab> {
+  int? _maxBooths; // «عدد الأجنحة المتاحة» للمعرض — يحدد مقاس الخرائط
+
   Future<Map<String, List<Map<String, dynamic>>>> _load() async {
+    final ex = await expoDb
+        .from('exhibitions')
+        .select('max_booths')
+        .eq('id', widget.exhibitionId)
+        .single();
+    _maxBooths = (ex['max_booths'] as num?)?.toInt();
     final halls = await expoDb
         .from('exhibition_halls')
         .select('*')
@@ -86,7 +94,9 @@ class _HallsTabState extends State<HallsTab> {
                   decoration: expoInput('اسم القاعة', icon: Icons.title_rounded)),
               const SizedBox(height: 14),
               expoFormSection('مقاس الخريطة', Icons.grid_on_rounded,
-                  note: 'الصفوف أحرف A، B… والأعمدة أرقام'),
+                  note: _maxBooths == null
+                      ? 'الصفوف أحرف A، B… والأعمدة أرقام'
+                      : 'الصفوف تُحسب تلقائياً من عدد الأجنحة'),
               const SizedBox(height: 10),
               Row(children: [
                 Expanded(
@@ -95,13 +105,15 @@ class _HallsTabState extends State<HallsTab> {
                         keyboardType: TextInputType.number,
                         style: kExpoFieldText,
                         decoration: expoInput('أعمدة (2-12)'))),
-                const SizedBox(width: 10),
-                Expanded(
-                    child: TextField(
-                        controller: rows,
-                        keyboardType: TextInputType.number,
-                        style: kExpoFieldText,
-                        decoration: expoInput('صفوف (1-26)'))),
+                if (_maxBooths == null) ...[
+                  const SizedBox(width: 10),
+                  Expanded(
+                      child: TextField(
+                          controller: rows,
+                          keyboardType: TextInputType.number,
+                          style: kExpoFieldText,
+                          decoration: expoInput('صفوف (1-26)'))),
+                ],
                 const SizedBox(width: 10),
                 Expanded(
                     child: TextField(
@@ -254,11 +266,20 @@ class _HallsTabState extends State<HallsTab> {
 
   // ===================== خريطة القاعة =====================
 
+  /// مواقع القاعة: من «عدد الأجنحة المتاحة» مقسوماً على القاعات، أو أعمدة × صفوف
+  int? _capacity(int hallsCount) => _maxBooths == null
+      ? null
+      : (_maxBooths! / (hallsCount < 1 ? 1 : hallsCount)).ceil();
+
   Widget _map(Map<String, dynamic> hall, List<Map<String, dynamic>> booths,
       List<Map<String, dynamic>> halls) {
     final layout = Map<String, dynamic>.from((hall['map_layout'] ?? {}) as Map);
     final cols = ((layout['cols'] ?? 6) as num).toInt().clamp(2, 12);
-    final rows = ((layout['rows'] ?? 4) as num).toInt().clamp(1, 26);
+    final cap = _capacity(halls.length);
+    final rows = cap == null
+        ? ((layout['rows'] ?? 4) as num).toInt().clamp(1, 26)
+        : (cap / cols).ceil().clamp(1, 26);
+    final total = cap == null ? rows * cols : (cap < rows * cols ? cap : rows * cols);
     final bySlot = <String, Map<String, dynamic>>{};
     for (final b in booths.where((b) => b['hall_id'] == hall['id'])) {
       final p = _slot(b['map_slot']);
@@ -274,6 +295,7 @@ class _HallsTabState extends State<HallsTab> {
       children: [
         for (var r = 1; r <= rows; r++)
           for (var c = 1; c <= cols; c++)
+            if ((r - 1) * cols + c <= total)
             Builder(builder: (_) {
               final b = bySlot['$r-$c'];
               final code =
@@ -332,7 +354,8 @@ class _HallsTabState extends State<HallsTab> {
         var slots = 0;
         for (final h in halls) {
           final l = Map<String, dynamic>.from((h['map_layout'] ?? {}) as Map);
-          slots += ((l['cols'] ?? 6) as num).toInt() * ((l['rows'] ?? 4) as num).toInt();
+          final cap = _capacity(halls.length);
+          slots += cap ?? ((l['cols'] ?? 6) as num).toInt() * ((l['rows'] ?? 4) as num).toInt();
         }
 
         return Column(

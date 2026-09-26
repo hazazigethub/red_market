@@ -66,7 +66,8 @@ export default async function Lobby({ params, searchParams }: {
 
         {view === "map" && hall ? (
           <div className="card p-4">
-            <HallMap hall={hall} booths={list} slug={slug} liveBoothIds={liveIds} />
+            <HallMap hall={hall} booths={list} slug={slug} liveBoothIds={liveIds}
+              capacity={e.max_booths ? Math.ceil(e.max_booths / Math.max(hallList.length, 1)) : null} />
             <p className="mt-3 text-xs text-muted">الأجنحة المحددة بالأحمر للرعاة، والنقطة الحمراء تعني أن الجناح يبث الآن.</p>
           </div>
         ) : list.length ? (

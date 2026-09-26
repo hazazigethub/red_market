@@ -7,16 +7,21 @@ export function parseSlot(slot: string | null): { r: number; c: number } | null 
   return m ? { r: m[1].charCodeAt(0) - 64, c: Number(m[2]) } : null;
 }
 
-export function HallMap({ hall, booths, slug, liveBoothIds }: {
-  hall: Hall; booths: Booth[]; slug: string; liveBoothIds: Set<string>;
+/** capacity: عدد مواقع هذه القاعة المحسوب من «عدد الأجنحة المتاحة» (فارغ = أعمدة × صفوف القاعة) */
+export function HallMap({ hall, booths, slug, liveBoothIds, capacity }: {
+  hall: Hall; booths: Booth[]; slug: string; liveBoothIds: Set<string>; capacity?: number | null;
 }) {
   const cols = Math.min(Math.max(hall.map_layout?.cols ?? 6, 2), 12);
-  const rows = Math.min(Math.max(hall.map_layout?.rows ?? 4, 1), 26);
+  const rows = capacity
+    ? Math.min(Math.max(Math.ceil(capacity / cols), 1), 26)
+    : Math.min(Math.max(hall.map_layout?.rows ?? 4, 1), 26);
+  const total = capacity ? Math.min(capacity, rows * cols) : rows * cols;
   const bySlot = new Map<string, Booth>();
   booths.forEach((b) => { const p = parseSlot(b.map_slot); if (p) bySlot.set(`${p.r}-${p.c}`, b); });
   const cells = [];
   for (let r = 1; r <= rows; r++) {
     for (let c = 1; c <= cols; c++) {
+      if ((r - 1) * cols + c > total) break;
       const b = bySlot.get(`${r}-${c}`);
       const code = `${String.fromCharCode(64 + r)}-${String(c).padStart(2, "0")}`;
       cells.push(b ? (

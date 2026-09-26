@@ -29,7 +29,8 @@ export default async function Halls({ params, searchParams }: { params: Promise<
             <div><label className="label">ترتيب</label><input name="sort_order" type="number" defaultValue={h.sort_order} className="input w-20" /></div>
             <button className="btn-ghost">حفظ</button>
           </form>
-          <HallMap hall={h} booths={boothList.filter((b) => b.hall_id === h.id)} slug={e.slug} liveBoothIds={new Set()} />
+          <HallMap hall={h} booths={boothList.filter((b) => b.hall_id === h.id)} slug={e.slug} liveBoothIds={new Set()}
+            capacity={e.max_booths ? Math.ceil(e.max_booths / Math.max(hallList.length, 1)) : null} />
           {hallList.length > 1 && <form action={deleteHall.bind(null, id, h.id)}><button className="text-xs text-muted hover:text-primary">حذف القاعة</button></form>}
         </section>
       ))}
