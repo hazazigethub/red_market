@@ -15,6 +15,7 @@ import 'notifications_page.dart';
 import 'store_settings_page.dart';
 import 'merchant_bank_account_page.dart';
 import 'useful_links_page.dart';
+import 'merchant_expo_page.dart';
 
 class MerchantHomePage extends StatefulWidget {
   const MerchantHomePage({super.key});
@@ -56,6 +57,9 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
 
   /// الحملة الموسمية النشطة
   Map<String, dynamic>? _campaign;
+
+  /// أقرب معرض مفتوح للمشاركة
+  Map<String, dynamic>? _expo;
   int _campaignProducts = 0;
 
   @override
@@ -66,6 +70,9 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
     _loadFeatures();
     _loadSuspended();
     _loadCampaign();
+    loadExpoBanner().then((b) {
+      if (mounted && b != null) setState(() => _expo = b);
+    });
   }
 
   /// يجلب الحملة النشطة وعدد عروض التاجر فيها
@@ -183,6 +190,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
     {'label': 'إعدادات المتجر', 'icon': Icons.settings_outlined},
     {'label': 'رصيد المتجر', 'icon': Icons.account_balance_wallet_outlined},
     {'label': 'روابط مفيدة', 'icon': Icons.link_outlined},
+    {'label': 'المعارض', 'icon': Icons.event_available_outlined},
   ];
 
   Widget _sectionBody(int i) {
@@ -211,6 +219,8 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
         return const MerchantBankAccountPage();
       case 10:
         return const UsefulLinksPage();
+      case 11:
+        return const MerchantExpoPage();
       default:
         return _welcome();
     }
@@ -535,6 +545,12 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
               // ===== بنر الحملة الموسمية =====
               if (_campaign != null) ...[
                 _campaignBanner(),
+                const SizedBox(height: 28),
+              ],
+
+              // ===== بنر المعارض =====
+              if (_expo != null) ...[
+                ExpoMerchantBanner(data: _expo!),
                 const SizedBox(height: 28),
               ],
 
