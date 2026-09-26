@@ -4,6 +4,7 @@ import 'expo/expo_common.dart';
 import 'expo/expo_exhibition_form.dart';
 import 'expo/expo_manage_screen.dart';
 import 'expo/tabs/applications_tab.dart' show expoParticipantCard;
+import 'expo/tabs/pricing_tab.dart';
 
 /// قسم المعارض في لوحة الأدمن — التحكم الكامل بمنصة Expo Red Market.
 /// الصلاحيات تُفحص في قاعدة البيانات نفسها (expo.is_admin).
@@ -24,6 +25,7 @@ class _AdminExpoScreenState extends State<AdminExpoScreen> {
     ('المشاركون', Icons.how_to_reg_outlined),
     ('المنظمون', Icons.apartment_outlined),
     ('العارضون', Icons.storefront_outlined),
+    ('الأسعار والأكواد', Icons.sell_outlined),
     ('الإحصاءات', Icons.insights_outlined),
   ];
 
@@ -545,6 +547,7 @@ class _AdminExpoScreenState extends State<AdminExpoScreen> {
       1 => _participantsTab(),
       2 => _organizersTab(),
       3 => _exhibitorsTab(),
+      4 => const PricingTab(),
       _ => _statsTab(),
     };
     return Directionality(
