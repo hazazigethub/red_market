@@ -36,7 +36,7 @@ export default async function EditBooth({ params, searchParams }: {
           <option value="published">منشور</option>
           <option value="hidden">مخفي مؤقتاً</option>
         </select>
-        <p className="text-xs text-muted">موقع الجناح في الخريطة ونوعه يحددهما المنظم.</p>
+        <p className="text-xs text-muted">تم إضافة جناحك في قائمة أجنحة المعرض.</p>
       </section>
       <button className="btn-primary self-start">حفظ الجناح</button>
     </form>
