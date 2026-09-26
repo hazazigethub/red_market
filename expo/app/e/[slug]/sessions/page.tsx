@@ -59,7 +59,7 @@ export default async function Sessions({ params, searchParams }: {
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="badge">{SESSION_TYPE[s.type]}</span>
                       {s.status === "live" && <LiveBadge />}
-                      {s.capacity && <span className="text-xs text-muted">{s.registered_count}/{s.capacity} مقعد</span>}
+                      {s.capacity && <span className="text-xs text-muted">{s.registered_count} من {s.capacity} مقعد</span>}
                     </div>
                     <h2 className="mt-2 font-heading text-lg font-bold">{s.title}</h2>
                     {s.description && <p className="mt-1 text-sm text-muted line-clamp-3">{s.description}</p>}

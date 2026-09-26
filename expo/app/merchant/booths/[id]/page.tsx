@@ -34,7 +34,7 @@ export default async function BoothOverview({ params }: { params: Promise<{ id: 
       {b.role !== "agent" && done < checklist.length && (
         <div className="card p-5">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-heading text-lg font-bold">جهّز جناحك</h2><span className="text-sm text-muted">{done}/{checklist.length}</span>
+            <h2 className="font-heading text-lg font-bold">جهّز جناحك</h2><span className="text-sm text-muted">{done} من {checklist.length}</span>
           </div>
           <div className="mb-4 h-2 overflow-hidden rounded-full bg-bg"><div className="h-full bg-primary" style={{ width: `${(done / checklist.length) * 100}%` }} /></div>
           <ul className="flex flex-col gap-2 text-sm">

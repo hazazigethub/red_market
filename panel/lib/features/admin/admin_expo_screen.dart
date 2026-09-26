@@ -278,10 +278,10 @@ class _AdminExpoScreenState extends State<AdminExpoScreen> {
           kExpoDivider,
           const SizedBox(height: 10),
           Row(children: [
-            Expanded(child: expoStat(Icons.apartment_outlined, '${org ?? '—'}')),
+            Expanded(child: expoStat(Icons.apartment_outlined, '${org ?? '—'}', expand: true)),
             const SizedBox(width: 12),
             expoStat(Icons.storefront_outlined,
-                e['max_booths'] == null ? '$booths جناح' : '$booths / ${e['max_booths']} جناح'),
+                e['max_booths'] == null ? '$booths جناح' : '${expoOf(booths, e['max_booths'])} جناح'),
             const SizedBox(width: 4),
             expoIconAction(
               featured ? Icons.star_rounded : Icons.star_border_rounded,

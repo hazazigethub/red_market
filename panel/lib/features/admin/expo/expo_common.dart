@@ -482,22 +482,26 @@ Widget expoDelete(VoidCallback onTap) => expoIconAction(
     Icons.delete_outline_rounded, onTap,
     color: Colors.red, tooltip: 'حذف');
 
-/// سطر معلومة صغير بأيقونة
-Widget expoStat(IconData icon, String text) => Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: Colors.grey.shade500),
-        const SizedBox(width: 6),
-        Flexible(
-          child: Text(text,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  fontFamily: kExpoFont,
-                  fontSize: 11.5,
-                  color: Colors.grey.shade700)),
-        ),
-      ],
-    );
+/// سطر معلومة صغير بأيقونة.
+/// expand: true فقط عندما يكون داخل Expanded (ليختصر النص الطويل بدل أن يتجاوز)
+Widget expoStat(IconData icon, String text, {bool expand = false}) {
+  final label = Text(text,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+          fontFamily: kExpoFont, fontSize: 11.5, color: Colors.grey.shade700));
+  return Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(icon, size: 14, color: Colors.grey.shade500),
+      const SizedBox(width: 6),
+      expand ? Flexible(child: label) : label,
+    ],
+  );
+}
+
+/// «12 من 30» — بالعربية حتى لا تنعكس الأرقام في النص من اليمين لليسار
+String expoOf(dynamic used, dynamic max) => '$used من $max';
 
 /// بطاقة رقم (نفس بطاقات الصفحة الرئيسية)
 Widget expoStatCard(String label, dynamic value) => Container(

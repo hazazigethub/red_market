@@ -118,7 +118,9 @@ class _SessionsTabState extends State<SessionsTab> {
           Wrap(spacing: 18, runSpacing: 6, children: [
             expoStat(Icons.category_outlined, kSessionType['${s['type']}'] ?? ''),
             expoStat(Icons.people_outline_rounded,
-                '${s['registered_count'] ?? 0}${s['capacity'] != null ? ' / ${s['capacity']}' : ''} مسجل'),
+                s['capacity'] != null
+                    ? '${expoOf(s['registered_count'] ?? 0, s['capacity'])} مسجل'
+                    : '${s['registered_count'] ?? 0} مسجل'),
             if (speakers.isNotEmpty)
               expoStat(Icons.record_voice_over_outlined, speakers),
           ]),
