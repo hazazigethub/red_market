@@ -39,7 +39,7 @@ export default async function LivePage({ params }: { params: Promise<{ slug: str
     <div className="container-x grid gap-6 py-6 lg:grid-cols-[1fr_380px]">
       <Tracker exhibition_id={e.id} stream_id={s.id} booth_id={s.booths?.id} event="stream_join" />
       <div className="flex min-w-0 flex-col gap-4">
-        <StreamPlayer streamId={s.id} exhibitionId={e.id} status={s.status} recordingUrl={recordingUrl(s.recording_path)} />
+        <StreamPlayer streamId={s.id} exhibitionId={e.id} status={s.status} recordingUrl={recordingUrl(s.recording_path)} inputId={s.cf_input_id} />
         <div className="flex flex-wrap items-center gap-3">
           {s.status === "live" && <LiveBadge />}
           <h1 className="text-2xl font-extrabold">{s.title}</h1>

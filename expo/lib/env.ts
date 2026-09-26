@@ -7,6 +7,8 @@ export const env = {
   productUrlTemplate:
     process.env.NEXT_PUBLIC_PRODUCT_URL_TEMPLATE ?? "https://redmarket.pro/products/{slug}",
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  /** customer-xxxx.cloudflarestream.com */
+  cfStreamSubdomain: process.env.NEXT_PUBLIC_CF_STREAM_SUBDOMAIN ?? "",
   /** "local" (default): sign-in page on the Expo site with the same Supabase accounts (email + password).
    *  "redmarket": send users to Red Market's web login and share the session cookie on .redmarket.pro. */
   authMode: (process.env.NEXT_PUBLIC_AUTH_MODE ?? "local") as "local" | "redmarket",

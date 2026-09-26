@@ -44,7 +44,6 @@ export default async function Studio({ params, searchParams }: {
                 </select></div>
               <button className="btn-ghost">تثبيت</button>
             </form>
-            <p className="text-xs text-muted">للبث من OBS: استخدم LiveKit Ingress (RTMP/WHIP) على نفس الغرفة. البث من المتصفح يكفي لمعظم العارضين.</p>
           </div>
           <div className="card flex h-[65vh] min-h-96 flex-col">
             <h3 className="border-b border-line p-4 font-heading font-bold">دردشة البث (إشراف)</h3>

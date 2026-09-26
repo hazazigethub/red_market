@@ -54,7 +54,7 @@ export interface LiveStream {
   id: string; exhibition_id: string; booth_id: string | null; session_id: string | null; title: string;
   status: "scheduled" | "live" | "ended" | "failed"; scheduled_at: string | null; started_at: string | null;
   ended_at: string | null; recording_path: string | null; current_viewers: number; peak_viewers: number;
-  likes_count: number; pinned_product_id: string | null;
+  likes_count: number; pinned_product_id: string | null; cf_input_id: string | null;
 }
 
 export interface Lead {
