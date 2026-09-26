@@ -37,25 +37,67 @@ export function ViewerCount({ streamId, fallback }: { streamId: string; fallback
   return <span className="text-sm text-muted">{fmtNum(Math.max(n, fallback))} يشاهد الآن</span>;
 }
 
-/** Watch a live stream (Cloudflare Stream player). Starts muted to satisfy autoplay rules. */
+/** Watch a live stream over WebRTC (WHEP) — required for streams broadcast from the browser (WHIP).
+ *  Starts muted to satisfy autoplay rules. */
 export function StreamPlayer({ streamId, exhibitionId, status, recordingUrl, poster, inputId }: {
   streamId: string; exhibitionId: string; status: string; recordingUrl: string | null;
   poster?: string | null; inputId?: string | null;
 }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [state, setState] = useState<"connecting" | "playing" | "error">("connecting");
+  const [muted, setMuted] = useState(true);
+  const live = status === "live" && !!inputId && !!env.cfStreamSubdomain;
+
   useEffect(() => {
     if (status === "live") trackEvent({ exhibition_id: exhibitionId, stream_id: streamId, event: "stream_join" });
   }, [streamId, exhibitionId, status]);
 
-  if (status === "live" && inputId && env.cfStreamSubdomain) {
+  useEffect(() => {
+    if (!live) return;
+    let closed = false;
+    let resource: string | null = null;
+    const url = `https://${env.cfStreamSubdomain}/${inputId}/webRTC/play`;
+    const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.cloudflare.com:3478" }], bundlePolicy: "max-bundle" });
+    pc.addTransceiver("video", { direction: "recvonly" });
+    pc.addTransceiver("audio", { direction: "recvonly" });
+    const stream = new MediaStream();
+    pc.ontrack = (ev) => {
+      stream.addTrack(ev.track);
+      if (videoRef.current && videoRef.current.srcObject !== stream) videoRef.current.srcObject = stream;
+      setState("playing");
+    };
+    (async () => {
+      try {
+        await pc.setLocalDescription(await pc.createOffer());
+        await iceGathered(pc);
+        const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/sdp" }, body: pc.localDescription!.sdp });
+        if (!res.ok) throw new Error(`whep ${res.status}`);
+        const loc = res.headers.get("Location");
+        resource = loc ? new URL(loc, url).toString() : null;
+        if (!closed) await pc.setRemoteDescription({ type: "answer", sdp: await res.text() });
+      } catch {
+        if (!closed) setState("error");
+      }
+    })();
+    return () => {
+      closed = true;
+      if (resource) fetch(resource, { method: "DELETE" }).catch(() => {});
+      pc.close();
+    };
+  }, [live, inputId]);
+
+  if (live) {
     return (
       <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-ink">
-        <iframe
-          src={`https://${env.cfStreamSubdomain}/${inputId}/iframe?autoplay=true&muted=true&preload=auto`}
-          className="absolute inset-0 h-full w-full border-0"
-          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
-          allowFullScreen
-          title="البث المباشر"
-        />
+        <video ref={videoRef} className="h-full w-full object-contain" autoPlay playsInline muted={muted} />
+        {state !== "playing" && (
+          <div className="absolute inset-0 grid place-items-center text-bg">
+            <p className="text-sm">{state === "error" ? "تعذر الاتصال بالبث. حدّث الصفحة." : "جارٍ الاتصال بالبث…"}</p>
+          </div>
+        )}
+        {state === "playing" && muted && (
+          <button className="btn-primary btn-sm absolute bottom-3 right-3" onClick={() => setMuted(false)}>تشغيل الصوت</button>
+        )}
       </div>
     );
   }
