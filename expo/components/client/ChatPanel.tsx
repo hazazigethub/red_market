@@ -88,9 +88,11 @@ function MessageCard({ m, dark }: { m: Message; dark: boolean }) {
 }
 
 /** overlay: فوق الفيديو (أسلوب TikTok للجوال) — خلفية شفافة ونص أبيض */
-export function ChatPanel({ chatId, meId, readOnly = false, canModerate = false, compact = false, placeholder = "اكتب رسالتك…", onModerateUser, overlay = false }: {
+export function ChatPanel({ chatId, meId, readOnly = false, canModerate = false, compact = false, placeholder = "اكتب رسالتك…", onModerateUser, overlay = false, streamId }: {
   chatId: string; meId: string | null; readOnly?: boolean; canModerate?: boolean; compact?: boolean;
   placeholder?: string; onModerateUser?: (userId: string, name: string) => void; overlay?: boolean;
+  /** stream chats: show likes as lines in the chat */
+  streamId?: string;
 }) {
   const [msgs, setMsgs] = useState<Message[]>([]);
   const [text, setText] = useState("");
@@ -100,6 +102,25 @@ export function ChatPanel({ chatId, meId, readOnly = false, canModerate = false,
   const [visitorsMuted, setVisitorsMuted] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // likes appear as short lines in the stream chat (kept in the page only, not saved)
+  useEffect(() => {
+    if (!streamId) return;
+    let n = 0;
+    const onLike = (ev: Event) => {
+      const d = (ev as CustomEvent<{ streamId: string; name: string | null }>).detail;
+      if (d.streamId !== streamId) return;
+      n += 1;
+      const line: Message = {
+        id: -Date.now() - n, chat_id: chatId, sender_id: "", sender_name: d.name ?? "زائر",
+        kind: "system", body: `❤ ${d.name ?? "زائر"} أعجبه البث`, attachments: null,
+        created_at: new Date().toISOString(), deleted_at: null,
+      };
+      setMsgs((m) => [...m.slice(-199), line]);
+    };
+    window.addEventListener("expo:stream-like", onLike);
+    return () => window.removeEventListener("expo:stream-like", onLike);
+  }, [streamId, chatId]);
 
   useEffect(() => {
     let channel: RealtimeChannel | null = null;
@@ -180,7 +201,9 @@ export function ChatPanel({ chatId, meId, readOnly = false, canModerate = false,
           aria-live="polite">
           {msgs.filter((m) => !m.deleted_at).slice(-40).map((m) => (
             <div key={m.id} className="flex flex-col items-start" onClick={() => canWrite && m.kind === "text" && reply(m)}>
-              {m.kind === "text" ? (
+              {m.kind === "system" ? (
+                <p className="w-fit rounded-full bg-primary/70 px-3 py-1 text-xs font-bold text-white">{m.body}</p>
+              ) : m.kind === "text" ? (
                 <p className="w-fit max-w-[85%] rounded-2xl bg-black/35 px-3 py-1.5 text-[13px] leading-6 text-white [text-shadow:0_1px_2px_rgba(0,0,0,.5)]">
                   {quote(m, true)}
                   <span className="font-bold opacity-80">{nameOf(m)}: </span>
@@ -211,6 +234,9 @@ export function ChatPanel({ chatId, meId, readOnly = false, canModerate = false,
         {msgs.length === 0 && <p className="py-8 text-center text-sm text-muted">لا توجد رسائل بعد. ابدأ المحادثة.</p>}
         {msgs.map((m) => {
           const mine = m.sender_id === meId;
+          if (m.kind === "system") {
+            return <p key={m.id} className="text-center text-xs font-semibold text-primary">{m.body}</p>;
+          }
           return (
             <div key={m.id} className={`group flex flex-col ${mine ? "items-start" : "items-end"}`}>
               {m.kind !== "text" && !m.deleted_at ? <MessageCard m={m} dark={false} /> : (

@@ -44,16 +44,16 @@ export default async function LivePage({ params }: { params: Promise<{ slug: str
           overlay={chat ? (
             <ScreenOnly desktop={false}>
               <ChatPanel chatId={chat.id} meId={user?.id ?? null} readOnly={chat.status !== "open"} overlay
-                placeholder={user ? "علّق…" : ""} />
+                placeholder={user ? "علّق…" : ""} streamId={s.id} />
             </ScreenOnly>
           ) : null} />
         <div className="flex flex-wrap items-center gap-3">
           {s.status === "live" && <LiveBadge />}
-          <h1 className="text-2xl font-extrabold">{s.title}</h1>
+          <h1 className="text-2xl font-extrabold">{s.booths?.name ?? s.exhibition_sessions?.title ?? "بث مباشر"}</h1>
           {s.status === "live" && <ViewerCount streamId={s.id} fallback={s.current_viewers} />}
           <div className="ms-auto flex gap-2">
             <LikeButton type="stream" id={s.id} initial={!!liked} count={s.likes_count} signedIn={!!user} />
-            <ShareButton title={s.title} exhibitionId={e.id} boothId={s.booths?.id} />
+            <ShareButton title={s.booths?.name ?? s.exhibition_sessions?.title ?? "بث مباشر"} exhibitionId={e.id} boothId={s.booths?.id} />
           </div>
         </div>
         {s.booths && (
@@ -81,7 +81,7 @@ export default async function LivePage({ params }: { params: Promise<{ slug: str
           {chat ? (
             <ScreenOnly desktop>
               <ChatPanel chatId={chat.id} meId={user?.id ?? null} readOnly={chat.status !== "open"} canModerate={canModerate} compact
-                placeholder={user ? "شارك في الدردشة…" : ""} />
+                placeholder={user ? "شارك في الدردشة…" : ""} streamId={s.id} />
             </ScreenOnly>
           ) : <p className="p-4 text-sm text-muted">الدردشة غير متاحة.</p>}
         </div>

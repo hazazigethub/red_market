@@ -90,6 +90,15 @@ export async function createStream(boothId: string, form: FormData) {
   revalidatePath(B(boothId, "/studio"));
 }
 
+/** "بث مباشر الآن": no title, no time — straight into the studio. */
+export async function goLiveNow(boothId: string) {
+  const db = await expo();
+  const { data, error } = await db.from("live_streams")
+    .insert({ booth_id: boothId, title: "بث مباشر" }).select("id").single();
+  failTo(B(boothId, "/studio"), error);
+  redirect(B(boothId, `/studio?stream=${data!.id}`));
+}
+
 export async function deleteStream(boothId: string, streamId: string) {
   const db = await expo();
   const { error } = await db.from("live_streams").delete().eq("id", streamId);

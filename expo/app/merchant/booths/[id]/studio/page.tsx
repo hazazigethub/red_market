@@ -8,7 +8,7 @@ import { LiveBadge } from "@/components/ui";
 import { ChatPanel } from "@/components/client/ChatPanel";
 import { StreamStudio } from "@/components/client/stream";
 import { StreamCardsPanel } from "@/components/client/StreamCardsPanel";
-import { createStream, deleteStream, pinProduct } from "../../../actions";
+import { createStream, deleteStream, goLiveNow, pinProduct } from "../../../actions";
 
 const LABEL: Record<string, string> = { scheduled: "مجدول", live: "مباشر", ended: "انتهى", failed: "فشل" };
 
@@ -66,6 +66,15 @@ export default async function Studio({ params, searchParams }: {
   return (
     <div className="flex flex-col gap-6">
       <Flash error={sp.error} />
+      {canStream && (
+        <form action={goLiveNow.bind(null, id)} className="card flex flex-wrap items-center gap-4 border-primary p-5">
+          <div className="min-w-0 flex-1">
+            <p className="font-heading text-lg font-bold">بث مباشر الآن</p>
+            <p className="text-sm text-muted">ابدأ البث فوراً بدون عنوان أو موعد.</p>
+          </div>
+          <button className="btn-primary">بث مباشر الآن</button>
+        </form>
+      )}
       {canStream ? (
         <form action={createStream.bind(null, id)} className="card grid gap-4 p-5 sm:grid-cols-[1fr_220px_auto] sm:items-end">
           <div><label className="label" htmlFor="st">عنوان البث</label><input id="st" name="title" className="input" required placeholder="مثال: عرض مباشر لمنتجات الموسم" /></div>

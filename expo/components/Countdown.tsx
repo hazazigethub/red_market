@@ -26,3 +26,22 @@ export function Countdown({ to, onDark = false }: { to: string; onDark?: boolean
     </div>
   );
 }
+
+/** Compact countdown for small spaces: "2 ي 03:14:05" or "03:14:05". */
+export function MiniCountdown({ to, className = "" }: { to: string; className?: string }) {
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    setNow(Date.now());
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const ms = new Date(to).getTime() - (now ?? Date.now());
+  if (ms <= 0) return <span className={className}>يبدأ الآن</span>;
+  const p = parts(ms);
+  const hms = `${String(p.h).padStart(2, "0")}:${String(p.m).padStart(2, "0")}:${String(p.s).padStart(2, "0")}`;
+  return (
+    <span className={`tabular-nums ${className}`} dir="ltr" suppressHydrationWarning>
+      {p.d > 0 ? `${hms} · ${p.d} ي` : hms}
+    </span>
+  );
+}

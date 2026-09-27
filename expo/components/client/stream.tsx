@@ -24,7 +24,11 @@ export function useStreamPresence(streamId: string, onLike?: (count: number) => 
     realtimeAuth().then((sb) => {
       ch = sb.channel(`stream:${streamId}`, { config: { private: true, presence: { key: crypto.randomUUID() } } })
         .on("presence", { event: "sync" }, () => setViewers(Object.keys(ch!.presenceState()).length))
-        .on("broadcast", { event: "like" }, ({ payload }) => likeRef.current?.(payload.count))
+        .on("broadcast", { event: "like" }, ({ payload }) => {
+          likeRef.current?.(payload.count);
+          // show "❤ name liked the stream" inside the chat (not stored)
+          window.dispatchEvent(new CustomEvent("expo:stream-like", { detail: { streamId, name: payload.name ?? null } }));
+        })
         .subscribe(async (status) => { if (status === "SUBSCRIBED") await ch!.track({ at: Date.now() }); });
     });
     return () => { ch?.unsubscribe(); };
@@ -98,8 +102,11 @@ export function StreamPlayer({ streamId, exhibitionId, status, recordingUrl, pos
             <p className="text-sm">{state === "error" ? "تعذر الاتصال بالبث. حدّث الصفحة." : "جارٍ الاتصال بالبث…"}</p>
           </div>
         )}
-        {state === "playing" && muted && (
-          <button className="btn-primary btn-sm absolute top-3 left-3" onClick={() => setMuted(false)}>تشغيل الصوت</button>
+        {state === "playing" && (
+          <button className={`btn-sm absolute top-3 left-3 ${muted ? "btn-primary" : "btn-ink"}`}
+            onClick={() => setMuted((m) => !m)} aria-pressed={!muted}>
+            {muted ? "تشغيل الصوت" : "كتم الصوت"}
+          </button>
         )}
       </div>
     );

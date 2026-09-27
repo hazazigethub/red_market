@@ -2,10 +2,11 @@ import Link from "next/link";
 import { getBoothBySlug, getExhibition } from "@/lib/queries";
 import { expo, getUser } from "@/lib/supabase/server";
 import { productUrl } from "@/lib/env";
-import { fmtMoney, fmtNum } from "@/lib/format";
+import { fmtDateTime, fmtMoney, fmtNum } from "@/lib/format";
 import { publicUrl, thumb } from "@/lib/storage";
 import type { BoothMedia, BoothProduct, LiveStream } from "@/lib/types";
 import { Cover, EmptyState, LiveBadge, Logo, Tabs } from "@/components/ui";
+import { MiniCountdown } from "@/components/Countdown";
 import { BoothChat } from "@/components/client/BoothChat";
 import { CatalogButton } from "@/components/client/CatalogButton";
 import { FollowButton, LikeButton, ShareButton } from "@/components/client/engage";
@@ -35,6 +36,9 @@ export default async function BoothPage({ params, searchParams }: {
   const catalogs = all.filter((m) => m.type === "catalog");
   const streamList = (streams ?? []) as LiveStream[];
   const live = streamList.find((s) => s.status === "live");
+  const nextStreams = streamList
+    .filter((s) => s.status === "scheduled" && s.scheduled_at && new Date(s.scheduled_at) > new Date())
+    .sort((a, b) => a.scheduled_at!.localeCompare(b.scheduled_at!));
   const chatEnabled = e.chat_enabled && ["scheduled", "live", "ended"].includes(e.status);
   const base = `/e/${slug}/b/${b.slug}`;
   const tabs = [
@@ -77,7 +81,7 @@ export default async function BoothPage({ params, searchParams }: {
                 <div className="flex flex-col gap-6">
                   {live && (
                     <Link href={`/e/${slug}/live/${live.id}`} className="card flex items-center gap-4 border-primary p-4">
-                      <LiveBadge /><span className="font-semibold">{live.title}</span><span className="ms-auto text-sm text-primary">شاهد الآن</span>
+                      <LiveBadge /><span className="font-semibold">بث مباشر الآن</span><span className="ms-auto text-sm text-primary">شاهد الآن</span>
                     </Link>
                   )}
                   {b.about ? <p className="whitespace-pre-line leading-8">{b.about}</p> : <p className="text-muted">لم يضف العارض نبذة بعد.</p>}
@@ -127,6 +131,22 @@ export default async function BoothPage({ params, searchParams }: {
           </div>
 
           <aside className="flex flex-col gap-5 lg:sticky lg:top-24 lg:self-start">
+            {nextStreams.length > 0 && (
+              <div className="card p-5">
+                <h2 className="mb-3 font-heading text-lg font-bold">البث القادم</h2>
+                <ul className="flex flex-col gap-3">
+                  {nextStreams.map((s) => (
+                    <li key={s.id} className="flex items-center gap-3 text-sm">
+                      <span className="min-w-0 flex-1">{fmtDateTime(s.scheduled_at!)}</span>
+                      <span className="flex flex-col items-end text-xs text-muted">
+                        <MiniCountdown to={s.scheduled_at!} className="font-bold text-ink" />
+                        <span>متبقٍ على البث</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="card p-5">
               <h2 className="mb-4 font-heading text-lg font-bold">أرسل استفساراً</h2>
               <InquiryForm boothId={b.id} signedIn={!!user} defaultName={(user?.user_metadata?.full_name as string) ?? ""} />
