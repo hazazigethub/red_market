@@ -39,9 +39,11 @@ export function ViewerCount({ streamId, fallback }: { streamId: string; fallback
 
 /** Watch a live stream over WebRTC (WHEP) — required for streams broadcast from the browser (WHIP).
  *  Starts muted to satisfy autoplay rules. */
-export function StreamPlayer({ streamId, exhibitionId, status, recordingUrl, poster, inputId }: {
+export function StreamPlayer({ streamId, exhibitionId, status, recordingUrl, poster, inputId, overlay }: {
   streamId: string; exhibitionId: string; status: string; recordingUrl: string | null;
   poster?: string | null; inputId?: string | null;
+  /** طبقة فوق الفيديو (الدردشة في الجوال) */
+  overlay?: React.ReactNode;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [state, setState] = useState<"connecting" | "playing" | "error">("connecting");
@@ -88,15 +90,16 @@ export function StreamPlayer({ streamId, exhibitionId, status, recordingUrl, pos
 
   if (live) {
     return (
-      <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-ink">
+      <div className="relative h-[72vh] w-full overflow-hidden rounded-2xl bg-ink lg:h-auto lg:aspect-video">
         <video ref={videoRef} className="h-full w-full object-contain" autoPlay playsInline muted={muted} />
+        {overlay && <div className="absolute inset-x-0 bottom-0 h-[55%] lg:hidden">{overlay}</div>}
         {state !== "playing" && (
           <div className="absolute inset-0 grid place-items-center text-bg">
             <p className="text-sm">{state === "error" ? "تعذر الاتصال بالبث. حدّث الصفحة." : "جارٍ الاتصال بالبث…"}</p>
           </div>
         )}
         {state === "playing" && muted && (
-          <button className="btn-primary btn-sm absolute bottom-3 right-3" onClick={() => setMuted(false)}>تشغيل الصوت</button>
+          <button className="btn-primary btn-sm absolute top-3 left-3" onClick={() => setMuted(false)}>تشغيل الصوت</button>
         )}
       </div>
     );

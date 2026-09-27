@@ -7,9 +7,10 @@ import { expoBrowser } from "@/lib/supabase/client";
 import type { Message } from "@/lib/types";
 import { realtimeAuth } from "@/components/client/useSession";
 
-export function ChatPanel({ chatId, meId, readOnly = false, canModerate = false, compact = false, placeholder = "اكتب رسالتك…", onModerateUser }: {
+/** overlay: فوق الفيديو (أسلوب TikTok للجوال) — خلفية شفافة ونص أبيض */
+export function ChatPanel({ chatId, meId, readOnly = false, canModerate = false, compact = false, placeholder = "اكتب رسالتك…", onModerateUser, overlay = false }: {
   chatId: string; meId: string | null; readOnly?: boolean; canModerate?: boolean; compact?: boolean;
-  placeholder?: string; onModerateUser?: (userId: string, name: string) => void;
+  placeholder?: string; onModerateUser?: (userId: string, name: string) => void; overlay?: boolean;
 }) {
   const [msgs, setMsgs] = useState<Message[]>([]);
   const [text, setText] = useState("");
@@ -53,6 +54,32 @@ export function ChatPanel({ chatId, meId, readOnly = false, canModerate = false,
   async function remove(id: number) {
     const { error } = await expoBrowser().rpc("delete_message", { p_message: id });
     if (error) setErr(arabicError(error.message));
+  }
+
+  if (overlay) {
+    return (
+      <div className="flex h-full min-h-0 flex-col justify-end">
+        <div ref={listRef}
+          className="max-h-full space-y-1.5 overflow-y-auto px-3 pb-2 [mask-image:linear-gradient(to_bottom,transparent,black_25%)]"
+          aria-live="polite">
+          {msgs.filter((m) => !m.deleted_at).slice(-40).map((m) => (
+            <p key={m.id} className="w-fit max-w-[85%] rounded-2xl bg-black/35 px-3 py-1.5 text-[13px] leading-6 text-white [text-shadow:0_1px_2px_rgba(0,0,0,.5)]">
+              <span className="font-bold opacity-80">{m.sender_id === meId ? "أنت" : (m.sender_name ?? "مشارك")}: </span>
+              <span className="whitespace-pre-wrap break-words">{m.body}</span>
+            </p>
+          ))}
+        </div>
+        {!readOnly && meId && (
+          <form className="flex gap-2 p-3 pt-1" onSubmit={(e) => { e.preventDefault(); send(); }}>
+            <input className="h-10 w-full rounded-full border border-white/25 bg-black/35 px-4 text-sm text-white placeholder:text-white/60 focus:outline-none"
+              value={text} onChange={(e) => setText(e.target.value)} placeholder={placeholder} maxLength={2000} aria-label="الرسالة" />
+            <button className="h-10 shrink-0 rounded-full bg-primary px-4 text-sm font-bold text-white disabled:opacity-50"
+              disabled={sending || !text.trim()}>إرسال</button>
+          </form>
+        )}
+        {err && <p className="px-3 pb-2 text-xs text-white" role="alert">{err}</p>}
+      </div>
+    );
   }
 
   return (

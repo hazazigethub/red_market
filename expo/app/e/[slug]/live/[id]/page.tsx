@@ -8,6 +8,7 @@ import { recordingUrl } from "@/lib/storage";
 import type { BoothProduct, LiveStream } from "@/lib/types";
 import { LiveBadge, Logo } from "@/components/ui";
 import { ChatPanel } from "@/components/client/ChatPanel";
+import { ScreenOnly } from "@/components/client/ScreenOnly";
 import { LikeButton, ShareButton } from "@/components/client/engage";
 import { StreamPlayer, ViewerCount } from "@/components/client/stream";
 import { TrackedLink, Tracker } from "@/components/client/Tracker";
@@ -39,7 +40,13 @@ export default async function LivePage({ params }: { params: Promise<{ slug: str
     <div className="container-x grid gap-6 py-6 lg:grid-cols-[1fr_380px]">
       <Tracker exhibition_id={e.id} stream_id={s.id} booth_id={s.booths?.id} event="stream_join" />
       <div className="flex min-w-0 flex-col gap-4">
-        <StreamPlayer streamId={s.id} exhibitionId={e.id} status={s.status} recordingUrl={recordingUrl(s.recording_path)} inputId={s.cf_input_id} />
+        <StreamPlayer streamId={s.id} exhibitionId={e.id} status={s.status} recordingUrl={recordingUrl(s.recording_path)} inputId={s.cf_input_id}
+          overlay={chat ? (
+            <ScreenOnly desktop={false}>
+              <ChatPanel chatId={chat.id} meId={user?.id ?? null} readOnly={chat.status !== "open"} overlay
+                placeholder={user ? "علّق…" : ""} />
+            </ScreenOnly>
+          ) : null} />
         <div className="flex flex-wrap items-center gap-3">
           {s.status === "live" && <LiveBadge />}
           <h1 className="text-2xl font-extrabold">{s.title}</h1>
@@ -68,12 +75,14 @@ export default async function LivePage({ params }: { params: Promise<{ slug: str
           </TrackedLink>
         )}
       </div>
-      <aside className="card flex h-[70vh] min-h-[420px] flex-col lg:sticky lg:top-24">
+      <aside className="card hidden h-[70vh] min-h-[420px] flex-col lg:sticky lg:top-24 lg:flex">
         <h2 className="border-b border-line p-4 font-heading font-bold">الدردشة المباشرة</h2>
         <div className="min-h-0 flex-1">
           {chat ? (
-            <ChatPanel chatId={chat.id} meId={user?.id ?? null} readOnly={chat.status !== "open"} canModerate={canModerate} compact
-              placeholder={user ? "شارك في الدردشة…" : ""} />
+            <ScreenOnly desktop>
+              <ChatPanel chatId={chat.id} meId={user?.id ?? null} readOnly={chat.status !== "open"} canModerate={canModerate} compact
+                placeholder={user ? "شارك في الدردشة…" : ""} />
+            </ScreenOnly>
           ) : <p className="p-4 text-sm text-muted">الدردشة غير متاحة.</p>}
         </div>
         {!user && <p className="border-t border-line p-3 text-center text-xs text-muted">سجّل الدخول للمشاركة في الدردشة.</p>}
