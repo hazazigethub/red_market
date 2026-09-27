@@ -138,7 +138,16 @@ export function StreamStudio({ streamId, status: initialStatus }: { streamId: st
   const [busy, setBusy] = useState(false);
   const viewers = useStreamPresence(streamId);
 
-  useEffect(() => () => { media?.getTracks().forEach((t) => t.stop()); pc?.close(); }, [media, pc]);
+  // stop the camera and close the connection only when leaving the page
+  // (not when the connection starts — that used to switch the camera off)
+  const mediaRef = useRef<MediaStream | null>(null);
+  const pcRef = useRef<RTCPeerConnection | null>(null);
+  mediaRef.current = media;
+  pcRef.current = pc;
+  useEffect(() => () => {
+    mediaRef.current?.getTracks().forEach((t) => t.stop());
+    pcRef.current?.close();
+  }, []);
 
   async function preview() {
     setErr(null);
