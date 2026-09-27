@@ -65,6 +65,8 @@ export interface Lead {
 }
 
 export interface Message {
-  id: number; chat_id: string; sender_id: string; sender_name?: string; kind: string; body: string;
-  created_at: string; deleted_at?: string | null;
+  id: number; chat_id: string; sender_id: string; sender_name?: string;
+  kind: "text" | "system" | "product_card" | "file" | "catalog" | "contact_card";
+  body: string; attachments: Record<string, unknown> | null; created_at: string; deleted_at: string | null;
+  reply_to?: number | null; reply_name?: string | null; reply_body?: string | null;
 }

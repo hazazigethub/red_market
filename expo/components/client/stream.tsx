@@ -136,7 +136,21 @@ export function StreamStudio({ streamId, status: initialStatus }: { streamId: st
   const [status, setStatus] = useState(initialStatus);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [micOn, setMicOn] = useState(true);
+  const [camOn, setCamOn] = useState(true);
   const viewers = useStreamPresence(streamId);
+
+  // mute / camera off keep the broadcast running (silence / black frame)
+  function toggleMic() {
+    const next = !micOn;
+    media?.getAudioTracks().forEach((t) => { t.enabled = next; });
+    setMicOn(next);
+  }
+  function toggleCam() {
+    const next = !camOn;
+    media?.getVideoTracks().forEach((t) => { t.enabled = next; });
+    setCamOn(next);
+  }
 
   // stop the camera and close the connection only when leaving the page
   // (not when the connection starts — that used to switch the camera off)
@@ -200,11 +214,23 @@ export function StreamStudio({ streamId, status: initialStatus }: { streamId: st
       <div className="relative aspect-video overflow-hidden rounded-2xl bg-ink">
         <video ref={previewRef} className="h-full w-full object-cover" autoPlay playsInline muted />
         {!media && <p className="absolute inset-0 grid place-items-center text-sm text-bg">المعاينة متوقفة</p>}
+        {media && !camOn && <p className="absolute inset-0 grid place-items-center bg-ink text-sm text-bg">الكاميرا متوقفة</p>}
+        {media && !micOn && <span className="absolute bottom-3 right-3 rounded-full bg-ink/70 px-2.5 py-0.5 text-xs text-bg">المايك مكتوم</span>}
         {pc && <div className="absolute top-3 right-3 flex items-center gap-2"><span className="badge-live"><span className="live-dot" />على الهواء</span>
           <span className="rounded-full bg-ink/70 px-2.5 py-0.5 text-xs text-bg">{viewers} مشاهد</span></div>}
       </div>
       <div className="flex flex-wrap gap-2">
         {!media && status !== "ended" && <button className="btn-ghost" onClick={preview}>تشغيل الكاميرا</button>}
+        {media && (
+          <>
+            <button className={micOn ? "btn-ghost" : "btn-ink"} onClick={toggleMic} aria-pressed={!micOn}>
+              {micOn ? "كتم المايك" : "تشغيل المايك"}
+            </button>
+            <button className={camOn ? "btn-ghost" : "btn-ink"} onClick={toggleCam} aria-pressed={!camOn}>
+              {camOn ? "إيقاف الكاميرا" : "تشغيل الكاميرا"}
+            </button>
+          </>
+        )}
         {media && !pc && <button className="btn-primary" disabled={busy} onClick={goLive}>{busy ? "…" : "ابدأ البث"}</button>}
         {pc && <button className="btn-ink" disabled={busy} onClick={end}>إنهاء البث</button>}
         {status === "ended" && <p className="text-sm text-muted">انتهى البث.</p>}

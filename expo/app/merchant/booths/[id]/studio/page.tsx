@@ -7,6 +7,7 @@ import { Flash } from "@/components/Flash";
 import { LiveBadge } from "@/components/ui";
 import { ChatPanel } from "@/components/client/ChatPanel";
 import { StreamStudio } from "@/components/client/stream";
+import { StreamCardsPanel } from "@/components/client/StreamCardsPanel";
 import { createStream, deleteStream, pinProduct } from "../../../actions";
 
 const LABEL: Record<string, string> = { scheduled: "مجدول", live: "مباشر", ended: "انتهى", failed: "فشل" };
@@ -27,7 +28,10 @@ export default async function Studio({ params, searchParams }: {
   const canStream = ["scheduled", "live"].includes(b.exhibitions.status);
 
   if (active) {
-    const { data: chat } = await db.from("exhibition_chats").select("id").eq("stream_id", active.id).maybeSingle();
+    const [{ data: chat }, { data: cats }] = await Promise.all([
+      db.from("exhibition_chats").select("id").eq("stream_id", active.id).maybeSingle(),
+      db.from("booth_media").select("id, title").eq("booth_id", id).eq("type", "catalog").order("sort_order"),
+    ]);
     return (
       <div className="flex flex-col gap-4">
         <Link href={`/merchant/booths/${id}/studio`} className="text-sm text-muted">← كل البثوث</Link>
@@ -44,6 +48,11 @@ export default async function Studio({ params, searchParams }: {
                 </select></div>
               <button className="btn-ghost">تثبيت</button>
             </form>
+            {chat && (
+              <StreamCardsPanel chatId={chat.id}
+                products={((prods ?? []) as BoothProduct[]).map((p) => ({ product_id: p.product_id, name: p.name }))}
+                catalogs={(cats ?? []) as { id: string; title: string | null }[]} />
+            )}
           </div>
           <div className="card flex h-[65vh] min-h-96 flex-col">
             <h3 className="border-b border-line p-4 font-heading font-bold">دردشة البث (إشراف)</h3>
