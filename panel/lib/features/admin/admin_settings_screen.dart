@@ -26,6 +26,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   bool _featPromo = false;
   bool _featBanners = false;
   bool _featCampaigns = false;
+  bool _featExpo = false;
 
   bool _isMaintenanceMode = false;
   bool _isLoading = true;
@@ -67,6 +68,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           _featPromo = data['feat_promo'] ?? false;
           _featBanners = data['feat_banners'] ?? false;
           _featCampaigns = data['feat_campaigns'] ?? false;
+          _featExpo = data['feat_expo'] ?? false;
         });
       }
     } catch (e) {
@@ -98,6 +100,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         'feat_promo': _featPromo,
         'feat_banners': _featBanners,
         'feat_campaigns': _featCampaigns,
+        'feat_expo': _featExpo,
         'updated_at': DateTime.now().toIso8601String(),
       });
       if (mounted) {
@@ -179,6 +182,15 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                     value: _featCampaigns,
                                     onChanged: (v) =>
                                         setState(() => _featCampaigns = v),
+                                  ),
+                                  const Divider(height: 22),
+                                  _toggle(
+                                    label: 'المعارض',
+                                    icon: Icons.event_available_outlined,
+                                    value: _featExpo,
+                                    note: 'يشمل بنر المعارض في لوحة التاجر',
+                                    onChanged: (v) =>
+                                        setState(() => _featExpo = v),
                                   ),
                                 ],
                               ),

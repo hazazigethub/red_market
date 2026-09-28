@@ -148,6 +148,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
     3: 'feat_promo',
     4: 'feat_banners',
     5: 'feat_campaigns',
+    11: 'feat_expo',
   };
 
   /// ما هو مفتوح فعلياً — يُملأ عند التحميل
@@ -157,7 +158,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
     try {
       final data = await Supabase.instance.client
           .from('system_settings')
-          .select('feat_promo, feat_banners, feat_campaigns')
+          .select('feat_promo, feat_banners, feat_campaigns, feat_expo')
           .eq('id', 1)
           .maybeSingle();
 
@@ -549,7 +550,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
               ],
 
               // ===== بنر المعارض =====
-              if (_expo != null) ...[
+              if (_expo != null && !_isLocked(11)) ...[
                 ExpoMerchantBanner(data: _expo!),
                 const SizedBox(height: 28),
               ],
