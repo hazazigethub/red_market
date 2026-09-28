@@ -76,7 +76,7 @@ async function start(req: Request) {
   if (!whip) return fail(req, 500, "NO_WHIP_URL");
 
   await db.from("live_streams")
-    .update({ status: "live", started_at: new Date().toISOString(), ended_at: null })
+    .update({ status: "live", started_at: new Date().toISOString(), ended_at: null, last_heartbeat_at: new Date().toISOString() })
     .eq("id", s.id);
   return json(req, { whip_url: whip, input_id: input.uid });
 }

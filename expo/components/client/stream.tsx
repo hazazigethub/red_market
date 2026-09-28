@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { env, functionsUrl } from "@/lib/env";
+import { expoBrowser } from "@/lib/supabase/client";
 import { fmtNum } from "@/lib/format";
 import { authHeaders, realtimeAuth } from "@/components/client/useSession";
 import { track as trackEvent } from "@/components/client/Tracker";
@@ -169,6 +170,15 @@ export function StreamStudio({ streamId, status: initialStatus }: { streamId: st
     mediaRef.current?.getTracks().forEach((t) => t.stop());
     pcRef.current?.close();
   }, []);
+
+  // "still broadcasting" signal: without it for 2 minutes the stream is ended automatically
+  useEffect(() => {
+    if (!pc) return;
+    const beat = () => { expoBrowser().rpc("stream_heartbeat", { p_stream: streamId }).then(() => {}); };
+    beat();
+    const t = setInterval(beat, 20_000);
+    return () => clearInterval(t);
+  }, [pc, streamId]);
 
   async function preview() {
     setErr(null);
