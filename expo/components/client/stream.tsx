@@ -51,7 +51,7 @@ export function StreamPlayer({ streamId, exhibitionId, status, recordingUrl, pos
   overlay?: React.ReactNode;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [state, setState] = useState<"connecting" | "playing" | "error">("connecting");
+  const [state, setState] = useState<"connecting" | "playing" | "reconnecting">("connecting");
   const [muted, setMuted] = useState(true);
   const live = status === "live" && !!inputId && !!env.cfStreamSubdomain;
 
@@ -59,38 +59,74 @@ export function StreamPlayer({ streamId, exhibitionId, status, recordingUrl, pos
     if (status === "live") trackEvent({ exhibition_id: exhibitionId, stream_id: streamId, event: "stream_join" });
   }, [streamId, exhibitionId, status]);
 
+  // WHEP playback that survives drops: shows "connection issue" at once and keeps retrying
   useEffect(() => {
     if (!live) return;
-    let closed = false;
-    let resource: string | null = null;
     const url = `https://${env.cfStreamSubdomain}/${inputId}/webRTC/play`;
-    const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.cloudflare.com:3478" }], bundlePolicy: "max-bundle" });
-    pc.addTransceiver("video", { direction: "recvonly" });
-    pc.addTransceiver("audio", { direction: "recvonly" });
-    const stream = new MediaStream();
-    pc.ontrack = (ev) => {
-      stream.addTrack(ev.track);
-      if (videoRef.current && videoRef.current.srcObject !== stream) videoRef.current.srcObject = stream;
-      setState("playing");
+    let stopped = false;
+    let pc: RTCPeerConnection | null = null;
+    let resource: string | null = null;
+    let retry: ReturnType<typeof setTimeout> | null = null;
+    let muteTimer: ReturnType<typeof setTimeout> | null = null;
+    let played = false;
+
+    const cleanup = () => {
+      if (muteTimer) { clearTimeout(muteTimer); muteTimer = null; }
+      if (resource) fetch(resource, { method: "DELETE" }).catch(() => {});
+      resource = null;
+      pc?.close();
+      pc = null;
     };
-    (async () => {
+    const reconnect = () => {
+      if (stopped || retry) return;
+      cleanup();
+      setState(played ? "reconnecting" : "connecting");
+      retry = setTimeout(() => { retry = null; connect(); }, 4000);
+    };
+
+    async function connect() {
+      if (stopped) return;
+      const conn = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.cloudflare.com:3478" }], bundlePolicy: "max-bundle" });
+      pc = conn;
+      conn.addTransceiver("video", { direction: "recvonly" });
+      conn.addTransceiver("audio", { direction: "recvonly" });
+      const stream = new MediaStream();
+      conn.ontrack = (ev) => {
+        stream.addTrack(ev.track);
+        if (videoRef.current && videoRef.current.srcObject !== stream) videoRef.current.srcObject = stream;
+        if (ev.track.kind === "video") {
+          // no picture arriving = the exhibitor dropped; reconnect if it lasts
+          ev.track.onmute = () => {
+            if (pc !== conn) return;
+            setState("reconnecting");
+            if (!muteTimer) muteTimer = setTimeout(() => { muteTimer = null; if (pc === conn) reconnect(); }, 6000);
+          };
+          ev.track.onunmute = () => {
+            if (muteTimer) { clearTimeout(muteTimer); muteTimer = null; }
+            if (pc === conn) { played = true; setState("playing"); }
+          };
+        }
+        played = true;
+        setState("playing");
+      };
+      conn.onconnectionstatechange = () => {
+        if (pc === conn && (conn.connectionState === "failed" || conn.connectionState === "closed")) reconnect();
+      };
       try {
-        await pc.setLocalDescription(await pc.createOffer());
-        await iceGathered(pc);
-        const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/sdp" }, body: pc.localDescription!.sdp });
+        await conn.setLocalDescription(await conn.createOffer());
+        await iceGathered(conn);
+        const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/sdp" }, body: conn.localDescription!.sdp });
         if (!res.ok) throw new Error(`whep ${res.status}`);
         const loc = res.headers.get("Location");
         resource = loc ? new URL(loc, url).toString() : null;
-        if (!closed) await pc.setRemoteDescription({ type: "answer", sdp: await res.text() });
+        if (pc === conn) await conn.setRemoteDescription({ type: "answer", sdp: await res.text() });
       } catch {
-        if (!closed) setState("error");
+        if (pc === conn) reconnect();
       }
-    })();
-    return () => {
-      closed = true;
-      if (resource) fetch(resource, { method: "DELETE" }).catch(() => {});
-      pc.close();
-    };
+    }
+
+    connect();
+    return () => { stopped = true; if (retry) clearTimeout(retry); cleanup(); };
   }, [live, inputId]);
 
   if (live) {
@@ -100,7 +136,7 @@ export function StreamPlayer({ streamId, exhibitionId, status, recordingUrl, pos
         {overlay && <div className="absolute inset-x-0 bottom-0 h-[55%] lg:hidden">{overlay}</div>}
         {state !== "playing" && (
           <div className="absolute inset-0 grid place-items-center text-bg">
-            <p className="text-sm">{state === "error" ? "تعذر الاتصال بالبث. حدّث الصفحة." : "جارٍ الاتصال بالبث…"}</p>
+            <p className="px-6 text-center text-sm">{state === "reconnecting" ? "العارض يواجه مشكلة في الاتصال… سيعود البث تلقائياً" : "جارٍ الاتصال بالبث…"}</p>
           </div>
         )}
         {state === "playing" && (
@@ -176,7 +212,7 @@ export function StreamStudio({ streamId, status: initialStatus }: { streamId: st
     if (!pc) return;
     const beat = () => { expoBrowser().rpc("stream_heartbeat", { p_stream: streamId }).then(() => {}); };
     beat();
-    const t = setInterval(beat, 20_000);
+    const t = setInterval(beat, 15_000);
     return () => clearInterval(t);
   }, [pc, streamId]);
 
@@ -193,23 +229,61 @@ export function StreamStudio({ streamId, status: initialStatus }: { streamId: st
     }
   }
 
+  const whipRef = useRef<string | null>(null);
+  const endingRef = useRef(false);
+  const [reconnecting, setReconnecting] = useState(false);
+
+  /** send camera + mic to Cloudflare (WHIP); reconnects by itself if the internet drops */
+  async function publish(whipUrl: string, m: MediaStream): Promise<RTCPeerConnection> {
+    const conn = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.cloudflare.com:3478" }], bundlePolicy: "max-bundle" });
+    m.getTracks().forEach((t) => conn.addTransceiver(t, { direction: "sendonly" }));
+    await conn.setLocalDescription(await conn.createOffer());
+    await iceGathered(conn);
+    const res = await fetch(whipUrl, { method: "POST", headers: { "Content-Type": "application/sdp" }, body: conn.localDescription!.sdp });
+    if (!res.ok) { conn.close(); throw new Error(`whip ${res.status}`); }
+    const loc = res.headers.get("Location");
+    resourceRef.current = loc ? new URL(loc, whipUrl).toString() : null;
+    await conn.setRemoteDescription({ type: "answer", sdp: await res.text() });
+    conn.onconnectionstatechange = () => {
+      const st = conn.connectionState;
+      if (st === "failed" || st === "disconnected") {
+        // give a short blip 3 seconds to recover on its own
+        setTimeout(() => {
+          if (pcRef.current === conn && conn.connectionState !== "connected") recover(conn);
+        }, st === "failed" ? 0 : 3000);
+      }
+    };
+    return conn;
+  }
+
+  async function recover(old: RTCPeerConnection) {
+    if (endingRef.current || pcRef.current !== old || !whipRef.current || !mediaRef.current) return;
+    setReconnecting(true);
+    old.close();
+    try {
+      // marks the same stream live again (in case the outage passed the 1-minute limit)
+      const { whip_url } = await streamCall("start", streamId);
+      if (whip_url) whipRef.current = whip_url;
+      const conn = await publish(whipRef.current!, mediaRef.current);
+      pcRef.current = conn;
+      setPc(conn);
+      setReconnecting(false);
+    } catch {
+      setTimeout(() => recover(old), 3000);   // keep trying until back online (or ended)
+      return;
+    }
+  }
+
   async function goLive() {
     if (!media) return;
     setBusy(true); setErr(null);
+    endingRef.current = false;
     try {
       const { whip_url } = await streamCall("start", streamId);
       if (!whip_url) throw new Error("no whip");
-      const conn = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.cloudflare.com:3478" }], bundlePolicy: "max-bundle" });
-      media.getTracks().forEach((t) => conn.addTransceiver(t, { direction: "sendonly" }));
-      await conn.setLocalDescription(await conn.createOffer());
-      await iceGathered(conn);
-      const res = await fetch(whip_url, {
-        method: "POST", headers: { "Content-Type": "application/sdp" }, body: conn.localDescription!.sdp,
-      });
-      if (!res.ok) throw new Error(`whip ${res.status}`);
-      const loc = res.headers.get("Location");
-      resourceRef.current = loc ? new URL(loc, whip_url).toString() : null;
-      await conn.setRemoteDescription({ type: "answer", sdp: await res.text() });
+      whipRef.current = whip_url;
+      const conn = await publish(whip_url, media);
+      pcRef.current = conn;
       setPc(conn); setStatus("live");
     } catch {
       setErr("تعذر بدء البث. تأكد أن المعرض مجدول أو مباشر وأن لديك صلاحية البث.");
@@ -218,6 +292,7 @@ export function StreamStudio({ streamId, status: initialStatus }: { streamId: st
   }
 
   async function end() {
+    endingRef.current = true;
     setBusy(true);
     if (resourceRef.current) await fetch(resourceRef.current, { method: "DELETE" }).catch(() => {});
     pc?.close();
@@ -233,6 +308,7 @@ export function StreamStudio({ streamId, status: initialStatus }: { streamId: st
         {!media && <p className="absolute inset-0 grid place-items-center text-sm text-bg">المعاينة متوقفة</p>}
         {media && !camOn && <p className="absolute inset-0 grid place-items-center bg-ink text-sm text-bg">الكاميرا متوقفة</p>}
         {media && !micOn && <span className="absolute bottom-3 right-3 rounded-full bg-ink/70 px-2.5 py-0.5 text-xs text-bg">المايك مكتوم</span>}
+        {reconnecting && <p className="absolute inset-x-0 bottom-3 mx-auto w-fit rounded-full bg-primary px-3 py-1 text-xs font-bold text-white">انقطع الاتصال… جارٍ إعادة الاتصال</p>}
         {pc && <div className="absolute top-3 right-3 flex items-center gap-2"><span className="badge-live"><span className="live-dot" />على الهواء</span>
           <span className="rounded-full bg-ink/70 px-2.5 py-0.5 text-xs text-bg">{viewers} مشاهد</span></div>}
       </div>
