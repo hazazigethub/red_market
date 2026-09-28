@@ -78,6 +78,7 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
     required String? merchantId,
     String? productId,
     String? categoryId,
+    String? linkUrl,
     required String imageUrl,
     required bool isPermanent,
     required String bannerType,
@@ -93,6 +94,7 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
       'merchant_id': merchantId,
       'product_id': productId,
       'category_id': categoryId,
+      'link_url': linkUrl,
       'image_url': imageUrl,
       'is_permanent': isPermanent,
       'banner_type': bannerType,
@@ -578,6 +580,9 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
     // ✅ تحديث الاسم من البيانات الموجودة
     final nameController =
         TextEditingController(text: existingBanner?['name'] ?? "");
+    // رابط خارجي (مثل رابط معرض) — اختياري
+    final linkController =
+        TextEditingController(text: existingBanner?['link_url'] ?? "");
 
     String? selectedProductCategoryId = existingBanner?['category_id'];
     String? selectedMerchantId = existingBanner?['merchant_id'];
@@ -640,6 +645,27 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
                       filled: true,
                       fillColor: Colors.grey.shade50,
                       hintText: "اسم البنر الإعلاني",
+                      enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                          borderRadius: BorderRadius.circular(15)),
+                      focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: brandRed),
+                          borderRadius: BorderRadius.circular(15))),
+                ),
+                const SizedBox(height: 15),
+
+                // ✅ رابط خارجي — يفتح عند الضغط على البنر (مثل صفحة معرض)
+                TextField(
+                  controller: linkController,
+                  textDirection: TextDirection.ltr,
+                  keyboardType: TextInputType.url,
+                  style: const TextStyle(fontFamily: 'Cairo', fontSize: 13),
+                  decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      hintText: "رابط خارجي (اختياري) — https://expo.redmarket.pro/e/...",
+                      hintTextDirection: TextDirection.rtl,
+                      prefixIcon: const Icon(Icons.link_rounded, size: 19),
                       enabledBorder: OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.grey.shade200),
                           borderRadius: BorderRadius.circular(15)),
@@ -1195,6 +1221,18 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
                               return;
                             }
 
+                            final link = linkController.text.trim();
+                            if (link.isNotEmpty &&
+                                !link.startsWith('https://')) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content:
+                                        Text("الرابط يجب أن يبدأ بـ https://"),
+                                    backgroundColor: Colors.red),
+                              );
+                              return;
+                            }
+
                             setSheetState(() => _isSaving = true);
                             String? uploadedUrl = existingBanner?['image_url'];
 
@@ -1209,6 +1247,7 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
                                 merchantId: selectedMerchantId,
                                 productId: selectedProductId,
                                 categoryId: selectedProductCategoryId,
+                                linkUrl: link.isEmpty ? null : link,
                                 imageUrl: uploadedUrl,
                                 isPermanent: isPermanent,
                                 bannerType: bannerType,

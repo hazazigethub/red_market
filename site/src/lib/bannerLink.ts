@@ -8,10 +8,13 @@ export type Banner = {
   booking_id?: string | null;
   /// وجهة البنر: store أو product أو category
   target_type?: string | null;
+  /// رابط خارجي (مثل صفحة معرض) — له الأولوية إن وُجد
+  link_url?: string | null;
 };
 
 /// يحدد وجهة البنر
 export function bannerHref(b: Banner): string | null {
+  if (b.link_url && b.link_url.startsWith('https://')) return b.link_url;
   // البنرات المحجوزة: الوجهة صريحة
   if (b.target_type === 'product' && b.product_id) {
     return `/offer/${b.product_id}`;

@@ -24,12 +24,12 @@ async function getData() {
     await Promise.all([
       supabase
         .from('banners')
-        .select('id, image_url, product_id, merchant_id, category_id')
+        .select('id, image_url, product_id, merchant_id, category_id, link_url')
         .eq('is_active', true)
         .eq('banner_type', 'wide'),
       supabase
         .from('banners')
-        .select('id, image_url, product_id, merchant_id, category_id')
+        .select('id, image_url, product_id, merchant_id, category_id, link_url')
         .eq('is_active', true)
         .eq('banner_type', 'small'),
       supabase

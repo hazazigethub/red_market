@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeBanners extends StatelessWidget {
   final PageController bannerController;
@@ -37,7 +38,8 @@ class HomeBanners extends StatelessWidget {
                 itemCount: 10000,
                 itemBuilder: (context, index) {
                   final b = active[index % active.length];
-                  return _buildBannerItem(b['image_url']);
+                  return _buildBannerItem(b['image_url'],
+                      link: b['link_url'] as String?);
                 },
               ),
             );
@@ -63,7 +65,8 @@ class HomeBanners extends StatelessWidget {
                 itemCount: 10000,
                 itemBuilder: (context, index) {
                   final b = small[index % small.length];
-                  return _buildBannerItem(b['image_url'], isSmall: true);
+                  return _buildBannerItem(b['image_url'],
+                      isSmall: true, link: b['link_url'] as String?);
                 },
               ),
             );
@@ -73,7 +76,17 @@ class HomeBanners extends StatelessWidget {
     );
   }
 
-  Widget _buildBannerItem(String url, {bool isSmall = false}) {
+  Widget _buildBannerItem(String url, {bool isSmall = false, String? link}) {
+    final item = _bannerBox(url, isSmall: isSmall);
+    if (link == null || link.isEmpty) return item;
+    // رابط خارجي (مثل صفحة معرض) — يفتح داخل التطبيق
+    return GestureDetector(
+      onTap: () => launchUrl(Uri.parse(link), mode: LaunchMode.inAppBrowserView),
+      child: item,
+    );
+  }
+
+  Widget _bannerBox(String url, {bool isSmall = false}) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: isSmall ? 8 : 4, vertical: 8),
       decoration: BoxDecoration(
