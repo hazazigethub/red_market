@@ -34,7 +34,7 @@ export default async function PrivacyPage() {
   const content = (row.content ?? '') as string;
   const version = row.version as number | null;
   const updatedAt = row.updated_at
-    ? new Date(row.updated_at as string).toLocaleDateString('ar-SA')
+    ? new Date(row.updated_at as string).toLocaleDateString('ar-SA', { timeZone: 'Asia/Riyadh' })
     : null;
 
   return (

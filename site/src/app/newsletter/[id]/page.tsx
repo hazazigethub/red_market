@@ -70,7 +70,7 @@ export default async function NewsletterPage({
   if (!nl) notFound();
 
   const date = nl.sent_at
-    ? new Date(nl.sent_at).toLocaleDateString('ar-SA')
+    ? new Date(nl.sent_at).toLocaleDateString('ar-SA', { timeZone: 'Asia/Riyadh' })
     : '';
 
   return (

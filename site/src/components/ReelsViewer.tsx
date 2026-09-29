@@ -364,7 +364,8 @@ export default function ReelsViewer({
   function fmt(d: string | null) {
     if (!d) return '';
     const date = new Date(d);
-    return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
+    const r = new Date(date.getTime() + 3 * 60 * 60 * 1000); // توقيت السعودية
+    return `${r.getUTCFullYear()}/${r.getUTCMonth() + 1}/${r.getUTCDate()}`;
   }
 
   // هيكل بأبعاد المحتوى النهائي — فلا يقفز التخطيط عند وصول البيانات

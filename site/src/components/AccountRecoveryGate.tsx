@@ -131,7 +131,7 @@ export default function AccountRecoveryGate() {
           <h2 className="text-xl font-bold mt-5">حسابك مجدول للحذف</h2>
           <p className="text-sm text-gray-600 mt-2 leading-7">
             سيُحذف حسابك نهائياً في{' '}
-            {scheduled.toLocaleDateString('ar-SA')}
+            {scheduled.toLocaleDateString('ar-SA', { timeZone: 'Asia/Riyadh' })}
           </p>
         </div>
 
