@@ -52,7 +52,7 @@ class _AdminAnalyticsMerchantsScreenState
     int newlyJoined = merchants.where((m) {
       final raw = m['created_at'];
       if (raw == null) return false;
-      return DateTime.parse(raw).isAfter(twentyFourHoursAgo);
+      return DateTime.parse(raw).toLocal().isAfter(twentyFourHoursAgo);
     }).length;
 
     int activeSub =

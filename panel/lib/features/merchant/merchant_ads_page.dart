@@ -134,7 +134,7 @@ class _MerchantAdsPageState extends State<MerchantAdsPage> {
   }
 
   String _fmt(dynamic raw) {
-    final d = DateTime.tryParse((raw ?? '').toString());
+    final d = DateTime.tryParse((raw ?? '').toString())?.toLocal();
     if (d == null) return '—';
     return '${d.day}/${d.month}';
   }
@@ -725,7 +725,7 @@ class _MerchantAdsPageState extends State<MerchantAdsPage> {
     if (status != 'paid' && status != 'scheduled') return false;
 
     final week = b['banner_weeks'] as Map<String, dynamic>?;
-    final start = DateTime.tryParse((week?['week_start'] ?? '').toString());
+    final start = DateTime.tryParse((week?['week_start'] ?? '').toString())?.toLocal();
     if (start == null) return false;
 
     return start.difference(DateTime.now()).inHours >= 24;
@@ -749,7 +749,7 @@ class _MerchantAdsPageState extends State<MerchantAdsPage> {
     final showStats = status == 'active' || status == 'expired';
 
     // التعديل متاح ما بقي أكثر من 24 ساعة
-    final start = DateTime.tryParse((week?['week_start'] ?? '').toString());
+    final start = DateTime.tryParse((week?['week_start'] ?? '').toString())?.toLocal();
     final canEdit = ['paid', 'scheduled', 'active', 'suspended']
             .contains(status) &&
         start != null &&
@@ -1715,7 +1715,7 @@ class _MerchantAdsPageState extends State<MerchantAdsPage> {
     };
 
     final adDate = (a['ad_date'] ?? '').toString();
-    final hoursLeft = DateTime.tryParse(adDate)
+    final hoursLeft = DateTime.tryParse(adDate)?.toLocal()
             ?.difference(DateTime.now())
             .inHours ??
         0;

@@ -38,7 +38,7 @@ class NotificationsObserver {
 
             // التحقق من الوقت (لضمان عدم ظهور إشعارات قديمة جداً عند تشغيل التطبيق)
             final createdAt =
-                DateTime.tryParse(notification['created_at']?.toString() ?? '');
+                DateTime.tryParse(notification['created_at']?.toString() ?? '')?.toLocal();
             if (createdAt == null) return;
             if (createdAt.isBefore(
                 DateTime.now().subtract(const Duration(seconds: 30)))) return;

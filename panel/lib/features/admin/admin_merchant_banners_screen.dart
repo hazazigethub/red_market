@@ -443,7 +443,7 @@ class _AdminMerchantBannersScreenState
   }
 
   String _fmt(dynamic raw) {
-    final d = DateTime.tryParse((raw ?? '').toString());
+    final d = DateTime.tryParse((raw ?? '').toString())?.toLocal();
     if (d == null) return '—';
     return '${d.day}/${d.month}';
   }

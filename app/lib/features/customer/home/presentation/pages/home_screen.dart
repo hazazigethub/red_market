@@ -572,7 +572,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       final now = DateTime.now();
       items = items.where((e) {
-        final visitedAt = DateTime.tryParse(e['visited_at'] ?? '');
+        final visitedAt = DateTime.tryParse(e['visited_at'] ?? '')?.toLocal();
         return visitedAt != null && now.difference(visitedAt).inDays < 5;
       }).toList();
 

@@ -413,7 +413,7 @@ class _DiscountCodesScreenState extends State<DiscountCodesScreen> {
                                   color: Colors.grey[50],
                                   borderRadius: BorderRadius.circular(5)),
                               child: Text(
-                                "ينتهي: ${item['expiry_date'] != null ? DateFormat('yyyy-MM-dd').format(DateTime.parse(item['expiry_date'])) : ''}",
+                                "ينتهي: ${item['expiry_date'] != null ? DateFormat('yyyy-MM-dd').format(DateTime.parse(item['expiry_date']).toLocal()) : ''}",
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Colors.grey[500],

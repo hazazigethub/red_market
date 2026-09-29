@@ -58,7 +58,7 @@ class _AdminAnalyticsProductsScreenState
     int totalProducts = products.length;
 
     int newlyAdded = products.where((p) {
-      DateTime createdAt = DateTime.parse(p['created_at']);
+      DateTime createdAt = DateTime.parse(p['created_at']).toLocal();
       return createdAt.isAfter(twentyFourHoursAgo);
     }).length;
 
@@ -76,7 +76,7 @@ class _AdminAnalyticsProductsScreenState
     // ✅ الأكثر زيارة = الأكثر إعجاباً مع فلتر زمني
     DateTime visitedFrom = _getFromDate(_visitedFilter);
     var topVisited = products.where((p) {
-      DateTime createdAt = DateTime.parse(p['created_at']);
+      DateTime createdAt = DateTime.parse(p['created_at']).toLocal();
       return createdAt.isAfter(visitedFrom);
     }).toList();
     topVisited.sort(
@@ -85,7 +85,7 @@ class _AdminAnalyticsProductsScreenState
     // ✅ فلتر الزمن للأكثر إضافة للمفضلة (بديل الأكثر بحثاً)
     DateTime searchedFrom = _getFromDate(_searchedFilter);
     var topSearched = products.where((p) {
-      DateTime createdAt = DateTime.parse(p['created_at']);
+      DateTime createdAt = DateTime.parse(p['created_at']).toLocal();
       return createdAt.isAfter(searchedFrom);
     }).toList();
     topSearched.sort(

@@ -85,15 +85,15 @@ class _AdminCampaignsScreenState extends State<AdminCampaignsScreen> {
   }
 
   String _fmt(dynamic raw) {
-    final d = DateTime.tryParse((raw ?? '').toString());
+    final d = DateTime.tryParse((raw ?? '').toString())?.toLocal();
     if (d == null) return '—';
     return '${d.day}/${d.month}/${d.year}';
   }
 
   /// حالة الحملة
   ({String label, Color color}) _statusOf(Map<String, dynamic> c) {
-    final start = DateTime.tryParse((c['starts_at'] ?? '').toString());
-    final end = DateTime.tryParse((c['ends_at'] ?? '').toString());
+    final start = DateTime.tryParse((c['starts_at'] ?? '').toString())?.toLocal();
+    final end = DateTime.tryParse((c['ends_at'] ?? '').toString())?.toLocal();
     final today = DateTime.now();
 
     if (end != null && end.isBefore(DateTime(today.year, today.month, today.day))) {
@@ -119,8 +119,8 @@ class _AdminCampaignsScreenState extends State<AdminCampaignsScreen> {
     final fee = TextEditingController(
         text: '${(edit?['entry_fee'] as num?)?.toInt() ?? 5}');
 
-    DateTime? start = DateTime.tryParse((edit?['starts_at'] ?? '').toString());
-    DateTime? end = DateTime.tryParse((edit?['ends_at'] ?? '').toString());
+    DateTime? start = DateTime.tryParse((edit?['starts_at'] ?? '').toString())?.toLocal();
+    DateTime? end = DateTime.tryParse((edit?['ends_at'] ?? '').toString())?.toLocal();
     bool saving = false;
 
     // صورة البنر — مقاس 30:7

@@ -56,7 +56,7 @@ class _NewMerchantsScreenState extends State<NewMerchantsScreen> {
   }
 
   String _fmtDate(dynamic raw) {
-    final d = DateTime.tryParse(raw?.toString() ?? '');
+    final d = DateTime.tryParse(raw?.toString() ?? '')?.toLocal();
     if (d == null) return '—';
     return '${d.day}/${d.month}/${d.year}';
   }

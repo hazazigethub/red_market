@@ -78,7 +78,7 @@ class _AdminBannerWeeksScreenState extends State<AdminBannerWeeksScreen> {
   }
 
   DateTime? _date(dynamic raw) {
-    final d = DateTime.tryParse((raw ?? '').toString());
+    final d = DateTime.tryParse((raw ?? '').toString())?.toLocal();
     return d == null ? null : DateTime(d.year, d.month, d.day);
   }
 
@@ -416,13 +416,13 @@ class _AdminBannerWeeksScreenState extends State<AdminBannerWeeksScreen> {
   }
 
   bool _isPast(Map<String, dynamic> w) {
-    final end = DateTime.tryParse((w['week_end'] ?? '').toString());
+    final end = DateTime.tryParse((w['week_end'] ?? '').toString())?.toLocal();
     if (end == null) return false;
     return end.isBefore(DateTime.now());
   }
 
   String _fmt(dynamic raw) {
-    final d = DateTime.tryParse((raw ?? '').toString());
+    final d = DateTime.tryParse((raw ?? '').toString())?.toLocal();
     if (d == null) return '—';
     return '${d.day}/${d.month}';
   }

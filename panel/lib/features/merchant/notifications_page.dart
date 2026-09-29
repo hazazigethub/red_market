@@ -106,7 +106,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   String _formatTime(dynamic raw) {
     if (raw == null) return '';
-    final d = DateTime.tryParse(raw.toString());
+    final d = DateTime.tryParse(raw.toString())?.toLocal();
     if (d == null) return '';
     final local = d.toLocal();
     final diff = DateTime.now().difference(local);

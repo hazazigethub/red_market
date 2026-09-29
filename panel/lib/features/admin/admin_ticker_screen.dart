@@ -81,7 +81,7 @@ class _AdminTickerScreenState extends State<AdminTickerScreen> {
     bool active = row?['is_active'] ?? true;
     DateTime? expiry = row?['expires_at'] == null
         ? null
-        : DateTime.tryParse(row!['expires_at'].toString());
+        : DateTime.tryParse(row!['expires_at'].toString())?.toLocal();
 
     bool saving = false;
 

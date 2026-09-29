@@ -188,7 +188,7 @@ class _LoginPageState extends State<LoginPage>
       final scheduledRaw = profile?['deletion_scheduled_at'];
       final scheduled = scheduledRaw == null
           ? null
-          : DateTime.tryParse(scheduledRaw.toString());
+          : DateTime.tryParse(scheduledRaw.toString())?.toLocal();
 
       if (scheduled != null && mounted) {
         final nav = Navigator.of(context, rootNavigator: true);

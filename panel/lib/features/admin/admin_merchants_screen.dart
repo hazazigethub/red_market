@@ -767,7 +767,7 @@ class _MerchantControlScreenState extends State<MerchantControlScreen> {
         _currentPlanName = profile?['package_name']?.toString();
         _subActive = profile?['is_subscription_active'] ?? false;
         final end = profile?['subscription_end_date'];
-        _subEnd = end == null ? null : DateTime.tryParse(end.toString());
+        _subEnd = end == null ? null : DateTime.tryParse(end.toString())?.toLocal();
       });
     } catch (e) {
       debugPrint('Load subscription error: $e');

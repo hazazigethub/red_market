@@ -278,7 +278,7 @@ class _PricingTabState extends State<PricingTab> {
 
   Widget _codeCard(Map<String, dynamic> c, int used) {
     final active = c['is_active'] == true;
-    final expiresAt = c['expires_at'] == null ? null : DateTime.tryParse('${c['expires_at']}');
+    final expiresAt = c['expires_at'] == null ? null : DateTime.tryParse('${c['expires_at']}')?.toLocal();
     final expired = expiresAt != null && expiresAt.isBefore(DateTime.now());
     final (String label, Color color) = !active
         ? ('موقوف', Colors.grey)

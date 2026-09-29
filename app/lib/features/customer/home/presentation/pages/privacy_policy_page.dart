@@ -50,7 +50,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
       setState(() {
         _content = (data['content'] ?? '').toString();
         _version = (data['version'] as num?)?.toInt();
-        _updatedAt = DateTime.tryParse((data['updated_at'] ?? '').toString());
+        _updatedAt = DateTime.tryParse((data['updated_at'] ?? '').toString())?.toLocal();
         _loading = false;
       });
     } catch (e) {

@@ -192,7 +192,7 @@ class _MerchantReportsPageState extends State<MerchantReportsPage> {
       for (final row in list) {
         final raw = row['visited_at'];
         if (raw == null) continue;
-        final d = DateTime.tryParse(raw.toString());
+        final d = DateTime.tryParse(raw.toString())?.toLocal();
         if (d == null) continue;
         final diff = now.difference(d).inDays;
         if (diff >= 0 && diff < 30) {

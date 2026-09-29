@@ -180,7 +180,7 @@ class _AdminRefundsScreenState extends State<AdminRefundsScreen> {
 
   String _fmt(dynamic raw) {
     if (raw == null) return '—';
-    final d = DateTime.tryParse(raw.toString());
+    final d = DateTime.tryParse(raw.toString())?.toLocal();
     if (d == null) return '—';
     return "${d.year}/${d.month}/${d.day}";
   }

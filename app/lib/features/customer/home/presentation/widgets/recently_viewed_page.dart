@@ -35,7 +35,7 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
 
       // ✅ فلترة العروض التي مضى عليها أكثر من 5 أيام
       items = items.where((e) {
-        final visitedAt = DateTime.tryParse(e['visited_at'] ?? '');
+        final visitedAt = DateTime.tryParse(e['visited_at'] ?? '')?.toLocal();
         return visitedAt != null && now.difference(visitedAt).inDays < 5;
       }).toList();
 

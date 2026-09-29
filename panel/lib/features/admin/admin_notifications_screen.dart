@@ -907,7 +907,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen>
 
   Widget _logCard(Map<String, dynamic> item, Color brandRed) {
     final bool isSent = item['status'] == 'sent';
-    final created = DateTime.tryParse(item['created_at']?.toString() ?? '');
+    final created = DateTime.tryParse(item['created_at']?.toString() ?? '')?.toLocal();
 
     return Container(
       padding: const EdgeInsets.all(16),

@@ -78,12 +78,12 @@ class AdminAnalyticsUsersScreen extends StatelessWidget {
             final now = DateTime.now();
 
             int newUsers24h = users.where((u) {
-              final createdAt = DateTime.parse(u['created_at']);
+              final createdAt = DateTime.parse(u['created_at']).toLocal();
               return now.difference(createdAt).inHours <= 24;
             }).length;
 
             int newUsers7d = users.where((u) {
-              final createdAt = DateTime.parse(u['created_at']);
+              final createdAt = DateTime.parse(u['created_at']).toLocal();
               return now.difference(createdAt).inDays <= 7;
             }).length;
 
@@ -96,7 +96,7 @@ class AdminAnalyticsUsersScreen extends StatelessWidget {
                 dormantUsers++;
                 continue;
               }
-              final lastSeen = DateTime.parse(u['last_sign_in_at']);
+              final lastSeen = DateTime.parse(u['last_sign_in_at']).toLocal();
               final difference = now.difference(lastSeen).inDays;
               if (difference < 7) {
                 activeUsers++;

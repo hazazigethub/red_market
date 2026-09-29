@@ -390,7 +390,7 @@ class _MerchantPromoPageState extends State<MerchantPromoPage> {
 
   String _fmtDate(dynamic raw) {
     if (raw == null) return '';
-    final d = DateTime.tryParse(raw.toString());
+    final d = DateTime.tryParse(raw.toString())?.toLocal();
     if (d == null) return '';
     return "${d.year}/${d.month}/${d.day}";
   }

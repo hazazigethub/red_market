@@ -66,7 +66,7 @@ class _MerchantCancelSubscriptionPageState
         final isTrial = sub['is_trial'] == true;
         final billing = (sub['billing'] ?? 'monthly').toString();
         final started = DateTime.tryParse(
-            (sub['started_at'] ?? '').toString());
+            (sub['started_at'] ?? '').toString())?.toLocal();
 
         window = billing == 'yearly' ? 14 : 7;
         amount = price;
@@ -95,7 +95,7 @@ class _MerchantCancelSubscriptionPageState
 
   String _fmt(dynamic raw) {
     if (raw == null) return '—';
-    final d = DateTime.tryParse(raw.toString());
+    final d = DateTime.tryParse(raw.toString())?.toLocal();
     if (d == null) return '—';
     return "${d.year}/${d.month}/${d.day}";
   }

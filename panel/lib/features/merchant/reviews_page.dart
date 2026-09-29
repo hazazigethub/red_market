@@ -48,7 +48,7 @@ class ReviewData {
       title: (map['product_name'] ?? 'عرض').toString(),
       comment: (map['comment'] ?? '').toString(),
       rating: (map['rating'] as num?)?.toDouble() ?? 0.0,
-      createdAt: DateTime.tryParse((map['created_at'] ?? '').toString()) ??
+      createdAt: DateTime.tryParse((map['created_at'] ?? '').toString())?.toLocal() ??
           DateTime.now(),
       merchantReply: map['merchant_reply']?.toString(),
     );
@@ -70,7 +70,7 @@ class ReviewData {
       comment:
           (map['comment'] ?? '').toString(), // غالبًا فاضي في store_reviews
       rating: (map['rating'] as num?)?.toDouble() ?? 0.0,
-      createdAt: DateTime.tryParse((map['created_at'] ?? '').toString()) ??
+      createdAt: DateTime.tryParse((map['created_at'] ?? '').toString())?.toLocal() ??
           DateTime.now(),
       merchantReply: map['merchant_reply']?.toString(),
     );

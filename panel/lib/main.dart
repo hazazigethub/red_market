@@ -126,7 +126,7 @@ class _AuthGateState extends State<AuthGate> {
 
       // حساب مجدول للحذف: شاشة الاستعادة بدل اللوحة
       final raw = profile?['deletion_scheduled_at'];
-      final scheduled = raw == null ? null : DateTime.tryParse(raw.toString());
+      final scheduled = raw == null ? null : DateTime.tryParse(raw.toString())?.toLocal();
 
       if (scheduled != null) {
         return AccountRecoveryPage(

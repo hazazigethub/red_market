@@ -212,7 +212,7 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
     final bool isActive = banner['is_active'] ?? true;
     final bool isPermanent = banner['is_permanent'] ?? true;
     final DateTime? endDate =
-        banner['end_date'] != null ? DateTime.parse(banner['end_date']) : null;
+        banner['end_date'] != null ? DateTime.parse(banner['end_date']).toLocal() : null;
     final DateTime now = DateTime.now();
 
     String label = "فعال";
@@ -277,14 +277,14 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
                   _infoRow(
                       Icons.calendar_today,
                       "تاريخ البداية",
-                      DateTime.parse(banner['start_date'])
+                      DateTime.parse(banner['start_date']).toLocal()
                           .toString()
                           .substring(0, 10)),
                 if (banner['end_date'] != null)
                   _infoRow(
                       Icons.event,
                       "تاريخ الانتهاء",
-                      DateTime.parse(banner['end_date'])
+                      DateTime.parse(banner['end_date']).toLocal()
                           .toString()
                           .substring(0, 10)),
               ],
@@ -631,10 +631,10 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
     bool isActive = existingBanner?['is_active'] ?? true;
     String bannerType = existingBanner?['banner_type'] ?? 'wide';
     DateTime? start = existingBanner?['start_date'] != null
-        ? DateTime.parse(existingBanner!['start_date'])
+        ? DateTime.parse(existingBanner!['start_date']).toLocal()
         : null;
     DateTime? end = existingBanner?['end_date'] != null
-        ? DateTime.parse(existingBanner!['end_date'])
+        ? DateTime.parse(existingBanner!['end_date']).toLocal()
         : null;
 
     showDialog(

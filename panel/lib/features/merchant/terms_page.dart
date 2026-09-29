@@ -52,7 +52,7 @@ class _TermsPageState extends State<TermsPage> {
       setState(() {
         _content = (row['content'] ?? '').toString();
         _version = (row['version'] as num?)?.toInt();
-        _updatedAt = DateTime.tryParse((row['updated_at'] ?? '').toString());
+        _updatedAt = DateTime.tryParse((row['updated_at'] ?? '').toString())?.toLocal();
         _loading = false;
       });
     } catch (e) {

@@ -472,7 +472,7 @@ class _MerchantSubscriptionsPageState
                               if (status == _PlanStatus.current &&
                                   currentPlan?['subscription_end_date'] != null)
                                 Text(
-                                  "ينتهي: ${DateTime.parse(currentPlan!['subscription_end_date']).day}/${DateTime.parse(currentPlan['subscription_end_date']).month}/${DateTime.parse(currentPlan['subscription_end_date']).year}",
+                                  "ينتهي: ${DateTime.parse(currentPlan!['subscription_end_date']).toLocal().day}/${DateTime.parse(currentPlan['subscription_end_date']).toLocal().month}/${DateTime.parse(currentPlan['subscription_end_date']).toLocal().year}",
                                   style: TextStyle(
                                     fontFamily: 'Cairo',
                                     fontSize: 9.5,

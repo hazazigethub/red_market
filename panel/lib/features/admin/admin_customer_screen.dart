@@ -173,7 +173,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   bool _checkIfActive(Map<String, dynamic> u, DateTime threshold) {
     if (u['last_sign_in_at'] != null) {
       try {
-        final lastSignIn = DateTime.parse(u['last_sign_in_at'].toString());
+        final lastSignIn = DateTime.parse(u['last_sign_in_at'].toString()).toLocal();
         return lastSignIn.isAfter(threshold);
       } catch (e) {
         return u['user_status'] == 'active';
