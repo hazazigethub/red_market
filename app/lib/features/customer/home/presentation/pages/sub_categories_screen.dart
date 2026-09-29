@@ -5,6 +5,8 @@ import 'package:red_market/core/routing/route_paths.dart';
 import 'package:red_market_core/red_market_core.dart';
 import '../widgets/product_card.dart';
 
+/// التصنيف الرئيسي + الفرعي + فرع الفرعي في شاشة واحدة
+/// (نفس طريقة الموقع: شريطان أفقيان يُسحبان، والعروض تتفلتر بلا تنقّل)
 class SubCategoriesScreen extends StatefulWidget {
   final String parentId;
   final String categoryName;
@@ -20,12 +22,103 @@ class SubCategoriesScreen extends StatefulWidget {
 }
 
 class _SubCategoriesScreenState extends State<SubCategoriesScreen> {
+  static const Color brandRed = Color(0xFFD32027);
   final supabase = Supabase.instance.client;
+
+  List<Map<String, dynamic>> _subs = [];
+  List<Map<String, dynamic>> _leaves = [];
+  List<ProductModel> _products = [];
+
+  /// null = الكل
+  String? _subId;
+  String? _leafId;
+
+  bool _loadingSubs = true;
+  bool _loadingProducts = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    try {
+      final data = await supabase
+          .from('product_categories')
+          .select('id, name')
+          .eq('parent_id', widget.parentId)
+          .eq('is_visible', true)
+          .order('name');
+      _subs = List<Map<String, dynamic>>.from(data);
+    } catch (e) {
+      debugPrint('Subs error: $e');
+    }
+    if (mounted) setState(() => _loadingSubs = false);
+    await _loadProducts();
+  }
+
+  /// عروض الكل (كل الفرعيات) أو فرعي محدد
+  Future<void> _loadProducts() async {
+    setState(() => _loadingProducts = true);
+    try {
+      final ids = _subId != null
+          ? [_subId!]
+          : _subs.map((s) => s['id'].toString()).toList();
+
+      if (ids.isEmpty) {
+        _products = [];
+      } else {
+        final data = await supabase
+            .from('products')
+            .select('*')
+            .inFilter('category_id', ids)
+            .eq('is_available', true)
+            .order('created_at', ascending: false)
+            .limit(60);
+        _products =
+            (data as List).map((p) => ProductModel.fromJson(p)).toList();
+      }
+    } catch (e) {
+      debugPrint('Products error: $e');
+      _products = [];
+    }
+    if (mounted) setState(() => _loadingProducts = false);
+  }
+
+  Future<void> _selectSub(String? id) async {
+    if (_subId == id) return;
+    setState(() {
+      _subId = id;
+      _leafId = null;
+      _leaves = [];
+    });
+
+    if (id != null) {
+      try {
+        final data = await supabase
+            .from('sup_product_subcategories')
+            .select('id, name')
+            .eq('parent_id', id)
+            .eq('is_visible', true)
+            .order('name');
+        if (mounted && _subId == id) {
+          setState(() => _leaves = List<Map<String, dynamic>>.from(data));
+        }
+      } catch (e) {
+        debugPrint('Leaves error: $e');
+      }
+    }
+    await _loadProducts();
+  }
+
+  List<ProductModel> get _visible {
+    if (_leafId == null) return _products;
+    return _products.where((p) => p.subCategoryId == _leafId).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
-    const Color brandRed = Color(0xFFD32027);
-
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -47,80 +140,118 @@ class _SubCategoriesScreenState extends State<SubCategoriesScreen> {
             ),
           ),
         ),
-        body: FutureBuilder<List<Map<String, dynamic>>>(
-          // ✅ نجلب اسم التصنيف الرئيسي مع كل تصنيف فرعي
-          future: supabase
-              .from('product_categories')
-              .select('*, parent:parent_id(name)')
-              .eq('parent_id', widget.parentId)
-              .eq('is_visible', true)
-              .order('name'),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                  child: CircularProgressIndicator(color: brandRed));
-            }
-            final data = snapshot.data ?? [];
-            if (data.isEmpty)
-              return const Center(child: Text("لا توجد أقسام فرعية حالياً"));
+        body: _loadingSubs
+            ? const Center(child: CircularProgressIndicator(color: brandRed))
+            : Column(
+                children: [
+                  const SizedBox(height: 12),
 
-            return GridView.builder(
-              padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.0,
-              ),
-              itemCount: data.length,
-              itemBuilder: (context, index) {
-                final item = data[index];
-                final String subName = item['name'] ?? 'قسم غير مسمى';
-                return InkWell(
-                  splashColor: Colors.transparent,
-                  highlightColor: Colors.transparent,
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => SubCategoryItemsPage(
-                          categoryId: item['id'],
-                          categoryName: subName,
-                        ),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: brandRed.withValues(alpha: 0.5),
-                        width: 1,
-                      ),
+                  // ===== الفرعية =====
+                  if (_subs.isNotEmpty)
+                    _chipsRow(
+                      height: 40,
+                      items: _subs,
+                      selected: _subId,
+                      onTap: _selectSub,
                     ),
-                    child: Center(
-                      child: Text(
-                        subName,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 13,
-                          height: 1.3,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
+
+                  // ===== فرع الفرعية — يظهر عند اختيار فرعي =====
+                  if (_subId != null && _leaves.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    _chipsRow(
+                      height: 34,
+                      small: true,
+                      items: _leaves,
+                      selected: _leafId,
+                      onTap: (id) => setState(() => _leafId = id),
                     ),
+                  ],
+
+                  const SizedBox(height: 12),
+
+                  Expanded(
+                    child: _loadingProducts
+                        ? const Center(
+                            child: CircularProgressIndicator(color: brandRed))
+                        : _visible.isEmpty
+                            ? const Center(
+                                child: Text("لا توجد عروض حالياً",
+                                    style: TextStyle(fontFamily: 'Cairo')))
+                            : GridView.builder(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  mainAxisSpacing: 12,
+                                  crossAxisSpacing: 12,
+                                  childAspectRatio: 0.75,
+                                ),
+                                itemCount: _visible.length,
+                                itemBuilder: (context, index) =>
+                                    ProductCard(product: _visible[index]),
+                              ),
                   ),
-                );
-              },
-            );
-          },
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _chipsRow({
+    required double height,
+    required List<Map<String, dynamic>> items,
+    required String? selected,
+    required ValueChanged<String?> onTap,
+    bool small = false,
+  }) {
+    return SizedBox(
+      height: height,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: [
+          _chip('الكل', selected == null, () => onTap(null), small),
+          for (final it in items) ...[
+            const SizedBox(width: 8),
+            _chip(
+              (it['name'] ?? '').toString(),
+              selected == it['id'].toString(),
+              () => onTap(it['id'].toString()),
+              small,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _chip(String label, bool on, VoidCallback onTap, bool small) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: small ? 12 : 16),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: on
+              ? brandRed
+              : Theme.of(context).brightness == Brightness.dark
+                  ? Theme.of(context).colorScheme.surfaceContainerHighest
+                  : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: on ? brandRed : brandRed.withValues(alpha: 0.5),
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Cairo',
+            fontSize: small ? 11.5 : 12.5,
+            fontWeight: FontWeight.bold,
+            color: on ? Colors.white : Theme.of(context).colorScheme.onSurface,
+          ),
         ),
       ),
     );
