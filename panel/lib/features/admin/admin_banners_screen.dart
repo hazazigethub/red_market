@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../shared/rm_pickers.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -1045,9 +1046,9 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
                         // تاريخ البداية
                         GestureDetector(
                           onTap: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: start ?? DateTime.now(),
+                            final picked = await rmPickDate(
+                              context,
+                              initial: start,
                               firstDate: DateTime.now()
                                   .subtract(const Duration(days: 365)),
                               lastDate:
@@ -1089,10 +1090,9 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
                         // تاريخ النهاية
                         GestureDetector(
                           onTap: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: end ??
-                                  DateTime.now().add(const Duration(days: 7)),
+                            final picked = await rmPickDate(
+                              context,
+                              initial: end,
                               firstDate: DateTime.now(),
                               lastDate:
                                   DateTime.now().add(const Duration(days: 365)),

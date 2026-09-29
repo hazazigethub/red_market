@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../shared/rm_pickers.dart';
+
 // =====================================================================
 // أدوات مشتركة لقسم المعارض — مطابقة لنظام تصميم لوحة الأدمن
 // (brandRed D32027، الخلفية F7F8FA، الحدود EDEFF3، خط Cairo، نوافذ منبثقة)
@@ -877,18 +879,15 @@ class ExpoDateTimeField extends StatelessWidget {
       onTap: () async {
         final now = DateTime.now();
         final base = v ?? DateTime(now.year, now.month, now.day, 10);
-        final d = await showDatePicker(
-          context: context,
-          initialDate: base,
+        final d = await rmPickDateTime(
+          context,
+          initial: base,
           firstDate: DateTime(now.year - 1),
           lastDate: DateTime(now.year + 3),
+          futureOnly: false,
         );
-        if (d == null || !context.mounted) return;
-        final t = await showTimePicker(
-            context: context,
-            initialTime: TimeOfDay(hour: base.hour, minute: base.minute));
-        if (t == null) return;
-        onChanged(DateTime(d.year, d.month, d.day, t.hour, t.minute));
+        if (d == null) return;
+        onChanged(d);
       },
       borderRadius: BorderRadius.circular(11),
       child: Container(

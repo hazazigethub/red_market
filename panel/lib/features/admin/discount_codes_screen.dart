@@ -3,6 +3,8 @@ import 'dart:ui' as ui;
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../shared/rm_pickers.dart';
+
 class DiscountCodesScreen extends StatefulWidget {
   const DiscountCodesScreen({super.key});
 
@@ -123,23 +125,11 @@ class _DiscountCodesScreenState extends State<DiscountCodesScreen> {
   }
 
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
+    final DateTime? picked = await rmPickDate(
+      context,
+      initial: isStartDate ? _startDate : _endDate,
       firstDate: DateTime.now(),
       lastDate: DateTime(2030),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: brandRed,
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (picked != null) {
       setState(() {

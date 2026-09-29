@@ -2,6 +2,8 @@ import 'package:flutter/material.dart' as material;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 
+import '../../shared/rm_pickers.dart';
+
 class AdminAnalyticsVisitsScreen extends material.StatefulWidget {
   const AdminAnalyticsVisitsScreen({super.key});
 
@@ -433,12 +435,11 @@ class _AdminAnalyticsVisitsScreenState
       child: material.InkWell(
         onTap: () async {
           final DateTime today = material.DateUtils.dateOnly(DateTime.now());
-          final picked = await material.showDateRangePicker(
-            context: context,
-            initialDateRange: selectedRange,
+          final picked = await rmPickDateRange(
+            context,
+            initial: selectedRange,
             firstDate: DateTime(2024),
             lastDate: today,
-            saveText: "اعتماد",
           );
           if (picked != null) onRangeSelected(picked);
         },

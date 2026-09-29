@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../shared/rm_pickers.dart';
 import '../expo_common.dart';
 
 const Map<String, String> kCodeProduct = {
@@ -169,9 +170,8 @@ class _PricingTabState extends State<PricingTab> {
                 InkWell(
                   onTap: () async {
                     final now = DateTime.now();
-                    final d = await showDatePicker(
-                        context: ctx,
-                        initialDate: expires ?? now.add(const Duration(days: 30)),
+                    final d = await rmPickDate(ctx,
+                        initial: expires,
                         firstDate: now,
                         lastDate: DateTime(now.year + 3));
                     if (d != null) setD(() => expires = d);

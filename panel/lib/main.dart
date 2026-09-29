@@ -36,8 +36,41 @@ class RedMarketWebApp extends StatelessWidget {
       title: 'Red Market',
       debugShowCheckedModeBanner: false,
       locale: const Locale('ar'),
-      builder: (context, child) =>
-          Directionality(textDirection: TextDirection.rtl, child: child!),
+      builder: (context, child) {
+        // ✅ كل الإشعارات تظهر كرسالة في وسط الصفحة
+        final size = MediaQuery.sizeOf(context);
+        const msgWidth = 380.0;
+        final side = size.width > msgWidth + 32
+            ? (size.width - msgWidth) / 2
+            : 16.0;
+        return Theme(
+          data: Theme.of(context).copyWith(
+            snackBarTheme: SnackBarThemeData(
+              behavior: SnackBarBehavior.floating,
+              insetPadding: EdgeInsets.fromLTRB(
+                side,
+                0,
+                side,
+                size.height / 2 - 30,
+              ),
+              backgroundColor: const Color(0xFF1F2937),
+              elevation: 6,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentTextStyle: const TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 13.5,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          child: Directionality(
+            textDirection: TextDirection.rtl,
+            child: child!,
+          ),
+        );
+      },
       theme: base.copyWith(
         // ✅ خط Cairo على كل نصوص اللوحة
         textTheme: GoogleFonts.cairoTextTheme(base.textTheme),
@@ -86,8 +119,7 @@ class _AuthGateState extends State<AuthGate> {
 
       // حساب مجدول للحذف: شاشة الاستعادة بدل اللوحة
       final raw = profile?['deletion_scheduled_at'];
-      final scheduled =
-          raw == null ? null : DateTime.tryParse(raw.toString());
+      final scheduled = raw == null ? null : DateTime.tryParse(raw.toString());
 
       if (scheduled != null) {
         return AccountRecoveryPage(

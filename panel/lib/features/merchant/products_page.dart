@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:red_market_core/red_market_core.dart';
 import 'merchant_subscriptions_page.dart';
+import '../../shared/rm_pickers.dart';
 
 const Color brandRed = Color(0xFFD32027);
 
@@ -1834,13 +1835,9 @@ class _ProductsPageState extends State<ProductsPage> {
                               splashColor: Colors.transparent,
                               highlightColor: Colors.transparent,
                               onTap: () async {
-                                final DateTime? picked = await showDatePicker(
-                                  context: context,
-                                  initialDate:
-                                      flashSaleStart ??
-                                      DateTime.now().add(
-                                        const Duration(days: 1),
-                                      ),
+                                final DateTime? picked = await rmPickDateTime(
+                                  context,
+                                  initial: flashSaleStart,
                                   firstDate: DateTime.now(),
                                   lastDate: DateTime.now().add(
                                     const Duration(days: 60),
@@ -1848,23 +1845,8 @@ class _ProductsPageState extends State<ProductsPage> {
                                 );
                                 if (picked == null) return;
 
-                                if (!context.mounted) return;
-                                final TimeOfDay? time = await showTimePicker(
-                                  context: context,
-                                  initialTime: TimeOfDay.fromDateTime(
-                                    flashSaleStart ?? DateTime.now(),
-                                  ),
-                                );
-                                if (time == null) return;
-
                                 setModalState(() {
-                                  flashSaleStart = DateTime(
-                                    picked.year,
-                                    picked.month,
-                                    picked.day,
-                                    time.hour,
-                                    time.minute,
-                                  );
+                                  flashSaleStart = picked;
                                   // الانتهاء دائماً بعد 24 ساعة من البدء
                                   flashSaleExpiry = flashSaleStart!.add(
                                     const Duration(hours: 24),

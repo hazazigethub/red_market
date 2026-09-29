@@ -555,6 +555,250 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen>
     );
   }
 
+  /// تقويم اختيار موعد الإرسال — بنفس تصميم تقويمات اللوحة
+  Future<DateTime?> _pickDateTime(BuildContext context) {
+    const Color brandRed = Color(0xFFD32027);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // أقرب 5 دقائق قادمة
+    final base = now.add(Duration(minutes: 5 - now.minute % 5));
+    DateTime month = DateTime(today.year, today.month);
+    DateTime day = today;
+    int hour = base.hour;
+    int minute = base.minute;
+
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const monthNames = [
+      'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+    ];
+
+    String two(int v) => v.toString().padLeft(2, '0');
+
+    Widget dropdown(
+        int value, List<int> items, ValueChanged<int> onChanged) {
+      return Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFEDEFF3)),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<int>(
+            value: value,
+            icon: const SizedBox.shrink(),
+            dropdownColor: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            menuMaxHeight: 240,
+            style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1F2937)),
+            items: items
+                .map((v) => DropdownMenuItem(value: v, child: Text(two(v))))
+                .toList(),
+            onChanged: (v) {
+              if (v != null) onChanged(v);
+            },
+          ),
+        ),
+      );
+    }
+
+    return showDialog<DateTime>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setCal) {
+          final first = DateTime(month.year, month.month, 1);
+          final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+          final lead = first.weekday % 7; // الأحد أول الأسبوع
+          final chosen = DateTime(day.year, day.month, day.day, hour, minute);
+          final valid = chosen.isAfter(DateTime.now());
+
+          Widget cell(int i) {
+            if (i < lead) return const SizedBox.shrink();
+            final d = DateTime(month.year, month.month, i - lead + 1);
+            final past = d.isBefore(today);
+            final sel = d == day;
+
+            return InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: past ? null : () => setCal(() => day = d),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: sel ? brandRed : Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: sel ? brandRed : const Color(0xFFEDEFF3)),
+                ),
+                alignment: Alignment.center,
+                child: Text('${d.day}',
+                    style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.bold,
+                        color: past
+                            ? Colors.grey.shade300
+                            : sel
+                                ? Colors.white
+                                : const Color(0xFF1F2937))),
+              ),
+            );
+          }
+
+          return Directionality(
+            textDirection: TextDirection.rtl,
+            child: Dialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 360),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: () => setCal(() => month =
+                                DateTime(month.year, month.month - 1)),
+                            icon: const Icon(Icons.chevron_left_rounded,
+                                size: 20),
+                            color: Colors.grey.shade700,
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          Expanded(
+                            child: Text(
+                              '${monthNames[month.month - 1]} ${month.year}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => setCal(() => month =
+                                DateTime(month.year, month.month + 1)),
+                            icon: const Icon(Icons.chevron_right_rounded,
+                                size: 20),
+                            color: Colors.grey.shade700,
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: dayNames
+                            .map((n) => Expanded(
+                                  child: Center(
+                                    child: Text(n,
+                                        style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF8A93A6))),
+                                  ),
+                                ))
+                            .toList(),
+                      ),
+                      const SizedBox(height: 8),
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 7,
+                          mainAxisSpacing: 4,
+                          crossAxisSpacing: 4,
+                          mainAxisExtent: 38,
+                        ),
+                        itemCount: lead + daysInMonth,
+                        itemBuilder: (_, i) => cell(i),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // الوقت
+                      Directionality(
+                        textDirection: TextDirection.ltr,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            dropdown(
+                              hour,
+                              List.generate(24, (i) => i),
+                              (v) => setCal(() => hour = v),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8),
+                              child: Text(':',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold)),
+                            ),
+                            dropdown(
+                              minute,
+                              List.generate(12, (i) => i * 5),
+                              (v) => setCal(() => minute = v),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+                      Text(
+                        valid
+                            ? '${day.year}/${two(day.month)}/${two(day.day)}  ·  ${two(hour)}:${two(minute)}'
+                            : 'الموعد المختار مضى — اختر وقتاً لاحقاً',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 12,
+                            color: valid ? Colors.grey.shade600 : brandRed),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('إلغاء',
+                                style: TextStyle(
+                                    fontFamily: 'Cairo', color: Colors.grey)),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: brandRed,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
+                            onPressed:
+                                valid ? () => Navigator.pop(ctx, chosen) : null,
+                            child: const Text('تم',
+                                style: TextStyle(
+                                    fontFamily: 'Cairo',
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildSchedulingSection(Color brandRed) {
     return Card(
       elevation: 0,
@@ -574,21 +818,14 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen>
         value: _isScheduled,
         onChanged: (v) async {
           if (v) {
-            final date = await showDatePicker(
-                context: context,
-                firstDate: DateTime.now(),
-                lastDate: DateTime(2027),
-                builder: (context, child) => Theme(
-                    data: Theme.of(context).copyWith(
-                        colorScheme: ColorScheme.light(primary: brandRed)),
-                    child: child!));
+            final picked = await _pickDateTime(context);
             if (!mounted) return;
-            final time = await showTimePicker(
-                context: context, initialTime: TimeOfDay.now());
-            if (date != null && time != null) {
+            if (picked != null) {
               setState(() {
-                _scheduledDate = date;
-                _scheduledTime = time;
+                _scheduledDate =
+                    DateTime(picked.year, picked.month, picked.day);
+                _scheduledTime =
+                    TimeOfDay(hour: picked.hour, minute: picked.minute);
                 _isScheduled = true;
               });
             } else {

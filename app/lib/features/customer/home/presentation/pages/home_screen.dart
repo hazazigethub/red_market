@@ -56,7 +56,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   List<Map<String, dynamic>> _realCategories = [];
 
-
   /// الحملة الموسمية النشطة
 
   Map<String, dynamic>? _campaign;
@@ -117,10 +116,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           .order('created_at', ascending: true);
 
       // الزائر: عدّاد محلي على الجهاز
-      final prefs =
-          user == null ? await SharedPreferences.getInstance() : null;
+      final prefs = user == null ? await SharedPreferences.getInstance() : null;
 
-      for (final ann in (announcements as List)) {
+      // ✅ عرض الإعلانات ضمن فترة نشرها فقط
+      final now = DateTime.now();
+      final today =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      final inRange = (announcements as List).where((a) {
+        final s = a['start_date']?.toString();
+        final e = a['end_date']?.toString();
+        if (s != null && s.compareTo(today) > 0) return false;
+        if (e != null && e.compareTo(today) < 0) return false;
+        return true;
+      }).toList();
+
+      for (final ann in inRange) {
         final int maxViews = ann['max_views'] ?? 1;
         final String annId = ann['id'].toString();
 
@@ -706,8 +716,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Expanded(
                 child: _isDataLoading
                     ? const Center(
-                        child: CircularProgressIndicator(
-                            color: Color(0xFFD32027)))
+                        child:
+                            CircularProgressIndicator(color: Color(0xFFD32027)))
                     : _buildCurrentPage(
                         isAdmin, isMerchant, recentlyViewedItems),
               ),
@@ -979,8 +989,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: Image.network(
                         _campaign!['banner_image'].toString(),
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            const SizedBox.shrink(),
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                       ),
                     ),
                   ),

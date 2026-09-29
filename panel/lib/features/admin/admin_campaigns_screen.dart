@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../shared/rm_pickers.dart';
+
 /// إدارة الحملات الموسمية
 class AdminCampaignsScreen extends StatefulWidget {
   const AdminCampaignsScreen({super.key});
@@ -483,9 +485,9 @@ class _AdminCampaignsScreenState extends State<AdminCampaignsScreen> {
   }) {
     return InkWell(
       onTap: () async {
-        final picked = await showDatePicker(
-          context: context,
-          initialDate: value ?? DateTime.now(),
+        final picked = await rmPickDate(
+          context,
+          initial: value,
           firstDate: DateTime.now().subtract(const Duration(days: 30)),
           lastDate: DateTime.now().add(const Duration(days: 400)),
         );

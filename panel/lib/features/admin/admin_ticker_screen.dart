@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../shared/rm_pickers.dart';
+
 /// إدارة رسائل شريط الأخبار — تظهر للتجار والعملاء
 class AdminTickerScreen extends StatefulWidget {
   const AdminTickerScreen({super.key});
@@ -178,9 +180,9 @@ class _AdminTickerScreenState extends State<AdminTickerScreen> {
                               InkWell(
                                 onTap: () async {
                                   final now = DateTime.now();
-                                  final picked = await showDatePicker(
-                                    context: ctx,
-                                    initialDate: expiry ?? now,
+                                  final picked = await rmPickDate(
+                                    ctx,
+                                    initial: expiry,
                                     firstDate: now,
                                     lastDate:
                                         now.add(const Duration(days: 730)),
