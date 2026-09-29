@@ -177,7 +177,7 @@ class _ManageReelsPageState extends State<ManageReelsPage> {
         'video_url': videoUrl,
         'thumbnail_url':
             'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=500',
-        'created_at': DateTime.now().toIso8601String(),
+        'created_at': DateTime.now().toUtc().toIso8601String(),
         'likes_count': 0,
         'comments_count': 0,
         'is_active': true,

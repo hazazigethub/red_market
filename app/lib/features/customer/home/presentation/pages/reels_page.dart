@@ -277,7 +277,7 @@ class _ReelsPageState extends State<ReelsPage>
         await supabase.from('reel_saves').insert({
           'reel_id': reel.id,
           'user_id': userId,
-          'created_at': DateTime.now().toIso8601String()
+          'created_at': DateTime.now().toUtc().toIso8601String()
         });
       } else {
         await supabase
@@ -339,7 +339,7 @@ class _ReelsPageState extends State<ReelsPage>
       await supabase.from('reel_views').insert({
         'viewer_id': userId,
         'reel_id': reelId,
-        'viewed_at': DateTime.now().toIso8601String()
+        'viewed_at': DateTime.now().toUtc().toIso8601String()
       });
       final countRes =
           await supabase.from('reel_views').select('id').eq('reel_id', reelId);
@@ -532,7 +532,7 @@ class _ReelsPageState extends State<ReelsPage>
         await supabase.from('reel_likes').insert({
           'reel_id': reel.id,
           'user_id': userId,
-          'created_at': DateTime.now().toIso8601String()
+          'created_at': DateTime.now().toUtc().toIso8601String()
         });
         await supabase
             .from('reels')
@@ -562,7 +562,7 @@ class _ReelsPageState extends State<ReelsPage>
         'reel_id': reel.id,
         'merchant_id': reel.merchantId,
         'user_id': userId,
-        'shared_at': DateTime.now().toIso8601String()
+        'shared_at': DateTime.now().toUtc().toIso8601String()
       });
       if (mounted)
         setState(() =>

@@ -205,7 +205,7 @@ class _StoreDetailsPageState extends ConsumerState<StoreDetailsPage> {
         'target_type': type,
         'reason': reason,
         'status': 'pending',
-        'created_at': DateTime.now().toIso8601String()
+        'created_at': DateTime.now().toUtc().toIso8601String()
       });
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -236,7 +236,7 @@ class _StoreDetailsPageState extends ConsumerState<StoreDetailsPage> {
           .or('is_banned.eq.false,is_banned.is.null')
           // العروض المجدولة تُخفى حتى موعدها
           .or('flash_sale_start.is.null,flash_sale_start.lte.'
-              '${DateTime.now().toIso8601String()}');
+              '${DateTime.now().toUtc().toIso8601String()}');
 
       if (mounted) {
         setState(() {

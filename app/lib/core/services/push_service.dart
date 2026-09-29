@@ -94,7 +94,7 @@ class PushService {
         'token': token,
         'platform': platform,
         'is_active': true,
-        'updated_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
       }, onConflict: 'token');
 
       debugPrint('✅ رمز الجهاز محفوظ');

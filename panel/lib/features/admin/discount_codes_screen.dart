@@ -64,7 +64,7 @@ class _DiscountCodesScreenState extends State<DiscountCodesScreen> {
           // فارغ يعني أن الكود يسري على كل الباقات
           'plan_id': _selectedPlanId == _allPlans ? null : _selectedPlanId,
           'is_active': true,
-          'expiry_date': _endDate!.toIso8601String(),
+          'expiry_date': _endDate!.toUtc().toIso8601String(),
           // ملاحظة: تم إخفاء start_date لأن الحقل غير موجود في جدول promo_codes لديك
         });
 

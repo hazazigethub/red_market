@@ -45,7 +45,7 @@ class RecentlyViewedNotifier {
         await supabase.from('user_recently_viewed').upsert({
           'user_id': userId,
           'product_id': product.id,
-          'visited_at': DateTime.now().toIso8601String(),
+          'visited_at': DateTime.now().toUtc().toIso8601String(),
         }, onConflict: 'user_id,product_id');
 
         // ✅ حذف القديم إذا تجاوز 20 عرض

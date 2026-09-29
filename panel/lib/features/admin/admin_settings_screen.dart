@@ -101,7 +101,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         'feat_banners': _featBanners,
         'feat_campaigns': _featCampaigns,
         'feat_expo': _featExpo,
-        'updated_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -87,7 +87,7 @@ class _AdminRefundsScreenState extends State<AdminRefundsScreen> {
     try {
       await supabase.from('refund_requests').update({
         'status': status,
-        'processed_at': DateTime.now().toIso8601String(),
+        'processed_at': DateTime.now().toUtc().toIso8601String(),
         'admin_note': note,
       }).eq('id', row['id']);
 

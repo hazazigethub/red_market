@@ -96,7 +96,7 @@ class _AdminContactsScreenState extends State<AdminContactsScreen> {
         await supabase.from('contact_requests').update({
           'status': newStatus,
           if (newStatus == 'closed')
-            'handled_at': DateTime.now().toIso8601String(),
+            'handled_at': DateTime.now().toUtc().toIso8601String(),
         }).eq('id', row['id']);
       }
 

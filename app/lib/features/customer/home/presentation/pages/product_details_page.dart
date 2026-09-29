@@ -240,7 +240,7 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
         'product_id': pid,
         'merchant_id': _merchantId,
         'user_id': userId,
-        'shared_at': DateTime.now().toIso8601String(),
+        'shared_at': DateTime.now().toUtc().toIso8601String(),
       });
     } catch (e) {
       debugPrint("❌ Share Error: $e");
@@ -446,14 +446,14 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
       await supabase.from('user_views').upsert({
         'user_id': userId,
         'product_id': pid,
-        'viewed_at': DateTime.now().toIso8601String()
+        'viewed_at': DateTime.now().toUtc().toIso8601String()
       }, onConflict: 'user_id, product_id');
 
       await supabase.from('product_views').insert({
         'product_id': pid,
         'merchant_id': _merchantId,
         'viewer_id': userId,
-        'viewed_at': DateTime.now().toIso8601String(),
+        'viewed_at': DateTime.now().toUtc().toIso8601String(),
       });
     } catch (e) {
       debugPrint("❌ View Error: $e");

@@ -839,7 +839,7 @@ class _MerchantControlScreenState extends State<MerchantControlScreen> {
           int days = banDurations
               .firstWhere((d) => d['label'] == selectedDuration)['days'];
           updateData['ban_until'] =
-              DateTime.now().add(Duration(days: days)).toIso8601String();
+              DateTime.now().add(Duration(days: days)).toUtc().toIso8601String();
         }
       }
 

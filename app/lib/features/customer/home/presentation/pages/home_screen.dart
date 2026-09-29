@@ -171,7 +171,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 .from('announcement_views')
                 .update({
                   'views_count': viewsCount + 1,
-                  'last_viewed_at': DateTime.now().toIso8601String(),
+                  'last_viewed_at': DateTime.now().toUtc().toIso8601String(),
                 })
                 .eq('announcement_id', ann['id'])
                 .eq('user_id', user.id);
@@ -357,7 +357,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (user != null) {
       try {
         await supabase.from('profiles').update({
-          'last_sign_in_at': DateTime.now().toIso8601String(),
+          'last_sign_in_at': DateTime.now().toUtc().toIso8601String(),
         }).eq('id', user.id);
       } catch (e) {
         debugPrint("Last sign-in update error: $e");
@@ -427,7 +427,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       final allProducts =
           await supabase.from('products').select('merchant_id, image_url');
 
-      final nowIso = DateTime.now().toIso8601String();
+      final nowIso = DateTime.now().toUtc().toIso8601String();
 
       final flashData = activeMerchantIds.isEmpty
           ? []
@@ -443,7 +443,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               .limit(10);
 
       final fiveDaysAgo =
-          DateTime.now().subtract(const Duration(days: 5)).toIso8601String();
+          DateTime.now().subtract(const Duration(days: 5)).toUtc().toIso8601String();
       final newData = activeMerchantIds.isEmpty
           ? []
           : await supabase
@@ -520,7 +520,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           .from('products')
           .select()
           .or('flash_sale_start.is.null,flash_sale_start.lte.'
-              '${DateTime.now().toIso8601String()}')
+              '${DateTime.now().toUtc().toIso8601String()}')
           .range(_currentOffset, _currentOffset + _pageSize - 1);
       if (mounted) {
         setState(() {
@@ -543,7 +543,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       // ✅ مسجل دخول — جلب من السوبابيس
       if (userId != null) {
         final fiveDaysAgo =
-            DateTime.now().subtract(const Duration(days: 5)).toIso8601String();
+            DateTime.now().subtract(const Duration(days: 5)).toUtc().toIso8601String();
 
         final data = await supabase
             .from('user_recently_viewed')

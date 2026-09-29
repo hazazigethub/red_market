@@ -414,7 +414,7 @@ class ReportsDetailsPage extends StatelessWidget {
                           ? null
                           : DateTime.now()
                                 .add(Duration(days: selectedDays))
-                                .toIso8601String();
+                                .toUtc().toIso8601String();
 
                       await supabase
                           .from('profiles')

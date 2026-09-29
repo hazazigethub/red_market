@@ -25,7 +25,7 @@ class _NewArrivalsPageState extends State<NewArrivalsPage> {
   Future<void> _fetchNewArrivals() async {
     try {
       final fiveDaysAgo =
-          DateTime.now().subtract(const Duration(days: 5)).toIso8601String();
+          DateTime.now().subtract(const Duration(days: 5)).toUtc().toIso8601String();
 
       final data = await supabase
           .from('products')

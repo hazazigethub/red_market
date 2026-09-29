@@ -164,7 +164,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
           'comment_id': _replyingToCommentId,
           'user_id': userId,
           'content': _commentCtrl.text.trim(),
-          'created_at': DateTime.now().toIso8601String()
+          'created_at': DateTime.now().toUtc().toIso8601String()
         });
         setState(() {
           _replyingToCommentId = null;
@@ -175,7 +175,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
           _targetColumn: widget.targetId,
           'user_id': userId,
           'content': _commentCtrl.text.trim(),
-          'created_at': DateTime.now().toIso8601String()
+          'created_at': DateTime.now().toUtc().toIso8601String()
         });
       }
       _commentCtrl.clear();

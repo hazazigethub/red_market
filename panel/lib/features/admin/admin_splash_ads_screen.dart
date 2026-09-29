@@ -319,7 +319,7 @@ class _AdminSplashAdsScreenState extends State<AdminSplashAdsScreen> {
           .update({
             'is_approved': true,
             'rejection_reason': null,
-            'reviewed_at': DateTime.now().toIso8601String(),
+            'reviewed_at': DateTime.now().toUtc().toIso8601String(),
           })
           .eq('id', a['id']);
 

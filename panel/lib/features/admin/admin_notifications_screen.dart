@@ -77,7 +77,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen>
         'target_type': _targetType,
         'target_id': _selectedTarget?['id'],
         'segment_filter': _selectedSegment,
-        'scheduled_at': finalSchedule?.toIso8601String(),
+        'scheduled_at': finalSchedule?.toUtc().toIso8601String(),
         'status': finalSchedule == null ? 'sent' : 'scheduled',
       });
 

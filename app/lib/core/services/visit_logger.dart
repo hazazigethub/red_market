@@ -32,7 +32,7 @@ class VisitLogger {
         'page_name': pageName,
         'platform': platform,
         'user_id': supabase.auth.currentUser?.id,
-        'visited_at': DateTime.now().toIso8601String(),
+        'visited_at': DateTime.now().toUtc().toIso8601String(),
         if (merchantId != null) 'merchant_id': merchantId,
         if (categoryId != null) 'category_id': categoryId,
         if (categoryName != null) 'category_name': categoryName,

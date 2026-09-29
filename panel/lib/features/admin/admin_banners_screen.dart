@@ -99,8 +99,8 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
       'image_url': imageUrl,
       'is_permanent': isPermanent,
       'banner_type': bannerType,
-      'start_date': isPermanent ? null : startDate?.toIso8601String(),
-      'end_date': isPermanent ? null : endDate?.toIso8601String(),
+      'start_date': isPermanent ? null : startDate?.toUtc().toIso8601String(),
+      'end_date': isPermanent ? null : endDate?.toUtc().toIso8601String(),
       'is_active': isActive,
     };
 
