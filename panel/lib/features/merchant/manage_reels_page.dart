@@ -520,13 +520,7 @@ class _ManageReelsPageState extends State<ManageReelsPage> {
           backgroundColor: Colors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: Text(
-            reel.title ?? "الريلز",
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-                fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -571,11 +565,7 @@ class _ManageReelsPageState extends State<ManageReelsPage> {
             backgroundColor: Colors.white,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            title: const Text("تعديل تفاصيل الريلز",
-                style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16)),
+            contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
             content: SizedBox(
               width: 380,
               child: Column(
@@ -843,13 +833,28 @@ class _ManageReelsPageState extends State<ManageReelsPage> {
           backgroundColor: Colors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: const Text("حذف الريلز",
-              style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16)),
-          content: const Text("هل أنت متأكد من حذف هذا المقطع نهائياً؟",
-              style: TextStyle(fontFamily: 'Cairo', fontSize: 13)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: brandRed.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.delete_outline_rounded,
+                    color: brandRed, size: 24),
+              ),
+              const SizedBox(height: 14),
+              const Text("هل أنت متأكد من حذف هذا المقطع نهائياً؟",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold)),
+            ],
+          ),
+          actionsAlignment: MainAxisAlignment.center,
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -857,7 +862,11 @@ class _ManageReelsPageState extends State<ManageReelsPage> {
                     style:
                         TextStyle(fontFamily: 'Cairo', color: Colors.grey))),
             ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: brandRed,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10))),
                 onPressed: () {
                   _deleteReel(id);
                   Navigator.pop(context);

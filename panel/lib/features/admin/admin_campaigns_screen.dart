@@ -137,25 +137,7 @@ class _AdminCampaignsScreenState extends State<AdminCampaignsScreen> {
             backgroundColor: Colors.white,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: brandRed.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(9),
-                  ),
-                  child: const Icon(Icons.campaign_outlined,
-                      color: brandRed, size: 17),
-                ),
-                const SizedBox(width: 11),
-                Text(edit == null ? 'حملة جديدة' : 'تعديل الحملة',
-                    style: const TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.bold)),
-              ],
-            ),
+            contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
             content: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 480),
               child: SingleChildScrollView(
@@ -561,18 +543,6 @@ class _AdminCampaignsScreenState extends State<AdminCampaignsScreen> {
           backgroundColor: Colors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Row(
-            children: [
-              Icon(Icons.delete_outline_rounded,
-                  color: Colors.red, size: 19),
-              SizedBox(width: 10),
-              Text('حذف الحملة',
-                  style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold)),
-            ],
-          ),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
             child: Column(

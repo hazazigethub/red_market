@@ -90,11 +90,6 @@ class _AdminPlansScreenState extends State<AdminPlansScreen> {
             backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16)),
-            title: const Text('لا يمكن الحذف',
-                style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16)),
             content: Text(
               'يشترك بهذه الباقة $count تاجر. عطّلها بدل حذفها حتى لا تفقد سجلّاتهم.',
               style: const TextStyle(
@@ -121,11 +116,6 @@ class _AdminPlansScreenState extends State<AdminPlansScreen> {
           backgroundColor: Colors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('حذف الباقة',
-              style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16)),
           content: Text(
             'سيتم حذف باقة "${plan['name']}" نهائياً. هل أنت متأكد؟',
             style: const TextStyle(

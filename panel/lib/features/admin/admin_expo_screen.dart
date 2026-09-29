@@ -59,7 +59,7 @@ class _AdminExpoScreenState extends State<AdminExpoScreen> {
           backgroundColor: Colors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: expoDialogTitle('جهة منظمة جديدة', Icons.apartment_outlined),
+          contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440, minWidth: 440),
             child: TextField(
@@ -148,7 +148,7 @@ class _AdminExpoScreenState extends State<AdminExpoScreen> {
           backgroundColor: Colors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: expoDialogTitle('إيقاف العارض من المعارض', Icons.block_rounded),
+          contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
             child: Column(

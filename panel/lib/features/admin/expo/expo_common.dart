@@ -149,24 +149,33 @@ Future<bool> expoConfirm(BuildContext context, String title, String body,
       child: AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(children: [
-          Icon(danger ? Icons.delete_outline_rounded : Icons.help_outline_rounded,
-              color: danger ? Colors.red : kBrand, size: 19),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(title,
-                style: const TextStyle(
-                    fontFamily: kExpoFont,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold)),
-          ),
-        ]),
         content: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 440),
-          child: Text(body,
-              style: const TextStyle(
-                  fontFamily: kExpoFont, fontSize: 13.5, height: 1.9)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: (danger ? Colors.red : kBrand).withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                    danger
+                        ? Icons.delete_outline_rounded
+                        : Icons.help_outline_rounded,
+                    color: danger ? Colors.red : kBrand,
+                    size: 24),
+              ),
+              const SizedBox(height: 14),
+              Text(body,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontFamily: kExpoFont, fontSize: 13.5, height: 1.9)),
+            ],
+          ),
         ),
+        actionsAlignment: MainAxisAlignment.center,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -658,7 +667,7 @@ class ExpoFormPage extends StatelessWidget {
       child: AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: expoDialogTitle(title, icon),
+        contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
         content: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: maxWidth, minWidth: maxWidth),
           child: SingleChildScrollView(

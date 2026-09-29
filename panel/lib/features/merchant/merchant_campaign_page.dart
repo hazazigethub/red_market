@@ -152,18 +152,6 @@ class _MerchantCampaignPageState extends State<MerchantCampaignPage> {
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
-              title: const Row(
-                children: [
-                  Icon(Icons.shopping_cart_outlined,
-                      color: brandRed, size: 19),
-                  SizedBox(width: 10),
-                  Text('شراء حصة عروض',
-                      style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold)),
-                ],
-              ),
               content: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),
                 child: Column(

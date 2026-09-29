@@ -1188,8 +1188,6 @@ class _MerchantControlScreenState extends State<MerchantControlScreen> {
         builder: (_) => Directionality(
           textDirection: TextDirection.rtl,
           child: AlertDialog(
-            title: const Text('إحصائيات المتجر',
-                style: TextStyle(fontFamily: 'Cairo')),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [

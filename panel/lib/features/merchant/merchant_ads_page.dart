@@ -648,18 +648,30 @@ class _MerchantAdsPageState extends State<MerchantAdsPage> {
           backgroundColor: Colors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('إلغاء البنر',
-              style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold)),
-          content: Text(
-            'سيُلغى البنر ويعود المبلغ '
-            '${(b['final_price'] as num?)?.toStringAsFixed(2) ?? '0'} ر.س '
-            'إلى رصيدك.',
-            style: const TextStyle(
-                fontFamily: 'Cairo', fontSize: 13.5, height: 1.9),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.event_busy_outlined,
+                    color: Colors.red, size: 24),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'سيُلغى البنر ويعود المبلغ '
+                '${(b['final_price'] as num?)?.toStringAsFixed(2) ?? '0'} ر.س '
+                'إلى رصيدك.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    fontFamily: 'Cairo', fontSize: 13.5, height: 1.9),
+              ),
+            ],
           ),
+          actionsAlignment: MainAxisAlignment.center,
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -1939,18 +1951,30 @@ class _MerchantAdsPageState extends State<MerchantAdsPage> {
           backgroundColor: Colors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('إلغاء الإعلان',
-              style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold)),
-          content: Text(
-            'سيُلغى الإعلان ويعود المبلغ '
-            '${(a['final_price'] as num?)?.toStringAsFixed(2) ?? '0'} ر.س '
-            'إلى رصيدك.',
-            style: const TextStyle(
-                fontFamily: 'Cairo', fontSize: 13.5, height: 1.9),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.event_busy_outlined,
+                    color: Colors.red, size: 24),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'سيُلغى الإعلان ويعود المبلغ '
+                '${(a['final_price'] as num?)?.toStringAsFixed(2) ?? '0'} ر.س '
+                'إلى رصيدك.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    fontFamily: 'Cairo', fontSize: 13.5, height: 1.9),
+              ),
+            ],
           ),
+          actionsAlignment: MainAxisAlignment.center,
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),

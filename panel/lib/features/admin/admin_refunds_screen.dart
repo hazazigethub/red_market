@@ -113,11 +113,6 @@ class _AdminRefundsScreenState extends State<AdminRefundsScreen> {
           backgroundColor: Colors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(isComplete ? 'تأكيد الاسترداد' : 'رفض الطلب',
-              style: const TextStyle(
-                  fontFamily: 'Cairo',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16)),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
             child: Column(

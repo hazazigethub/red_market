@@ -149,11 +149,6 @@ class _DashboardShellState extends State<DashboardShell> {
           backgroundColor: Colors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('تسجيل الخروج',
-              style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold)),
           content: const Text('هل تريد الخروج من حسابك؟',
               style: TextStyle(
                   fontFamily: 'Cairo', fontSize: 13.5, height: 1.9)),

@@ -83,8 +83,7 @@ class _HallsTabState extends State<HallsTab> {
         child: AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: expoDialogTitle(
-              h == null ? 'قاعة جديدة' : 'تعديل القاعة', Icons.grid_view_rounded),
+          contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440, minWidth: 440),
             child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -179,7 +178,7 @@ class _HallsTabState extends State<HallsTab> {
           child: AlertDialog(
             backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: expoDialogTitle('${b['name']}', Icons.storefront_outlined),
+            contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
             content: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 440, minWidth: 440),
               child: Column(mainAxisSize: MainAxisSize.min, children: [

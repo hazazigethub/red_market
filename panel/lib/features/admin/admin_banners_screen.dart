@@ -134,17 +134,55 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
   Future<void> _deleteBanner(String id) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("حذف البنر", style: TextStyle(fontFamily: 'Cairo')),
-        content: const Text("هل أنت متأكد من حذف هذا البنر نهائياً؟"),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text("إلغاء")),
-          TextButton(
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          backgroundColor: Colors.white,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD32027).withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.delete_outline_rounded,
+                    color: Color(0xFFD32027), size: 24),
+              ),
+              const SizedBox(height: 14),
+              const Text("هل أنت متأكد من حذف هذا البنر نهائياً؟",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold)),
+            ],
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text("إلغاء",
+                    style: TextStyle(fontFamily: 'Cairo', color: Colors.grey))),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD32027),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text("حذف", style: TextStyle(color: Colors.red))),
-        ],
+              child: const Text("حذف",
+                  style: TextStyle(
+                      fontFamily: 'Cairo',
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
       ),
     );
 
@@ -215,9 +253,6 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           backgroundColor: Colors.white,
-          title: Text(banner['name'] ?? 'بنر',
-              style: const TextStyle(
-                  fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -852,11 +887,6 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
                                   side: const BorderSide(
                                       color: Colors.red, width: 3),
                                 ),
-                                title: const Text("ابحث عن تصنيف",
-                                    style: TextStyle(
-                                        fontFamily: 'Cairo',
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold)),
                                 content: SizedBox(
                                   width: double.maxFinite,
                                   height: 350,

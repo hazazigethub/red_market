@@ -95,13 +95,7 @@ class _AdminTickerScreenState extends State<AdminTickerScreen> {
             backgroundColor: Colors.white,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            title: Text(
-              isNew ? 'رسالة جديدة' : 'تعديل الرسالة',
-              style: const TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold),
-            ),
+            contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
             content: SizedBox(
               width: 460,
               child: SingleChildScrollView(
@@ -344,13 +338,35 @@ class _AdminTickerScreenState extends State<AdminTickerScreen> {
           backgroundColor: Colors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          title: const Text('حذف الرسالة',
-              style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold)),
-          content: const Text('لا يمكن التراجع عن هذا الإجراء.',
-              style: TextStyle(fontFamily: 'Cairo', fontSize: 13)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD32027).withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.delete_outline_rounded,
+                    color: Color(0xFFD32027), size: 24),
+              ),
+              const SizedBox(height: 14),
+              const Text('حذف هذه الرسالة؟',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text('لا يمكن التراجع عن هذا الإجراء.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 12.5,
+                      color: Colors.grey.shade600)),
+            ],
+          ),
+          actionsAlignment: MainAxisAlignment.center,
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),

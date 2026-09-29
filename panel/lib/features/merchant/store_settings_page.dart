@@ -52,11 +52,6 @@ class _StoreSettingsPageState extends State<StoreSettingsPage> {
         child: AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text("تفعيل المتجر ⚠️",
-              style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontWeight: FontWeight.bold,
-                  color: brandColor)),
           content: const Text(
             "أهلاً بك في رد ماركت! لتفعيل متجرك وإظهار عروضك أمام العملاء، "
             "يرجى رفع شعار المتجر وإضافة رابطه.",
@@ -183,17 +178,6 @@ class _StoreSettingsPageState extends State<StoreSettingsPage> {
           backgroundColor: Theme.of(context).colorScheme.surface,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.red),
-              SizedBox(width: 8),
-              Text("طلب حذف الحساب",
-                  style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red)),
-            ],
-          ),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
             child: Column(

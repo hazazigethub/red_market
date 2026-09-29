@@ -60,7 +60,6 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("حظر العميل", style: TextStyle(fontFamily: 'Cairo')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

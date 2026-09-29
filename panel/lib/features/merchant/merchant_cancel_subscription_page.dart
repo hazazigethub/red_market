@@ -109,17 +109,6 @@ class _MerchantCancelSubscriptionPageState
           backgroundColor: Colors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          title: const Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.orange),
-              SizedBox(width: 8),
-              Text('تأكيد الإلغاء',
-                  style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16)),
-            ],
-          ),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
             child: Text(
@@ -174,17 +163,6 @@ class _MerchantCancelSubscriptionPageState
             backgroundColor: Colors.white,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            title: const Row(
-              children: [
-                Icon(Icons.lock_outline_rounded, color: brandRed),
-                SizedBox(width: 8),
-                Text('تأكيد الاسترداد',
-                    style: TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold)),
-              ],
-            ),
             content: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 380),
               child: Column(
@@ -331,17 +309,6 @@ class _MerchantCancelSubscriptionPageState
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14)),
-              title: const Row(
-                children: [
-                  Icon(Icons.check_circle_rounded, color: Colors.green),
-                  SizedBox(width: 8),
-                  Text('تم استلام طلبك',
-                      style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16)),
-                ],
-              ),
               content: Text(
                 'أُلغي اشتراكك واختفت عروضك عن العملاء.\n'
                 'ستتم معالجة استرداد مبلغك خلال 48 ساعة.',

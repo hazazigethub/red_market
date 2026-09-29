@@ -272,26 +272,6 @@ class ReportsDetailsPage extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
           ),
           titlePadding: EdgeInsets.zero,
-          title: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: brandRed,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-            ),
-            child: const Text(
-              "إجراء حظر متقدم",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Cairo',
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Colors.white,
-              ),
-            ),
-          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -670,26 +650,6 @@ class ReportsDetailsPage extends StatelessWidget {
                                           ),
                                         ),
                                         titlePadding: EdgeInsets.zero,
-                                        title: Container(
-                                          padding: const EdgeInsets.all(16),
-                                          decoration: const BoxDecoration(
-                                            color: brandRed,
-                                            borderRadius: BorderRadius.only(
-                                              topLeft: Radius.circular(20),
-                                              topRight: Radius.circular(20),
-                                            ),
-                                          ),
-                                          child: const Text(
-                                            "تفاصيل البلاغ",
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              fontFamily: 'Cairo',
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 18,
-                                            ),
-                                          ),
-                                        ),
                                         content: SingleChildScrollView(
                                           child: Text(
                                             content,
@@ -817,19 +777,6 @@ class ReportsDetailsPage extends StatelessWidget {
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.orange),
-            SizedBox(width: 10),
-            Text(
-              "تأكيد التجاهل",
-              style: TextStyle(
-                fontFamily: 'Cairo',
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
         content: const Text(
           "هل أنت متأكد من رغبتك في حذف هذا البلاغ نهائياً؟ لا يمكن التراجع عن هذا الإجراء.",
           style: TextStyle(fontFamily: 'Cairo', fontSize: 14),

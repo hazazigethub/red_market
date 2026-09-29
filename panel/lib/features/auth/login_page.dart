@@ -228,15 +228,6 @@ class _LoginPageState extends State<LoginPage>
           backgroundColor: Colors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
-            children: [
-              Icon(Icons.lock_reset_rounded, color: AppColors.brand),
-              const SizedBox(width: 10),
-              const Text('استعادة كلمة المرور',
-                  style:
-                      TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            ],
-          ),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
             child: const Text(

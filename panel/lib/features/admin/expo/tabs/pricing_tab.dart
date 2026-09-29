@@ -135,7 +135,7 @@ class _PricingTabState extends State<PricingTab> {
           child: AlertDialog(
             backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: expoDialogTitle('كود جديد', Icons.confirmation_number_outlined),
+            contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
             content: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 440, minWidth: 440),
               child: Column(mainAxisSize: MainAxisSize.min, children: [

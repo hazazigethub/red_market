@@ -353,15 +353,6 @@ class _ProductsPageState extends State<ProductsPage> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
-              title: Text(
-                title,
-                style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontWeight: FontWeight.bold,
-                  color: brandRed,
-                  fontSize: 16,
-                ),
-              ),
               content: SizedBox(
                 width: double.maxFinite,
                 child: Column(
@@ -439,14 +430,6 @@ class _ProductsPageState extends State<ProductsPage> {
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-          ),
-          title: const Text(
-            "إضافة قسم جديد لمتجري",
-            style: TextStyle(
-              fontFamily: 'Cairo',
-              fontWeight: FontWeight.bold,
-              color: brandRed,
-            ),
           ),
           content: TextField(
             controller: catCtrl,
@@ -770,16 +753,7 @@ class _ProductsPageState extends State<ProductsPage> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          title: Text(
-            catName,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontFamily: 'Cairo',
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -821,10 +795,6 @@ class _ProductsPageState extends State<ProductsPage> {
         textDirection: TextDirection.rtl,
         child: AlertDialog(
           backgroundColor: Colors.white,
-          title: const Text(
-            "تعديل اسم التصنيف",
-            style: TextStyle(fontFamily: 'Cairo', fontSize: 16),
-          ),
           content: TextField(
             controller: ctrl,
             style: const TextStyle(fontFamily: 'Cairo'),
@@ -896,10 +866,6 @@ class _ProductsPageState extends State<ProductsPage> {
         textDirection: TextDirection.rtl,
         child: AlertDialog(
           backgroundColor: Colors.white,
-          title: const Text(
-            "حذف التصنيف",
-            style: TextStyle(fontFamily: 'Cairo', fontSize: 16),
-          ),
           content: Text(
             count > 0
                 ? "لا يمكن حذف التصنيف لأنه يحتوي على $count عرض. انقل العروض أو احذفها أولاً."
@@ -1243,10 +1209,6 @@ class _ProductsPageState extends State<ProductsPage> {
         child: AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
-          ),
-          title: const Text(
-            "حذف العرض",
-            style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
           ),
           content: Text(
             "هل أنت متأكد من رغبتك في حذف '${product.name}'؟ لا يمكن التراجع عن هذه العملية.",
