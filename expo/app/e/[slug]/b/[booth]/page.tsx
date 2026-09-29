@@ -5,7 +5,7 @@ import { productUrl } from "@/lib/env";
 import { fmtDateTime, fmtMoney, fmtNum } from "@/lib/format";
 import { publicUrl, thumb } from "@/lib/storage";
 import type { BoothMedia, BoothProduct, LiveStream } from "@/lib/types";
-import { Cover, EmptyState, LiveBadge, Logo, Tabs } from "@/components/ui";
+import { Cover, EmptyState, LiveBadge, Tabs } from "@/components/ui";
 import { MiniCountdown } from "@/components/Countdown";
 import { BoothChat } from "@/components/client/BoothChat";
 import { CatalogButton } from "@/components/client/CatalogButton";
@@ -52,10 +52,20 @@ export default async function BoothPage({ params, searchParams }: {
   return (
     <>
       <Tracker exhibition_id={e.id} booth_id={b.id} event="booth_view" />
-      <div className="relative h-48 bg-ink sm:h-64"><Cover path={b.cover_path} alt="" /></div>
+      {/* البنر كاملاً بمقاس الرفع 1600×600 بلا قصّ ولا زوايا مستديرة */}
+      <div className="container-x pt-4">
+        <div className="relative aspect-[8/3] w-full overflow-hidden bg-ink">
+          <Cover path={b.cover_path} alt="" className="object-contain!" />
+        </div>
+      </div>
       <div className="container-x">
-        <div className="relative z-10 -mt-12 flex flex-col gap-4 sm:flex-row sm:items-end">
-          <Logo path={b.logo_path} name={b.name} size={104} className="border-4 border-bg shadow-md" />
+        <div className="relative z-10 -mt-10 flex flex-col gap-4 sm:flex-row sm:items-end md:-mt-16">
+          {/* الشعار دائري بمقاس Red Market: 80 بكسل للجوال و128 للكمبيوتر */}
+          <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border-4 border-bg bg-surface shadow-md md:h-32 md:w-32">
+            {thumb(b.logo_path, 256)
+              ? <img src={thumb(b.logo_path, 256)!} alt={b.name} className="h-full w-full object-cover" />
+              : <span className="grid h-full w-full place-items-center bg-ink font-heading text-2xl font-extrabold text-bg">{b.name.trim().charAt(0)}</span>}
+          </div>
           <div className="min-w-0 flex-1 pb-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-3xl font-extrabold">{b.name}</h1>
