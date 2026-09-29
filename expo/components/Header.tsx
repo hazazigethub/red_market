@@ -23,7 +23,7 @@ export async function Header() {
         <nav className="hidden items-center gap-5 text-sm font-medium md:flex">
           <NavLink href="/" exact also={["/e"]} activeClassName="font-bold text-primary" inactiveClassName="hover:text-primary">المعارض</NavLink>
           <NavLink href="/search" activeClassName="font-bold text-primary" inactiveClassName="hover:text-primary">بحث</NavLink>
-          {(roles.isMerchant || roles.hasStore) && <NavLink href="/merchant" activeClassName="font-bold text-primary" inactiveClassName="hover:text-primary">لوحة العارض</NavLink>}
+          {(roles.isMerchant || roles.hasStore) && <NavLink href="/merchant" activeClassName="font-bold text-primary" inactiveClassName="hover:text-primary">لوحة تحكم المعرض</NavLink>}
           {roles.isOrganizer && <NavLink href="/organizer" activeClassName="font-bold text-primary" inactiveClassName="hover:text-primary">لوحة المنظم</NavLink>}
           {roles.isAdmin && <NavLink href="/admin" activeClassName="font-bold text-primary" inactiveClassName="hover:text-primary">الإدارة</NavLink>}
         </nav>
@@ -50,7 +50,7 @@ export async function Header() {
       <nav className="container-x flex gap-5 overflow-x-auto pb-2 text-sm md:hidden">
         <NavLink href="/" exact also={["/e"]} activeClassName="font-bold text-primary">المعارض</NavLink>
         <NavLink href="/search" activeClassName="font-bold text-primary">بحث</NavLink>
-        {(roles.isMerchant || roles.hasStore) && <NavLink href="/merchant" activeClassName="font-bold text-primary">لوحة العارض</NavLink>}
+        {(roles.isMerchant || roles.hasStore) && <NavLink href="/merchant" activeClassName="font-bold text-primary">لوحة تحكم المعرض</NavLink>}
         {roles.isOrganizer && <NavLink href="/organizer" activeClassName="font-bold text-primary">المنظم</NavLink>}
         {roles.isAdmin && <NavLink href="/admin" activeClassName="font-bold text-primary">الإدارة</NavLink>}
       </nav>

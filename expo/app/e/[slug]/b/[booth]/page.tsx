@@ -54,7 +54,7 @@ export default async function BoothPage({ params, searchParams }: {
       <Tracker exhibition_id={e.id} booth_id={b.id} event="booth_view" />
       <div className="relative h-48 bg-ink sm:h-64"><Cover path={b.cover_path} alt="" /></div>
       <div className="container-x">
-        <div className="-mt-12 flex flex-col gap-4 sm:flex-row sm:items-end">
+        <div className="relative z-10 -mt-12 flex flex-col gap-4 sm:flex-row sm:items-end">
           <Logo path={b.logo_path} name={b.name} size={104} className="border-4 border-bg shadow-md" />
           <div className="min-w-0 flex-1 pb-1">
             <div className="flex flex-wrap items-center gap-2">
