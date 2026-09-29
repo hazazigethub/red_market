@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:web/web.dart' as web;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:red_market_core/red_market_core.dart';
 
@@ -28,15 +28,15 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
   /// -1 يعني شاشة الترحيب
   int _index = -1;
 
-  static const String _secKey = 'rm_sec_merchant';
+  /// ذاكرة التبويب — تبقى مع التحديث، وتُمسح بإغلاق التبويب أو عند ظهور صفحة الدخول
+  static const String _secKey = 'rm_nav_sec_merchant';
 
   /// يعيدك للقسم الذي كنت فيه قبل تحديث الصفحة
-  Future<void> _restoreSection() async {
+  void _restoreSection() {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final i = prefs.getInt(_secKey);
-      if (i != null && i >= -1 && i < _sections.length && mounted) {
-        setState(() => _index = i);
+      final i = int.tryParse(web.window.sessionStorage.getItem(_secKey) ?? '');
+      if (i != null && i >= -1 && i < _sections.length) {
+        _index = i;
       }
     } catch (_) {
       // التخزين قد يكون معطّلاً — نبدأ من الترحيب
@@ -46,9 +46,9 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
   void _setSection(int i) {
     if (i < -1 || i >= _sections.length) return;
     setState(() => _index = i);
-    SharedPreferences.getInstance()
-        .then((p) => p.setInt(_secKey, i))
-        .catchError((_) => false);
+    try {
+      web.window.sessionStorage.setItem(_secKey, '$i');
+    } catch (_) {}
   }
 
 

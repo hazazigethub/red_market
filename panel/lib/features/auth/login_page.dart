@@ -74,6 +74,7 @@ class _LoginPageState extends State<LoginPage>
   @override
   void initState() {
     super.initState();
+    clearSavedNavPosition(); // ✅ بعد أي خروج يبدأ الدخول التالي من الرئيسية
     _revealCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1300),

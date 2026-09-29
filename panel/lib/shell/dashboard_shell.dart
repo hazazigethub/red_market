@@ -1,11 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:web/web.dart' as web;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'news_ticker.dart';
 import 'package:red_market_core/red_market_core.dart';
 
 import '../features/auth/login_page.dart';
+
+/// يمسح آخر قسم محفوظ لكل الأدوار — يُستدعى عند ظهور صفحة الدخول
+/// (أي خروج: زر الخروج، حساب محظور، حذف حساب... يعود بعده للرئيسية)
+void clearSavedNavPosition() {
+  try {
+    final store = web.window.sessionStorage;
+    final keys = <String>[];
+    for (var i = 0; i < store.length; i++) {
+      final k = store.key(i);
+      if (k != null && k.startsWith('rm_nav_')) keys.add(k);
+    }
+    for (final k in keys) {
+      store.removeItem(k);
+    }
+  } catch (_) {}
+}
 
 class NavItem {
   final String label;
@@ -45,22 +61,21 @@ class _DashboardShellState extends State<DashboardShell> {
   }
 
   /// يعيدك للقسم الذي كنت فيه قبل تحديث الصفحة
-  Future<void> _restorePosition() async {
+  /// (ذاكرة التبويب: تبقى مع التحديث وتُمسح عند إغلاق التبويب أو المتصفح)
+  void _restorePosition() {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final i = prefs.getInt(_posKey);
-      if (i != null && i >= 0 && i < widget.items.length && mounted) {
-        setState(() => _index = i);
+      final i = int.tryParse(web.window.sessionStorage.getItem(_posKey) ?? '');
+      if (i != null && i >= 0 && i < widget.items.length) {
+        _index = i;
       }
     } catch (_) {
       // التخزين قد يكون معطّلاً — نبدأ من الرئيسية
     }
   }
 
-  Future<void> _savePosition(int i) async {
+  void _savePosition(int i) {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_posKey, i);
+      web.window.sessionStorage.setItem(_posKey, '$i');
     } catch (_) {}
   }
 
@@ -183,8 +198,7 @@ class _DashboardShellState extends State<DashboardShell> {
 
     // الموضع المحفوظ يخصّ الجلسة المنتهية
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_posKey);
+      web.window.sessionStorage.removeItem(_posKey);
     } catch (_) {}
 
     try {
