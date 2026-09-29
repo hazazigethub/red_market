@@ -489,16 +489,24 @@ class _MerchantAdsPageState extends State<MerchantAdsPage> {
 
   // ===================== نافذة الحجز =====================
 
+  /// نافذة في وسط الصفحة بدل الشاشة السفلية
+  Widget _centered(Widget child) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: child,
+        ),
+      );
+
   void _openBooking(Map<String, dynamic> week, String type) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _BookingSheet(
+      builder: (_) => _centered(_BookingSheet(
         week: week,
         bannerType: type,
         onDone: _load,
-      ),
+      )),
     );
   }
 
@@ -615,11 +623,9 @@ class _MerchantAdsPageState extends State<MerchantAdsPage> {
 
   /// تعديل بنر — الصورة والوجهة
   void _editBooking(Map<String, dynamic> b) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _AdEditSheet(
+      builder: (_) => _centered(_AdEditSheet(
         kind: 'banner',
         id: b['id'].toString(),
         currentTarget: (b['target_type'] ?? 'store').toString(),
@@ -628,7 +634,7 @@ class _MerchantAdsPageState extends State<MerchantAdsPage> {
         height: b['banner_type'] == 'wide' ? 350 : 400,
         maxKb: 500,
         onDone: _load,
-      ),
+      )),
     );
   }
 
@@ -1536,16 +1542,14 @@ class _MerchantAdsPageState extends State<MerchantAdsPage> {
       '${d.day.toString().padLeft(2, '0')}';
 
   void _openSplashBooking(DateTime day, int price, String occasion) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _SplashBookingSheet(
+      builder: (_) => _centered(_SplashBookingSheet(
         adDate: _dateKey(day),
         price: price,
         occasion: occasion,
         onDone: _loadSplash,
-      ),
+      )),
     );
   }
 
@@ -1668,11 +1672,9 @@ class _MerchantAdsPageState extends State<MerchantAdsPage> {
 
   /// تعديل إعلان — الصورة والوجهة
   void _editSplashAd(Map<String, dynamic> a) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _AdEditSheet(
+      builder: (_) => _centered(_AdEditSheet(
         kind: 'splash',
         id: a['id'].toString(),
         currentTarget: (a['target_type'] ?? 'store').toString(),
@@ -1681,7 +1683,7 @@ class _MerchantAdsPageState extends State<MerchantAdsPage> {
         height: 1920,
         maxKb: 300,
         onDone: _loadSplash,
-      ),
+      )),
     );
   }
 
@@ -2282,41 +2284,20 @@ class _BookingSheetState extends State<_BookingSheet> {
         ),
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: BorderRadius.all(Radius.circular(16)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ===== المقبض =====
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 10),
-              width: 42,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 520),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(
-                          widget.bannerType == 'wide'
-                              ? 'حجز بنر عريض'
-                              : 'حجز بنر صغير',
-                          style: const TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
                         Text(
                           'المقاس ${_size.w} × ${_size.h} بكسل · '
                           'الحد الأقصى $_maxKb كيلوبايت · JPG أو WebP',
@@ -3095,36 +3076,20 @@ class _SplashBookingSheetState extends State<_SplashBookingSheet> {
         ),
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: BorderRadius.all(Radius.circular(16)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 10),
-              width: 42,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 520),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Text('إعلان الشاشة الرئيسية',
-                            style: TextStyle(
-                                fontFamily: 'Cairo',
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 4),
                         Text(
                           'ليوم ${widget.adDate}'
                           '${widget.occasion.isEmpty ? '' : ' · ${widget.occasion}'}',
@@ -3800,40 +3765,20 @@ class _AdEditSheetState extends State<_AdEditSheet> {
         ),
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: BorderRadius.all(Radius.circular(16)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 10),
-              width: 42,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 520),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(
-                          widget.kind == 'splash'
-                              ? 'تعديل إعلان الشاشة الرئيسية'
-                              : 'تعديل البنر',
-                          style: const TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
                         Text(
                           'أي تعديل يُعيد الإعلان لمراجعة الإدارة',
                           style: TextStyle(

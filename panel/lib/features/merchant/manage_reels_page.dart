@@ -675,23 +675,19 @@ class _ManageReelsPageState extends State<ManageReelsPage> {
     XFile? video;
     String? selectedProductId; // ✅ مضاف
 
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF1E1E1E)
-                : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-          ),
-          padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-              left: 24,
-              right: 24,
-              top: 15),
+        builder: (context, setModalState) => Dialog(
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF1E1E1E)
+              : Colors.white,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 10, 24, 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -830,6 +826,8 @@ class _ManageReelsPageState extends State<ManageReelsPage> {
                 ),
               )
             ],
+          ),
+          ),
           ),
         ),
       ),

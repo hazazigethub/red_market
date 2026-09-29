@@ -1332,10 +1332,8 @@ class _ProductsPageState extends State<ProductsPage> {
     // نشر مباشر أم مجدول
     bool isScheduled = productToEdit?.flashSaleStart != null;
 
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setModalState) {
           void calculateNewPrice() {
@@ -1350,32 +1348,17 @@ class _ProductsPageState extends State<ProductsPage> {
             }
           }
 
-          return Container(
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(30),
-              ),
-            ),
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-              left: 24,
-              right: 24,
-              top: 20,
-            ),
+          return Dialog(
+            backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+            child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
             child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    "بيانات العرض",
-                    style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
 
                   // ===== أربع خانات صور =====
                   Row(
@@ -2147,6 +2130,7 @@ class _ProductsPageState extends State<ProductsPage> {
                   ),
                 ],
               ),
+            ),
             ),
           );
         },

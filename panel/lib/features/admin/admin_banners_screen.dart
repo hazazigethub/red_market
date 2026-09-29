@@ -578,6 +578,7 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
   void _showAddBannerSheet(Color brandRed,
       {Map<String, dynamic>? existingBanner}) {
     XFile? selectedImage;
+    bool showErrors = false; // ✅ تلوين الخانات الناقصة
     // ✅ تحديث الاسم من البيانات الموجودة
     final nameController =
         TextEditingController(text: existingBanner?['name'] ?? "");
@@ -601,45 +602,32 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
         ? DateTime.parse(existingBanner!['end_date'])
         : null;
 
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
       builder: (context) => StatefulBuilder(
-        builder: (context, setSheetState) => Padding(
-          padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-              left: 20,
-              right: 20,
-              top: 25),
+        builder: (context, setSheetState) => Dialog(
+          backgroundColor: Colors.white,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
           child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                        existingBanner == null
-                            ? "إضافة بنر جديد"
-                            : "تعديل البنر",
-                        style: const TextStyle(
-                            fontFamily: 'Cairo',
-                            fontWeight: FontWeight.w900,
-                            fontSize: 18)),
-                    if (existingBanner != null)
-                      IconButton(
-                          icon: const Icon(Icons.delete_outline,
-                              color: Colors.red),
-                          onPressed: () => _deleteBanner(existingBanner['id'])),
-                  ],
-                ),
-                const SizedBox(height: 20),
+                if (existingBanner != null)
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: IconButton(
+                        icon: const Icon(Icons.delete_outline,
+                            color: Colors.red),
+                        onPressed: () => _deleteBanner(existingBanner['id'])),
+                  ),
                 TextField(
                   controller: nameController,
                   textAlign: TextAlign.right,
+                  onChanged: (_) => setSheetState(() {}),
                   style: const TextStyle(
                       fontFamily: 'Cairo', fontWeight: FontWeight.bold),
                   decoration: InputDecoration(
@@ -647,7 +635,15 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
                       fillColor: Colors.grey.shade50,
                       hintText: "اسم البنر الإعلاني",
                       enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.grey.shade200),
+                          borderSide: BorderSide(
+                              color: showErrors &&
+                                      nameController.text.trim().isEmpty
+                                  ? brandRed
+                                  : Colors.grey.shade200,
+                              width: showErrors &&
+                                      nameController.text.trim().isEmpty
+                                  ? 1.4
+                                  : 1),
                           borderRadius: BorderRadius.circular(15)),
                       focusedBorder: OutlineInputBorder(
                           borderSide: BorderSide(color: brandRed),
@@ -1170,7 +1166,17 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
                     decoration: BoxDecoration(
                         color: Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300)),
+                        border: Border.all(
+                            color: showErrors &&
+                                    selectedImage == null &&
+                                    existingBanner == null
+                                ? brandRed
+                                : Colors.grey.shade300,
+                            width: showErrors &&
+                                    selectedImage == null &&
+                                    existingBanner == null
+                                ? 1.4
+                                : 1)),
                     child: selectedImage != null
                         ? ClipRRect(
                             borderRadius: BorderRadius.circular(12),
@@ -1210,9 +1216,10 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
                     onPressed: _isSaving
                         ? null
                         : () async {
-                            if (nameController.text.isEmpty ||
+                            if (nameController.text.trim().isEmpty ||
                                 (selectedImage == null &&
                                     existingBanner == null)) {
+                              setSheetState(() => showErrors = true);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                     content: Text("يرجى إدخال الاسم والصورة"),
@@ -1272,6 +1279,7 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
                 const SizedBox(height: 20),
               ],
             ),
+          ),
           ),
         ),
       ),

@@ -65,9 +65,16 @@ class RedMarketWebApp extends StatelessWidget {
               ),
             ),
           ),
+          // ✅ الإشعارات تُرسم فوق كل الصفحات والنوافذ
           child: Directionality(
             textDirection: TextDirection.rtl,
-            child: child!,
+            child: ScaffoldMessenger(
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                resizeToAvoidBottomInset: false,
+                body: child!,
+              ),
+            ),
           ),
         );
       },

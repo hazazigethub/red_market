@@ -424,49 +424,23 @@ class _ReviewsPageState extends State<ReviewsPage> {
 
     final replyController = TextEditingController();
 
-    showModalBottomSheet(
+    showDialog(
       context: context,
       useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (ctx) => Directionality(
         textDirection: ui.TextDirection.rtl,
-        child: Container(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
-            top: 15,
-            left: 20,
-            right: 20,
-          ),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-          ),
+        child: Dialog(
+          backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: Padding(
+          padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                "الرد على التقييم",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  fontFamily: 'Cairo',
-                  color: isDark ? Colors.white : Colors.black,
-                ),
-              ),
-              const SizedBox(height: 12),
               Text(
                 review.title,
                 style: TextStyle(
@@ -528,8 +502,9 @@ class _ReviewsPageState extends State<ReviewsPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 30),
             ],
+          ),
+          ),
           ),
         ),
       ),

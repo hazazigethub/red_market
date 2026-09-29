@@ -5,10 +5,8 @@ const Color _brandRed = Color(0xFFD32027);
 
 /// يعرض شروط الإعلان في نافذة، ويُرجع true إن وافق التاجر
 Future<bool?> showBannerTermsSheet(BuildContext context) {
-  return showModalBottomSheet<bool>(
+  return showDialog<bool>(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (_) => const _BannerTermsSheet(),
   );
 }
@@ -78,51 +76,17 @@ class _BannerTermsSheetState extends State<_BannerTermsSheet> {
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: Container(
+      child: Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.9,
-        ),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          maxWidth: 600,
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 10),
-              width: 42,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 6, 20, 12),
-              child: Row(
-                children: [
-                  const Icon(Icons.gavel_rounded,
-                      color: _brandRed, size: 19),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text('شروط وأحكام الإعلان',
-                        style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold)),
-                  ),
-                  if (_version.isNotEmpty)
-                    Text(_version,
-                        style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontSize: 11,
-                            color: Colors.grey.shade500)),
-                ],
-              ),
-            ),
-
             Flexible(
               child: _loading
                   ? const Padding(
@@ -141,7 +105,7 @@ class _BannerTermsSheetState extends State<_BannerTermsSheet> {
                         )
                       : SingleChildScrollView(
                           padding:
-                              const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                              const EdgeInsets.fromLTRB(20, 20, 20, 20),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
@@ -269,6 +233,7 @@ class _BannerTermsSheetState extends State<_BannerTermsSheet> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
