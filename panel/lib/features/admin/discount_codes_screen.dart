@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../shared/rm_pickers.dart';
+import 'ad_promo_codes_panel.dart';
 
 class DiscountCodesScreen extends StatefulWidget {
   const DiscountCodesScreen({super.key});
@@ -170,6 +171,12 @@ class _DiscountCodesScreenState extends State<DiscountCodesScreen> {
                           icon: Icons.format_list_bulleted_rounded,
                           index: 1,
                         ),
+                        const SizedBox(width: 10),
+                        _buildCompactSquareCard(
+                          title: "أكواد الإعلانات والحملات",
+                          icon: Icons.campaign_outlined,
+                          index: 2,
+                        ),
                       ],
                     ),
                   ),
@@ -186,7 +193,9 @@ class _DiscountCodesScreenState extends State<DiscountCodesScreen> {
                       constraints: const BoxConstraints(maxWidth: 1400),
                       child: _activeTab == 0
                           ? _buildCreateView()
-                          : _buildListView(),
+                          : _activeTab == 1
+                              ? _buildListView()
+                              : const AdPromoCodesPanel(),
                     ),
                   ),
                 ),

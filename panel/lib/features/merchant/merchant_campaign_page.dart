@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../shared/promo_popup.dart';
+
 /// صفحة الحملة الموسمية للتاجر
 class MerchantCampaignPage extends StatefulWidget {
   const MerchantCampaignPage({super.key});
@@ -25,7 +27,10 @@ class _MerchantCampaignPageState extends State<MerchantCampaignPage> {
   @override
   void initState() {
     super.initState();
-    _load();
+    _load().then((_) {
+      // نافذة كود الخصم عند فتح الشاشة، إذا كانت هناك حملة
+      if (mounted && _campaign != null) showPromoPopup(context, 'campaign');
+    });
   }
 
   Future<void> _load({bool silent = false}) async {
@@ -134,6 +139,7 @@ class _MerchantCampaignPageState extends State<MerchantCampaignPage> {
   void _buyQuotaDialog() {
     int count = 5;
     bool busy = false;
+    final codeCtrl = TextEditingController();
 
     final fee = (_campaign?['entry_fee'] as num?)?.toDouble() ?? 5;
 
@@ -144,7 +150,10 @@ class _MerchantCampaignPageState extends State<MerchantCampaignPage> {
           final subtotal = fee * count;
           final vat = subtotal * 0.15;
           final total = subtotal + vat;
-          final enough = _balance >= total;
+          final code = codeCtrl.text.trim();
+          final hasCode = code.isNotEmpty;
+          // مع الكود يتحقق الخادم من الخصم والرصيد
+          final enough = hasCode || _balance >= total;
 
           return Directionality(
             textDirection: TextDirection.rtl,
@@ -264,6 +273,61 @@ class _MerchantCampaignPageState extends State<MerchantCampaignPage> {
                         ],
                       ),
                     ),
+
+                    const SizedBox(height: 14),
+
+                    SizedBox(
+                      height: 44,
+                      child: TextField(
+                        controller: codeCtrl,
+                        enabled: !busy,
+                        textDirection: TextDirection.ltr,
+                        textAlign: TextAlign.center,
+                        onChanged: (_) => setModal(() {}),
+                        style: const TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600),
+                        decoration: InputDecoration(
+                          hintText: 'كود الخصم (اختياري)',
+                          hintStyle: TextStyle(
+                              fontFamily: 'Cairo',
+                              fontSize: 12.5,
+                              color: Colors.grey.shade500),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding:
+                              const EdgeInsets.symmetric(horizontal: 12),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(11),
+                            borderSide:
+                                const BorderSide(color: Color(0xFFEDEFF3)),
+                          ),
+                          disabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(11),
+                            borderSide:
+                                const BorderSide(color: Color(0xFFEDEFF3)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(11),
+                            borderSide: const BorderSide(
+                                color: brandRed, width: 1.4),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    if (hasCode) ...[
+                      const SizedBox(height: 7),
+                      Text(
+                        'يُطبَّق الخصم عند تأكيد الشراء',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 11.5,
+                            color: Colors.grey.shade600),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -290,9 +354,18 @@ class _MerchantCampaignPageState extends State<MerchantCampaignPage> {
                                 .rpc('purchase_campaign_quota', params: {
                               'p_campaign_id': _campaign!['id'],
                               'p_count': count,
+                              'p_promo_code': hasCode ? code : null,
                             });
                             final map =
                                 Map<String, dynamic>.from(res as Map);
+
+                            if (map['ok'] != true) {
+                              setModal(() => busy = false);
+                              _snack(
+                                  map['error']?.toString() ?? 'تعذر الشراء',
+                                  Colors.red);
+                              return;
+                            }
 
                             if (ctx.mounted) Navigator.pop(ctx);
 

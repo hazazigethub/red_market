@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../shared/promo_popup.dart';
+
 import 'banner_terms_sheet.dart';
 import 'merchant_nav.dart';
 
@@ -44,12 +46,24 @@ class _MerchantAdsPageState extends State<MerchantAdsPage> {
   DateTime _calMonth = DateTime(DateTime.now().year, DateTime.now().month);
   String _adsFilter = 'active';
 
+  /// الأقسام التي ظهرت فيها نافذة كود الخصم في هذه الزيارة
+  final Set<String> _promoShown = {};
+
   @override
   void initState() {
     super.initState();
     _load();
     _loadStats();
     _loadSplash();
+    // نافذة كود الخصم فور دخول قسم البنرات
+    WidgetsBinding.instance.addPostFrameCallback((_) => _promoFor('banner'));
+  }
+
+  /// تظهر مرة واحدة لكل قسم في الزيارة الواحدة
+  void _promoFor(String scope) {
+    if (!mounted || _promoShown.contains(scope)) return;
+    _promoShown.add(scope);
+    showPromoPopup(context, scope);
   }
 
   /// يجلب تقويم الأيام وإعلانات التاجر
@@ -210,7 +224,11 @@ class _MerchantAdsPageState extends State<MerchantAdsPage> {
   Widget _tabChip(int index, String label, int? count) {
     final on = _tab == index;
     return GestureDetector(
-      onTap: () => setState(() => _tab = index),
+      onTap: () {
+        setState(() => _tab = index);
+        // نافذة كود الخصم فور دخول قسم إعلان الشاشة الرئيسية
+        if (index == 3) _promoFor('splash');
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         decoration: BoxDecoration(

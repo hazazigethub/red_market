@@ -18,6 +18,7 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
 
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController =
       TextEditingController(text: "********");
 
@@ -46,6 +47,7 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
 
       setState(() {
         _usernameController.text = user.userMetadata?['full_name'] ?? "";
+        _emailController.text = user.email ?? "";
         _avatarUrl = user.userMetadata?['avatar_url'];
 
         // ✅ رقم الجوال من profiles
@@ -110,12 +112,31 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
     final formKey = GlobalKey<FormState>();
     // الخانتان تتشاركان الحالة — فالغرض مقارنة ما كُتب
     final obscure = ValueNotifier<bool>(true);
+    final codeController = TextEditingController();
+    bool codeSent = false;
+    bool sending = false;
+
+    // يرسل رمز التحقق إلى بريد الحساب
+    Future<void> sendCode(StateSetter setSheet) async {
+      setSheet(() => sending = true);
+      try {
+        await supabase.auth.reauthenticate();
+        setSheet(() => codeSent = true);
+        _showSnackBar("أُرسل الرمز إلى ${_emailController.text}", Colors.green);
+      } catch (e) {
+        debugPrint('Reauthenticate error: $e');
+        _showSnackBar("تعذر إرسال الرمز، حاول بعد قليل", Colors.red);
+      } finally {
+        setSheet(() => sending = false);
+      }
+    }
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
+      builder: (context) => StatefulBuilder(
+       builder: (context, setSheet) => Container(
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -145,6 +166,56 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
                       fontWeight: FontWeight.bold,
                       fontSize: 18)),
               const SizedBox(height: 20),
+              // ===== رمز التحقق عبر البريد =====
+              Text(
+                "سنرسل رمز تحقق إلى\n${_emailController.text}",
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    fontFamily: 'Cairo', fontSize: 13, height: 1.7),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: sending ? null : () => sendCode(setSheet),
+                  style: OutlinedButton.styleFrom(
+                      foregroundColor: brandRed,
+                      side: const BorderSide(color: brandRed),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10))),
+                  child: Text(
+                      sending
+                          ? "جاري الإرسال..."
+                          : codeSent
+                              ? "إعادة إرسال الرمز"
+                              : "إرسال الرمز",
+                      style: const TextStyle(fontFamily: 'Cairo')),
+                ),
+              ),
+              if (codeSent) ...[
+                const SizedBox(height: 15),
+                TextFormField(
+                  controller: codeController,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  maxLength: 6,
+                  decoration: InputDecoration(
+                    labelText: "رمز التحقق",
+                    labelStyle:
+                        const TextStyle(fontFamily: 'Cairo', fontSize: 13),
+                    counterText: '',
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: brandRed)),
+                  ),
+                  validator: (v) =>
+                      (v ?? '').trim().length == 6 ? null : "أدخل الرمز المكوّن من ستة أرقام",
+                ),
+              ],
+              const SizedBox(height: 15),
               _buildSheetTextField(
                   newPwdController, "كلمة المرور الجديدة", true,
                   obscure: obscure),
@@ -162,6 +233,10 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10))),
                   onPressed: () async {
+                    if (!codeSent) {
+                      _showSnackBar("أرسل رمز التحقق أولاً", Colors.orange);
+                      return;
+                    }
                     if (formKey.currentState!.validate()) {
                       if (newPwdController.text != confirmPwdController.text) {
                         _showSnackBar("كلمات المرور غير متطابقة", Colors.red);
@@ -169,10 +244,16 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
                       }
                       try {
                         await supabase.auth.updateUser(UserAttributes(
-                            password: newPwdController.text.trim()));
-                        Navigator.pop(context);
+                          password: newPwdController.text.trim(),
+                          nonce: codeController.text.trim(),
+                        ));
+                        if (context.mounted) Navigator.pop(context);
                         _showSnackBar(
                             "تم تحديث كلمة المرور بنجاح ✅", Colors.green);
+                      } on AuthException catch (e) {
+                        debugPrint('Update password error: ${e.message}');
+                        _showSnackBar("الرمز غير صحيح أو منتهي الصلاحية",
+                            Colors.red);
                       } catch (e) {
                         _showSnackBar("حدث خطأ أثناء التحديث", Colors.red);
                       }
@@ -187,6 +268,7 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -231,6 +313,9 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
                           const SizedBox(height: 25),
                           _buildFieldLabel("رقم الجوال"),
                           _buildPhoneField(_phoneController),
+                          const SizedBox(height: 25),
+                          _buildFieldLabel("البريد الإلكتروني"),
+                          _buildEmailField(_emailController),
                           const SizedBox(height: 25),
                           _buildFieldLabel("إدارة الحماية"),
                           _buildPasswordField(),
@@ -414,6 +499,26 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
       decoration: InputDecoration(
         prefixIcon:
             const Icon(Icons.phone_android, color: Colors.grey, size: 22),
+        filled: true,
+        fillColor: Colors.grey.withValues(alpha: 0.05),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none),
+      ),
+    );
+  }
+
+  Widget _buildEmailField(TextEditingController controller) {
+    return TextField(
+      controller: controller,
+      readOnly: true,
+      textAlign: TextAlign.left,
+      textDirection: TextDirection.ltr,
+      style: const TextStyle(
+          fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.bold),
+      decoration: InputDecoration(
+        prefixIcon:
+            const Icon(Icons.alternate_email_rounded, color: Colors.grey, size: 22),
         filled: true,
         fillColor: Colors.grey.withValues(alpha: 0.05),
         border: OutlineInputBorder(
