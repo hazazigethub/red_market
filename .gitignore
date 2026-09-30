@@ -17,3 +17,4 @@ site/.vercel/
 # نظام
 .DS_Store
 Thumbs.db
+.vercel

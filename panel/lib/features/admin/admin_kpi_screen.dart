@@ -196,35 +196,54 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
 
   // ===================== الواجهة =====================
 
+  int _tab = 0;
+
+  static const _tabs = <(String, IconData)>[
+    ('نظرة عامة', Icons.dashboard_outlined),
+    ('الإيرادات', Icons.payments_outlined),
+    ('الإعلانات', Icons.view_carousel_outlined),
+    ('المتاجر', Icons.storefront_outlined),
+    ('العملاء', Icons.groups_outlined),
+    ('القيمة للتاجر', Icons.handshake_outlined),
+    ('الجودة والمعارض', Icons.verified_outlined),
+    ('التكلفة والبنية', Icons.dns_outlined),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: brandRed));
-    }
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: Container(
-        color: const Color(0xFFF7F8FA),
-        child: RefreshIndicator(
-          color: brandRed,
-          onRefresh: _load,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-            children: [
-              _header(),
-              if (_data.isEmpty) _empty(),
-              if (_data.isNotEmpty) ...[
-                _northStar(),
-                _section('الإيرادات', Icons.payments_outlined, _revenueCards()),
-                _section('المنتجات الإعلانية', Icons.campaign_outlined, _adsCards()),
-                _section('المتاجر', Icons.storefront_outlined, _storeCards()),
-                _section('العملاء', Icons.groups_outlined, _userCards()),
-                _section('القيمة للتاجر', Icons.handshake_outlined, _valueCards()),
-                _section('الجودة والمعارض', Icons.verified_outlined, _qualityCards()),
-                _section('التكلفة والبنية', Icons.dns_outlined, _costCards()),
-                _listsRow(),
-              ],
-            ],
+      child: RefreshIndicator(
+        onRefresh: _load,
+        color: brandRed,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1600),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _header(),
+                  const SizedBox(height: 16),
+                  _tabsBar(),
+                  const SizedBox(height: 14),
+                  _controls(),
+                  const SizedBox(height: 20),
+                  if (_loading)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 80),
+                      child: Center(
+                          child: CircularProgressIndicator(color: brandRed)),
+                    )
+                  else if (_data.isEmpty)
+                    _empty()
+                  else
+                    _tabBody(),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -232,76 +251,177 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
   }
 
   Widget _header() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Wrap(
-        spacing: 10,
-        runSpacing: 10,
-        crossAxisAlignment: WrapCrossAlignment.center,
+    final days = _data.keys.toList()..sort();
+    final last = days.isEmpty ? null : days.last;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('مؤشرات الأداء',
+            style: TextStyle(
+                fontFamily: 'Cairo', fontSize: 19, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 6),
+        Text(
+          last == null
+              ? 'تُحسب تلقائياً كل يوم بعد منتصف الليل'
+              : 'تُحسب تلقائياً كل يوم بعد منتصف الليل — آخر يوم محسوب ${DateFormat('yyyy-MM-dd').format(last)}',
+          style: TextStyle(
+              fontFamily: 'Cairo', fontSize: 11.5, color: Colors.grey.shade500),
+        ),
+      ],
+    );
+  }
+
+  Widget _tabsBar() {
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _tabs.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (_, i) {
+          final active = _tab == i;
+          final alerts = i == 0 ? _alertCards().length : 0;
+          return InkWell(
+            onTap: () => setState(() => _tab = i),
+            borderRadius: BorderRadius.circular(11),
+            splashColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            child: Container(
+              height: 44,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: active ? brandRed : Colors.white,
+                borderRadius: BorderRadius.circular(11),
+                border: Border.all(color: active ? brandRed : line),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(_tabs[i].$2,
+                    size: 17, color: active ? Colors.white : Colors.grey.shade500),
+                const SizedBox(width: 7),
+                Text(_tabs[i].$1,
+                    style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: active ? Colors.white : textMain)),
+                if (alerts > 0) ...[
+                  const SizedBox(width: 7),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: active ? Colors.white : brandRed,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text('$alerts',
+                        style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.bold,
+                            color: active ? brandRed : Colors.white)),
+                  ),
+                ],
+              ]),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _controls() {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: [
+        SizedBox(
+          width: 150,
+          child: _dropdown<int>(
+            icon: Icons.date_range_rounded,
+            value: _days,
+            items: const [(value: 7, label: 'آخر 7 أيام'), (value: 30, label: 'آخر 30 يوماً')],
+            onChanged: (v) {
+              if (v == null) return;
+              setState(() => _days = v);
+              _load();
+            },
+          ),
+        ),
+        SizedBox(
+          width: 180,
+          child: _dropdown<bool>(
+            icon: Icons.payments_outlined,
+            value: _paidBasis,
+            items: const [
+              (value: true, label: 'المدفوع فعلاً'),
+              (value: false, label: 'سعر الباقة الأصلي'),
+            ],
+            onChanged: (v) => setState(() => _paidBasis = v ?? true),
+          ),
+        ),
+        _actionBtn(Icons.edit_note_rounded, 'المدخلات الشهرية', _editInputs),
+        _actionBtn(
+            Icons.refresh_rounded,
+            _refreshing ? 'جاري التحديث...' : 'تحديث اليوم',
+            _refreshing ? null : _refresh),
+      ],
+    );
+  }
+
+  Widget _dropdown<T>({
+    required IconData icon,
+    required T value,
+    required List<({T value, String label})> items,
+    required ValueChanged<T?> onChanged,
+  }) {
+    return Container(
+      height: 42,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(11),
+        border: Border.all(color: line),
+      ),
+      child: Row(
         children: [
-          const Text('مؤشرات الأداء',
-              style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: textMain)),
-          const SizedBox(width: 12),
-          _chip('آخر 7 أيام', _days == 7, () {
-            setState(() => _days = 7);
-            _load();
-          }),
-          _chip('آخر 30 يوماً', _days == 30, () {
-            setState(() => _days = 30);
-            _load();
-          }),
-          const SizedBox(width: 6),
-          _chip('المدفوع فعلاً', _paidBasis, () => setState(() => _paidBasis = true)),
-          _chip('سعر الباقة الأصلي', !_paidBasis,
-              () => setState(() => _paidBasis = false)),
-          const SizedBox(width: 6),
-          _outlineBtn(Icons.edit_note_rounded, 'المدخلات الشهرية', _editInputs),
-          _outlineBtn(
-              Icons.refresh_rounded,
-              _refreshing ? 'جاري التحديث...' : 'تحديث اليوم',
-              _refreshing ? null : _refresh),
+          Icon(icon, size: 15, color: Colors.grey.shade500),
+          const SizedBox(width: 8),
+          Expanded(
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<T>(
+                value: value,
+                isExpanded: true,
+                isDense: true,
+                icon: Icon(Icons.keyboard_arrow_down_rounded,
+                    size: 17, color: Colors.grey.shade500),
+                style: const TextStyle(
+                    fontFamily: 'Cairo', fontSize: 12, color: textMain),
+                items: items
+                    .map((e) => DropdownMenuItem<T>(
+                          value: e.value,
+                          child: Text(e.label,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontFamily: 'Cairo', fontSize: 12)),
+                        ))
+                    .toList(),
+                onChanged: onChanged,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _chip(String label, bool active, VoidCallback onTap) {
+  Widget _actionBtn(IconData icon, String label, VoidCallback? onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(11),
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,
       child: Container(
-        height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: active ? brandRed : Colors.white,
-          borderRadius: BorderRadius.circular(11),
-          border: Border.all(color: active ? brandRed : line),
-        ),
-        child: Text(label,
-            style: TextStyle(
-                fontFamily: 'Cairo',
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                color: active ? Colors.white : textMain)),
-      ),
-    );
-  }
-
-  Widget _outlineBtn(IconData icon, String label, VoidCallback? onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(11),
-      splashColor: Colors.transparent,
-      highlightColor: Colors.transparent,
-      child: Container(
-        height: 40,
+        height: 42,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -309,197 +429,331 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
           border: Border.all(color: line),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 18, color: brandRed),
-          const SizedBox(width: 6),
+          Icon(icon, size: 16, color: brandRed),
+          const SizedBox(width: 7),
           Text(label,
               style: const TextStyle(
-                  fontFamily: 'Cairo', fontSize: 12.5, color: textMain)),
+                  fontFamily: 'Cairo', fontSize: 12, color: textMain)),
         ]),
       ),
     );
   }
 
   Widget _empty() {
-    return Container(
-      padding: const EdgeInsets.all(30),
-      decoration: _box(),
-      child: const Text(
-          'لا توجد قيم بعد. اضغط «تحديث اليوم» لحساب مؤشرات اليوم الأول.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontFamily: 'Cairo', color: Colors.grey)),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 80),
+      child: Center(
+        child: Text('لا توجد قيم بعد. اضغط «تحديث اليوم» لحساب مؤشرات اليوم.',
+            style: TextStyle(
+                fontFamily: 'Cairo', fontSize: 14, color: Colors.grey.shade500)),
+      ),
     );
   }
 
-  BoxDecoration _box() => BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: line),
+  Widget _tabBody() {
+    switch (_tab) {
+      case 0:
+        final alerts = _alertCards();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _northStar(),
+            const SizedBox(height: 24),
+            _sectionTitle(alerts.isEmpty
+                ? 'لا توجد مؤشرات تحتاج انتباهك'
+                : 'مؤشرات تحتاج انتباهك (${alerts.length})'),
+            const SizedBox(height: 14),
+            if (alerts.isNotEmpty) _grid(alerts),
+          ],
+        );
+      case 1:
+        return _grid(_revenueCards());
+      case 2:
+        return _grid(_adsCards());
+      case 3:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [_grid(_storeCards()), const SizedBox(height: 14), _listsRow()],
+        );
+      case 4:
+        return _grid(_userCards());
+      case 5:
+        return _grid(_valueCards());
+      case 6:
+        return _grid(_qualityCards());
+      default:
+        return _grid(_costCards());
+    }
+  }
+
+  /// كل البطاقات التي في حالة تنبيه، من كل الأقسام
+  List<Widget> _alertCards() {
+    if (_data.isEmpty) return const [];
+    _collectAlerts = true;
+    _alerts.clear();
+    _revenueCards();
+    _adsCards();
+    _storeCards();
+    _userCards();
+    _valueCards();
+    _qualityCards();
+    _costCards();
+    _collectAlerts = false;
+    return List.of(_alerts);
+  }
+
+  bool _collectAlerts = false;
+  final List<Widget> _alerts = [];
+
+  Widget _sectionTitle(String t) => Text(t,
+      style: const TextStyle(
+          fontFamily: 'Cairo', fontSize: 16, fontWeight: FontWeight.bold));
+
+  Widget _grid(List<Widget> cards) {
+    return LayoutBuilder(builder: (context, c) {
+      const gap = 12.0;
+      int cols = 3;
+      if (c.maxWidth < 620) {
+        cols = 1;
+      } else if (c.maxWidth < 1000) {
+        cols = 2;
+      }
+      final w = (c.maxWidth - gap * (cols - 1)) / cols;
+      return Wrap(
+        spacing: gap,
+        runSpacing: gap,
+        children: cards.map((e) => SizedBox(width: w, child: e)).toList(),
       );
+    });
+  }
 
   Widget _northStar() {
     final cur = _sum('outbound_clicks');
     final prev = _sum('outbound_clicks', 1);
     return Container(
-      padding: const EdgeInsets.all(20),
-      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: brandRed,
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: line),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('المؤشر الرئيسي · الانتقالات إلى المتاجر',
-                    style: TextStyle(
-                        fontFamily: 'Cairo', fontSize: 13, color: Colors.white70)),
-                const SizedBox(height: 4),
-                Text(_fmt(cur),
-                    style: const TextStyle(
-                        fontFamily: 'Cairo',
-                        fontSize: 34,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white)),
-                Text(
-                  'التطبيق ${_fmt(_sum('clicks_app'))} · الموقع ${_fmt(_sum('clicks_web'))} · المعارض ${_fmt(_sum('clicks_expo'))}',
-                  style: const TextStyle(
-                      fontFamily: 'Cairo', fontSize: 12.5, color: Colors.white),
-                ),
-              ],
-            ),
-          ),
-          _delta(cur, prev, true, onRed: true),
-        ],
-      ),
-    );
-  }
-
-  Widget _section(String title, IconData icon, List<Widget> cards) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            Icon(icon, size: 20, color: brandRed),
-            const SizedBox(width: 8),
-            Text(title,
-                style: const TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: textMain)),
+            Expanded(
+              child: Text('المؤشر الرئيسي — الانتقالات إلى متاجر التجار',
+                  style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 13.5,
+                      color: Colors.grey.shade600)),
+            ),
+            _delta(cur, prev, true),
           ]),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(_fmt(cur),
+                  style: const TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 34,
+                      fontWeight: FontWeight.bold,
+                      color: brandRed,
+                      height: 1.1)),
+              const SizedBox(width: 8),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text('انتقال',
+                    style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 13,
+                        color: Colors.grey.shade500)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Text('القيمة الوحيدة التي يدفع التاجر مقابلها — بعد حذف التكرار',
+              style: TextStyle(
+                  fontFamily: 'Cairo', fontSize: 10.5, color: Colors.grey.shade500)),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 18),
+            child: Divider(color: line, height: 1),
+          ),
           LayoutBuilder(builder: (context, c) {
-            final cols = c.maxWidth > 1100
-                ? 4
-                : c.maxWidth > 800
-                    ? 3
-                    : c.maxWidth > 520
-                        ? 2
-                        : 1;
-            final w = (c.maxWidth - (cols - 1) * 12) / cols;
-            return Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: cards.map((e) => SizedBox(width: w, child: e)).toList(),
-            );
+            const gap = 10.0;
+            final cols = c.maxWidth < 520 ? 1 : 3;
+            final w = (c.maxWidth - gap * (cols - 1)) / cols;
+            return Wrap(spacing: gap, runSpacing: gap, children: [
+              SizedBox(width: w, child: _summaryBox('من التطبيق', _fmt(_sum('clicks_app')))),
+              SizedBox(width: w, child: _summaryBox('من الموقع', _fmt(_sum('clicks_web')))),
+              SizedBox(width: w, child: _summaryBox('من المعارض', _fmt(_sum('clicks_expo')))),
+            ]);
           }),
         ],
       ),
     );
   }
 
-  /// بطاقة مؤشر: الاسم، القيمة، التغير عن الفترة السابقة، القرار
+  Widget _summaryBox(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F8FA),
+        borderRadius: BorderRadius.circular(11),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: TextStyle(
+                  fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade600)),
+          const SizedBox(height: 5),
+          Text(value,
+              style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.bold,
+                  color: textMain)),
+        ],
+      ),
+    );
+  }
+
+  /// بطاقة مؤشر بنمط بطاقات التقرير المالي
   Widget _card({
     required String name,
     required String value,
     required String decision,
+    IconData icon = Icons.insights_outlined,
     String? sub,
     double? cur,
     double? prev,
     bool higherIsBetter = true,
     bool alert = false,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
+    final card = Container(
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: alert ? brandRed : line, width: alert ? 1.4 : 1),
+        border: Border.all(
+            color: alert ? brandRed.withValues(alpha: 0.45) : line,
+            width: alert ? 1.4 : 1),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: brandRed.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(icon, size: 17, color: brandRed),
+              ),
+              const SizedBox(width: 11),
               Expanded(
                 child: Text(name,
+                    style: const TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.bold)),
+              ),
+              if (alert)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: brandRed.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: const Text('يحتاج انتباه',
+                      style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: brandRed)),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(value,
                     style: TextStyle(
                         fontFamily: 'Cairo',
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade700)),
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        height: 1.2,
+                        color: alert ? brandRed : textMain)),
               ),
               if (cur != null && prev != null) _delta(cur, prev, higherIsBetter),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(value,
-              style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: alert ? brandRed : textMain)),
-          if (sub != null)
+          if (sub != null) ...[
+            const SizedBox(height: 4),
             Text(sub,
                 style: TextStyle(
-                    fontFamily: 'Cairo', fontSize: 11.5, color: Colors.grey.shade600)),
-          const SizedBox(height: 8),
+                    fontFamily: 'Cairo', fontSize: 11, color: Colors.grey.shade600)),
+          ],
+          const SizedBox(height: 12),
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
             decoration: BoxDecoration(
               color: const Color(0xFFF7F8FA),
-              borderRadius: BorderRadius.circular(9),
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Text('القرار: $decision',
-                style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 11.5,
-                    height: 1.5,
-                    color: Colors.grey.shade700)),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Icon(Icons.lightbulb_outline_rounded,
+                      size: 13, color: Colors.grey.shade500),
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Text(decision,
+                      style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 10.5,
+                          color: Colors.grey.shade600)),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
+    if (_collectAlerts && alert) _alerts.add(card);
+    return card;
   }
 
-  Widget _delta(double cur, double prev, bool higherIsBetter, {bool onRed = false}) {
+  Widget _delta(double cur, double prev, bool higherIsBetter) {
     if (prev == 0 && cur == 0) return const SizedBox.shrink();
     final up = cur >= prev;
     final good = up == higherIsBetter;
     final pct = prev == 0 ? null : (cur - prev) / prev.abs();
-    final color = onRed
-        ? Colors.white
-        : (cur == prev ? Colors.grey : (good ? green : brandRed));
+    final Color color =
+        cur == prev ? Colors.grey : (good ? Colors.green : brandRed);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
-        color: onRed ? Colors.white24 : color.withAlpha(25),
+        color: color.withValues(alpha: 0.09),
         borderRadius: BorderRadius.circular(7),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(up ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
             size: 13, color: color),
+        const SizedBox(width: 2),
         Text(pct == null ? 'جديد' : '${_fmt(pct.abs() * 100, dec: 0)}%',
             style: TextStyle(
                 fontFamily: 'Cairo',
-                fontSize: 11.5,
+                fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: color)),
       ]),
@@ -534,6 +788,7 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
     return [
       _card(
         name: 'الإيراد الشهري المتكرر (MRR)',
+        icon: Icons.autorenew_rounded,
         value: _sar(mrr),
         sub: 'السنوي (ARR): ${_sar(mrr == null ? null : mrr * 12)}',
         cur: mrr,
@@ -542,6 +797,7 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
       ),
       _card(
         name: 'صافي نمو الإيراد (Net New MRR)',
+        icon: Icons.trending_up_rounded,
         value: _sar(net),
         sub:
             'جديد ${_sar(_sum('new_mrr_$_b'))} · ترقية ${_sar(_sum('expansion_mrr_$_b'))} · تخفيض ${_sar(_sum('contraction_mrr_$_b'))} · مفقود ${_sar(_sum('churned_mrr_$_b'))}',
@@ -552,6 +808,7 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
       ),
       _card(
         name: 'متوسط الإيراد لكل متجر (ARPA)',
+        icon: Icons.storefront_outlined,
         value: _sar(_arpa()),
         cur: _arpa(),
         prev: _arpa(1),
@@ -559,6 +816,7 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
       ),
       _card(
         name: 'قيمة الأكواد الممنوحة',
+        icon: Icons.confirmation_number_outlined,
         value: _sar(code),
         sub: 'الفرق بين السعر الأصلي والمدفوع في كل المصادر',
         cur: code,
@@ -568,12 +826,14 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
       ),
       _card(
         name: 'مزيج الإيراد (Revenue Mix)',
+        icon: Icons.pie_chart_outline_rounded,
         value: _sar(totalRev),
         sub: mix.isEmpty ? 'لا إيراد في الفترة' : mix,
         decision: 'أي منتج إعلاني تطوّره، وأيها توقفه',
       ),
       _card(
         name: 'مدة الاستمرار (Runway)',
+        icon: Icons.hourglass_bottom_rounded,
         value: runway == null
             ? '—'
             : (runway.isInfinite ? 'لا استهلاك' : '${_fmt(runway, dec: 1)} شهر'),
@@ -600,12 +860,14 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
     return [
       _card(
         name: 'إشغال البنرات (الأسابيع القادمة)',
+        icon: Icons.view_carousel_outlined,
         value: _pct(_ratio(booked, total)),
         sub: '${_fmt(booked)} من ${_fmt(total)} خانة',
         decision: 'رفع السعر عند الامتلاء، وخفضه أو تقليل الخانات عند الفراغ',
       ),
       _card(
         name: 'إشغال الإعلان الافتتاحي (±30 يوماً)',
+        icon: Icons.smartphone_outlined,
         value: _pct(_ratio(sBooked, sOpen)),
         sub: '${_fmt(sBooked)} من ${_fmt(sOpen)} يوم مفتوح',
         decision: 'رفع سعر الأيام أو خفضه',
@@ -630,6 +892,7 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
     return [
       _card(
         name: 'المتاجر الجديدة',
+        icon: Icons.add_business_outlined,
         value: _fmt(newS),
         sub:
             'الإجمالي ${_fmt(total)} من ${_fmt(target)} · المطلوب ${_fmt(pace)} في الفترة',
@@ -640,6 +903,7 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
       ),
       _card(
         name: 'تفعيل المتاجر',
+        icon: Icons.rocket_launch_outlined,
         value: _pct(act),
         sub: 'نشرت أول عرض خلال 7 أيام من التسجيل',
         cur: act,
@@ -648,6 +912,7 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
       ),
       _card(
         name: 'التحويل من التجربة إلى الدفع',
+        icon: Icons.card_membership_outlined,
         value: _pct(trial),
         sub: 'تجارب انتهت: ${_fmt(_sum('trials_ended'))}',
         cur: trial,
@@ -656,6 +921,7 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
       ),
       _card(
         name: 'تسرب المتاجر (Churn)',
+        icon: Icons.logout_rounded,
         value: _pct(churn),
         sub: 'متاجر غادرت: ${_fmt(_sum('churned_stores'))}',
         cur: churn,
@@ -666,6 +932,7 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
       ),
       _card(
         name: 'متاجر معرّضة للمغادرة',
+        icon: Icons.warning_amber_rounded,
         value: _fmt(_atRisk.length.toDouble()),
         sub: 'لها عروض ولم يصلها انتقال خلال 14 يوماً (القائمة أسفل الصفحة)',
         alert: _atRisk.isNotEmpty,
@@ -673,6 +940,7 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
       ),
       _card(
         name: 'البحث بلا نتائج',
+        icon: Icons.search_off_rounded,
         value: _pct(zero),
         sub: 'من ${_fmt(_sum('searches'))} عملية بحث (الكلمات أسفل الصفحة)',
         higherIsBetter: false,
@@ -695,6 +963,7 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
     return [
       _card(
         name: 'العملاء الجدد',
+        icon: Icons.person_add_alt_outlined,
         value: _fmt(newU),
         sub:
             'الإجمالي ${_fmt(total)} من ${_fmt(target)} · المطلوب ${_fmt(pace)} في الفترة',
@@ -705,6 +974,7 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
       ),
       _card(
         name: 'الاحتفاظ بعد 4 أسابيع',
+        icon: Icons.replay_rounded,
         value: _pct(ret),
         sub:
             'النشطون: أسبوعياً ${_fmt(_last('wau'))} · شهرياً ${_fmt(_last('mau'))}',
@@ -725,6 +995,7 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
     return [
       _card(
         name: 'معدل الانتقال من العرض إلى المتجر',
+        icon: Icons.open_in_new_rounded,
         value: _pct(ctr),
         sub: 'مشاهدات العروض ${_fmt(_sum('offer_views'))}',
         cur: ctr,
@@ -733,6 +1004,7 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
       ),
       _card(
         name: 'المتاجر التي وصلتها قيمة',
+        icon: Icons.handshake_outlined,
         value: _pct(value),
         sub: '${_fmt(clicked)} من ${_fmt(active)} متجر نشط خلال 7 أيام',
         alert: value != null && value < 0.5,
@@ -740,6 +1012,7 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
       ),
       _card(
         name: 'قيمة أولوية الباقة الاحترافية',
+        icon: Icons.workspace_premium_outlined,
         value: lift == null ? '—' : '${_fmt(lift, dec: 2)}×',
         sub: 'مشاهدات عرض الاحترافية مقارنة ببقية الباقات',
         alert: lift != null && lift < 1.1,
@@ -755,6 +1028,7 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
     return [
       _card(
         name: 'نسبة الخصومات غير الحقيقية',
+        icon: Icons.local_offer_outlined,
         value: _pct(fd),
         sub: 'عروض خصم بلا سعر قبل الخصم، أو سعرها لم ينخفض',
         higherIsBetter: false,
@@ -763,6 +1037,7 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
       ),
       _card(
         name: 'العملاء المحتملون لكل جناح',
+        icon: Icons.event_available_outlined,
         value: booths == null || booths == 0
             ? '—'
             : _fmt(leads / booths, dec: 1),
@@ -796,6 +1071,7 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
     return [
       _card(
         name: 'قيمة المتجر ÷ تكلفة استقطابه (LTV/CAC)',
+        icon: Icons.balance_rounded,
         value: ratio == null ? '—' : '${_fmt(ratio, dec: 1)}×',
         sub: 'LTV ${_sar(ltv)} · CAC ${_sar(cac)}',
         alert: ratio != null && ratio < 3,
@@ -803,12 +1079,14 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
       ),
       _card(
         name: 'تكلفة الاستضافة لكل عميل نشط',
+        icon: Icons.cloud_outlined,
         value: perMau == null ? '—' : _sar(perMau),
         sub: infra == null ? 'أدخل فاتورة الاستضافة في «المدخلات الشهرية»' : null,
         decision: 'هل تعيد تصميم ما يستهلك التكلفة',
       ),
       _card(
         name: 'استهلاك قاعدة البيانات والتخزين',
+        icon: Icons.storage_rounded,
         value: _pct(worst),
         sub: 'القاعدة ${_pct(dbPct)} من 8 جيجا · التخزين ${_pct(stPct)} من 100 جيجا',
         alert: worst > 0.7,
@@ -819,11 +1097,12 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
 
   Widget _listsRow() {
     return Padding(
-      padding: const EdgeInsets.only(top: 24),
+      padding: EdgeInsets.zero,
       child: LayoutBuilder(builder: (context, c) {
         final wide = c.maxWidth > 800;
         final a = _listBox(
           'متاجر معرّضة للمغادرة',
+          Icons.warning_amber_rounded,
           _atRisk.isEmpty
               ? const ['لا توجد']
               : _atRisk.map((r) {
@@ -835,6 +1114,7 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
         );
         final b = _listBox(
           'أكثر كلمات البحث بلا نتائج',
+          Icons.search_off_rounded,
           _zeroQueries.isEmpty
               ? const ['لا توجد']
               : _zeroQueries.map((r) => '${r['query']} · ${r['searches']} مرة').toList(),
@@ -853,27 +1133,48 @@ class _AdminKpiScreenState extends State<AdminKpiScreen> {
     );
   }
 
-  Widget _listBox(String title, List<String> items) {
+  Widget _listBox(String title, IconData icon, List<String> items) {
     return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: _box(),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: line),
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(title,
-              style: const TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: textMain)),
-          const SizedBox(height: 8),
-          ...items.map((t) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text(t,
+          Row(children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: brandRed.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Icon(icon, size: 17, color: brandRed),
+            ),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Text(title,
+                  style: const TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.bold)),
+            ),
+          ]),
+          const SizedBox(height: 12),
+          ...items.asMap().entries.map((e) => Container(
+                padding: const EdgeInsets.symmetric(vertical: 9),
+                decoration: BoxDecoration(
+                  border: e.key == 0
+                      ? null
+                      : const Border(top: BorderSide(color: line)),
+                ),
+                child: Text(e.value,
                     style: TextStyle(
                         fontFamily: 'Cairo',
-                        fontSize: 12.5,
-                        color: Colors.grey.shade800)),
+                        fontSize: 12,
+                        color: Colors.grey.shade700)),
               )),
         ],
       ),
