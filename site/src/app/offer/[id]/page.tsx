@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/ProductCard';
 import ProductInteractions from '@/components/ProductInteractions';
 import TrackView from '@/components/TrackView';
+import OutboundLink from '@/components/OutboundLink';
 import ProductGallery from '@/components/ProductGallery';
 import type { Product, Merchant } from '@/lib/types';
 import { notFound } from 'next/navigation';
@@ -271,15 +272,16 @@ export default async function ProductPage({
             </div>
 
             {product.product_url && (
-              <a
+              <OutboundLink
                 href={product.product_url}
-                target="_blank"
-                rel="noopener noreferrer"
+                source="product"
+                productId={product.id}
+                merchantId={product.merchant_id}
                 className="px-6 py-2 rounded-lg text-white text-sm font-bold hover:opacity-90 transition-opacity whitespace-nowrap"
                 style={{ backgroundColor: BRAND }}
               >
                 شراء من المتجر
-              </a>
+              </OutboundLink>
             )}
           </div>
 

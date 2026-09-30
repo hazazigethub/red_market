@@ -8,6 +8,7 @@ import 'package:red_market/core/routing/route_paths.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:red_market/features/auth/presentation/login_screen.dart';
 import 'package:red_market/core/widgets/comments_sheet.dart';
+import 'package:red_market/core/services/kpi_tracker.dart';
 import 'package:red_market_core/red_market_core.dart';
 import 'dart:async';
 
@@ -779,6 +780,11 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
                 onTap: () => _protectedAction(() async {
                   final String? urlString = _currentProduct!.productUrl;
                   if (urlString != null && urlString.isNotEmpty) {
+                    // مؤشر الأداء: انتقال إلى متجر التاجر
+                    KpiTracker.storeClick(
+                      productId: _productId().isEmpty ? null : _productId(),
+                      merchantId: _merchantId,
+                    );
                     final Uri url = Uri.parse(urlString);
                     if (await canLaunchUrl(url)) {
                       await launchUrl(url,

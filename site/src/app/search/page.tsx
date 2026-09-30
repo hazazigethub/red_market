@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import ProductCard from '@/components/ProductCard';
 import { supabaseBrowser } from '@/lib/supabase-client';
+import { logSearch } from '@/lib/tracking';
 import type { Product, Merchant } from '@/lib/types';
 
 const BRAND = '#D32027';
@@ -72,8 +73,13 @@ export default function SearchPage() {
           : Promise.resolve({ data: [] }),
       ]);
 
-      setProducts((pRes.data as Product[]) ?? []);
-      setMerchants((mRes.data as Merchant[]) ?? []);
+      const foundProducts = (pRes.data as Product[]) ?? [];
+      const foundMerchants = (mRes.data as Merchant[]) ?? [];
+      setProducts(foundProducts);
+      setMerchants(foundMerchants);
+
+      // مؤشر الأداء: البحث وعدد نتائجه
+      if (q) void logSearch(q, foundProducts.length + foundMerchants.length);
     } finally {
       setLoading(false);
     }

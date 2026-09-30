@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:red_market_core/red_market_core.dart';
 import 'package:red_market/core/routing/route_paths.dart';
+import 'package:red_market/core/services/kpi_tracker.dart';
 import 'package:red_market/features/customer/home/presentation/pages/sub_categories_screen.dart';
 import 'package:red_market_core/red_market_core.dart';
 
@@ -434,6 +435,13 @@ class _SearchResultsDropdownState extends State<_SearchResultsDropdown> {
   }
 
   Future<List<dynamic>> _fetchResults() async {
+    final results = await _queryResults();
+    // مؤشر الأداء: البحث وعدد نتائجه
+    KpiTracker.search(query, results.length);
+    return results;
+  }
+
+  Future<List<dynamic>> _queryResults() async {
     final minPrice = double.tryParse(activeFilter['minPrice'] ?? '');
     final maxPrice = double.tryParse(activeFilter['maxPrice'] ?? '');
     final String? dateSort = activeFilter['dateSort'];

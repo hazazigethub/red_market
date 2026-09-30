@@ -9,6 +9,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { Metadata } from 'next';
 import VisitLogger from '@/components/VisitLogger';
+import OutboundLink from '@/components/OutboundLink';
 
 export const revalidate = 60;
 
@@ -169,15 +170,15 @@ export default async function StorePage({
               </h1>
 
               {merchant.store_url && (
-                <a
+                <OutboundLink
                   href={merchant.store_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  source="store"
+                  merchantId={merchant.id}
                   className="px-5 py-1.5 rounded-lg text-white text-xs font-bold hover:opacity-90 transition-opacity whitespace-nowrap"
                   style={{ backgroundColor: BRAND }}
                 >
                   زيارة المتجر
-                </a>
+                </OutboundLink>
               )}
             </div>
 

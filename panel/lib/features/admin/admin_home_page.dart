@@ -19,6 +19,7 @@ import 'admin_billing_hub_screen.dart';
 import 'admin_messages_hub_screen.dart';
 import 'admin_support_hub_screen.dart';
 import 'admin_expo_screen.dart';
+import 'admin_kpi_screen.dart';
 import 'expo/expo_common.dart' show expoDb;
 
 class AdminHomePage extends StatefulWidget {
@@ -93,6 +94,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     {'label': 'شريط الأخبار', 'icon': Icons.campaign_outlined},
     {'label': 'المعارض', 'icon': Icons.event_available_outlined},
     {'label': 'الإعدادات', 'icon': Icons.settings_outlined},
+    {'label': 'مؤشرات الأداء', 'icon': Icons.insights_outlined},
   ];
 
   Widget _sectionBody(int i) {
@@ -129,6 +131,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
         return AdminExpoScreen(onSeen: _loadExpoNew);
       case 15:
         return const AdminSettingsScreen();
+      case 16:
+        return const AdminKpiScreen();
       default:
         return _welcome();
     }
