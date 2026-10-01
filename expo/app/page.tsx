@@ -3,12 +3,13 @@ import { expo } from "@/lib/supabase/server";
 import { fmtDate, fmtNum } from "@/lib/format";
 import type { Exhibition } from "@/lib/types";
 import { ExhibitionCard } from "@/components/cards";
-import { Countdown } from "@/components/Countdown";
-import { Cover, EmptyState, LiveBadge, Logo, SectionHead } from "@/components/ui";
+import { HeroStats, HeroTiming } from "@/components/ExhibitionHeroInfo";
+import { Cover, EmptyState, LiveBadge, Logo, SectionHead, Tabs } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const tab = (await searchParams).tab === "past" ? "past" : "upcoming";
   const db = await expo();
   const [{ data: upcoming }, { data: past }, { data: live }] = await Promise.all([
     db.from("exhibitions").select("*").in("status", ["live", "scheduled"])
@@ -20,6 +21,9 @@ export default async function Home() {
   const list = (upcoming ?? []) as Exhibition[];
   const hero = list.find((e) => e.status === "live") ?? list[0];
   const rest = list.filter((e) => e.id !== hero?.id);
+  const { data: heroStats } = hero
+    ? await db.rpc("exhibition_public_stats", { p_exhibition: hero.id })
+    : { data: null };
 
   return (
     <>
@@ -29,12 +33,13 @@ export default async function Home() {
           <div className="absolute inset-0 bg-gradient-to-l from-ink via-ink/85 to-ink/40" aria-hidden />
           <div className="container-x relative flex min-h-[440px] flex-col justify-center gap-6 py-14">
             <div className="flex items-center gap-3">
-              {hero.status === "live" ? <LiveBadge label="مباشر الآن" /> : <span className="badge bg-white/10 text-bg">المعرض القادم</span>}
+              {hero.status === "live" ? <LiveBadge label="يقام الآن" /> : <span className="badge bg-white/10 text-bg">المعرض القادم</span>}
               <span className="text-sm text-white/70">{fmtDate(hero.starts_at, hero.timezone)}{hero.city ? ` · ${hero.city}` : ""}</span>
             </div>
             <h1 className="max-w-3xl text-4xl font-extrabold sm:text-5xl">{hero.title}</h1>
             {hero.description && <p className="max-w-2xl text-lg text-white/80 line-clamp-3">{hero.description}</p>}
-            {hero.status === "scheduled" && <Countdown to={hero.starts_at} onDark />}
+            <HeroStats stats={heroStats as { exhibitors?: number; visits?: number } | null} />
+            <HeroTiming status={hero.status} startsAt={hero.starts_at} endsAt={hero.ends_at} />
             <div className="flex flex-wrap gap-3">
               <Link href={`/e/${hero.slug}${hero.status === "live" ? "/lobby" : ""}`} className="btn-primary">
                 {hero.status === "live" ? "ادخل المعرض" : "تفاصيل المعرض"}
@@ -73,21 +78,24 @@ export default async function Home() {
         )}
 
         <section>
-          <SectionHead title="المعارض القادمة" />
-          {rest.length ? (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{rest.map((e) => <ExhibitionCard key={e.id} e={e} />)}</div>
-          ) : (
-            <EmptyState title="لا توجد معارض أخرى مجدولة حالياً" body="تابع Red Market لتصلك مواعيد المعارض القادمة." />
-          )}
+          <Tabs active={tab} items={[
+            { key: "upcoming", label: "المعارض القادمة", href: "/?tab=upcoming", count: rest.length },
+            { key: "past", label: "المعارض السابقة", href: "/?tab=past", count: past?.length ?? 0 },
+          ]} />
+          <div className="pt-6">
+            {tab === "upcoming" ? (
+              rest.length ? (
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{rest.map((e) => <ExhibitionCard key={e.id} e={e} />)}</div>
+              ) : (
+                <EmptyState title="لا توجد معارض قادمة أخرى حالياً" body="تابع Red Market لتصلك مواعيد المعارض القادمة." />
+              )
+            ) : (past?.length ?? 0) > 0 ? (
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{(past as Exhibition[]).map((e) => <ExhibitionCard key={e.id} e={e} />)}</div>
+            ) : (
+              <EmptyState title="لا توجد معارض سابقة" />
+            )}
+          </div>
         </section>
-
-        {(past?.length ?? 0) > 0 && (
-          <section>
-            <SectionHead title="معارض سابقة" />
-            <p className="-mt-3 mb-5 text-sm text-muted">تصفح الأجنحة وشاهد تسجيلات الجلسات.</p>
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{(past as Exhibition[]).map((e) => <ExhibitionCard key={e.id} e={e} />)}</div>
-          </section>
-        )}
       </div>
     </>
   );

@@ -6,7 +6,7 @@ function parts(ms: number) {
   return { d: Math.floor(s / 86400), h: Math.floor((s % 86400) / 3600), m: Math.floor((s % 3600) / 60), s: s % 60 };
 }
 
-export function Countdown({ to, onDark = false }: { to: string; onDark?: boolean }) {
+export function Countdown({ to, onDark = false, label = "الوقت المتبقي على البدء" }: { to: string; onDark?: boolean; label?: string }) {
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     setNow(Date.now());
@@ -21,7 +21,7 @@ export function Countdown({ to, onDark = false }: { to: string; onDark?: boolean
     </div>
   );
   return (
-    <div className="flex gap-3" role="timer" aria-label="الوقت المتبقي على البدء" suppressHydrationWarning>
+    <div className="flex gap-3" role="timer" aria-label={label} suppressHydrationWarning>
       {cell(p.d, "يوم")}{cell(p.h, "ساعة")}{cell(p.m, "دقيقة")}{cell(p.s, "ثانية")}
     </div>
   );

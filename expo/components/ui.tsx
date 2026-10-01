@@ -7,7 +7,7 @@ export function LiveBadge({ label = "مباشر" }: { label?: string }) {
 }
 
 export function StatusBadge({ status }: { status: string }) {
-  if (status === "live") return <LiveBadge label="مباشر الآن" />;
+  if (status === "live") return <LiveBadge label="يقام الآن" />;
   return <span className="badge">{EXHIBITION_STATUS[status] ?? status}</span>;
 }
 

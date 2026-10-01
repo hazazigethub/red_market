@@ -47,7 +47,7 @@ export function dayKey(iso: string, tz = TZ) {
 }
 
 export const EXHIBITION_STATUS: Record<string, string> = {
-  draft: "مسودة", scheduled: "مجدول", live: "مباشر الآن", ended: "انتهى", archived: "مؤرشف",
+  draft: "مسودة", scheduled: "يقام قريباً", live: "يقام الآن", ended: "انتهى", archived: "انتهى",
 };
 export const LEAD_STATUS: Record<string, string> = {
   new: "جديد", contacted: "تم التواصل", qualified: "مؤهل", negotiation: "تفاوض", won: "تم البيع", lost: "لم يتم",

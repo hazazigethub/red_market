@@ -5,13 +5,11 @@ import type { Exhibition } from "@/lib/types";
 import { Flash } from "@/components/Flash";
 import { EmptyState, Logo, StatusBadge } from "@/components/ui";
 import { ParticipateButton } from "@/components/client/ParticipateButton";
-import { withdrawApplication } from "./actions";
 
 export const metadata = { title: "لوحة العارض" };
 
-const APP_STATUS: Record<string, string> = { pending: "قيد المراجعة", approved: "مقبول", rejected: "مرفوض", withdrawn: "مسحوب" };
 
-export default async function MerchantHome({ searchParams }: { searchParams: Promise<{ error?: string; ok?: string }> }) {
+export default async function MerchantHome({ searchParams }: { searchParams: Promise<{ error?: string; ok?: string; archive?: string }> }) {
   const sp = await searchParams;
   const user = (await getUser())!;
   const db = await expo();
@@ -32,12 +30,17 @@ export default async function MerchantHome({ searchParams }: { searchParams: Pro
   const appliedTo = new Set(((apps ?? []) as unknown as { status: string; exhibitions: { slug: string } }[])
     .filter((a) => a.status !== "withdrawn").map((a) => a.exhibitions.slug));
   const openList = ((open ?? []) as Exhibition[]).filter((e) => !joined.has(e.id) && !appliedTo.has(e.slug));
+  // الصفحة تعرض المعارض الجارية والقريبة فقط، والسابقة في «أرشيف المشاركات»
+  const showArchive = sp.archive === "1";
+  const currentBooths = booths.filter((x) => ["scheduled", "live"].includes(x.booths.exhibitions.status));
+  const pastBooths = booths.filter((x) => !["scheduled", "live"].includes(x.booths.exhibitions.status));
+  const shownBooths = showArchive ? pastBooths : currentBooths;
 
   return (
     <div className="container-x flex flex-col gap-10 py-8">
       <div>
         <h1 className="section-title">لوحة العارض</h1>
-        <p className="text-muted">أجنحتك في المعارض، الطلبات، والمعارض المفتوحة للمشاركة.</p>
+        <p className="text-muted">أجنحتك في المعارض، والمعارض المفتوحة للمشاركة.</p>
       </div>
       <Flash error={sp.error} ok={sp.ok === "applied" ? "تم إرسال طلب المشاركة إلى المنظم." : undefined} />
       {suspended.length > 0 && (
@@ -47,10 +50,20 @@ export default async function MerchantHome({ searchParams }: { searchParams: Pro
       )}
 
       <section>
-        <h2 className="mb-4 font-heading text-xl font-bold">أجنحتي</h2>
-        {booths.length === 0 ? <EmptyState title="لا توجد أجنحة بعد" body="قدّم طلب مشاركة في أحد المعارض المفتوحة أدناه." /> : (
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <h2 className="font-heading text-xl font-bold">{showArchive ? "أرشيف المشاركات" : "أجنحتي"}</h2>
+          <span className="flex-1" />
+          {showArchive
+            ? <Link href="/merchant" className="btn-ghost btn-sm">← المشاركات الحالية</Link>
+            : pastBooths.length > 0 && <Link href="/merchant?archive=1" className="btn-ghost btn-sm">أرشيف المشاركات ({pastBooths.length})</Link>}
+        </div>
+        {shownBooths.length === 0 ? (
+          showArchive
+            ? <EmptyState title="لا توجد مشاركات سابقة" />
+            : <EmptyState title="لا توجد مشاركات حالية" body="شارك في أحد المعارض المفتوحة أدناه." />
+        ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {booths.map(({ booths: b, role }) => (
+            {shownBooths.map(({ booths: b, role }) => (
               <Link key={b.id} href={`/merchant/booths/${b.id}`} className="card flex items-center gap-4 p-5 hover:border-ink">
                 <Logo path={b.logo_path} name={b.name} size={56} />
                 <div className="min-w-0 flex-1">
@@ -66,28 +79,7 @@ export default async function MerchantHome({ searchParams }: { searchParams: Pro
         )}
       </section>
 
-      {(apps?.length ?? 0) > 0 && (
-        <section>
-          <h2 className="mb-4 font-heading text-xl font-bold">طلبات المشاركة</h2>
-          <div className="card overflow-x-auto">
-            <table className="table-x">
-              <thead><tr><th>المعرض</th><th>الحالة</th><th>ملاحظة المنظم</th><th></th></tr></thead>
-              <tbody>
-                {(apps as unknown as { id: string; status: string; review_note: string | null; exhibitions: { title: string } }[]).map((a) => (
-                  <tr key={a.id}>
-                    <td>{a.exhibitions.title}</td>
-                    <td><span className="badge">{APP_STATUS[a.status]}</span></td>
-                    <td className="text-muted">{a.review_note ?? "—"}</td>
-                    <td>{a.status === "pending" && <form action={withdrawApplication.bind(null, a.id)}><button className="text-sm text-muted hover:text-primary">سحب</button></form>}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
-
-      <section>
+      {!showArchive && <section>
         <h2 className="mb-4 font-heading text-xl font-bold">معارض مفتوحة للمشاركة</h2>
         {allStores.length === 0 ? (
           <EmptyState title="تحتاج متجراً في Red Market" body="المشاركة في المعارض متاحة لأصحاب المتاجر. أنشئ متجرك في Red Market أولاً." />
@@ -105,7 +97,7 @@ export default async function MerchantHome({ searchParams }: { searchParams: Pro
             ))}
           </div>
         )}
-      </section>
+      </section>}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { expo } from "@/lib/supabase/server";
 import { fmtDate, fmtDateTime, fmtTime, SESSION_TYPE } from "@/lib/format";
 import type { Booth, Session, Sponsor } from "@/lib/types";
 import { BoothCard, SponsorWall } from "@/components/cards";
-import { Countdown } from "@/components/Countdown";
+import { HeroStats, HeroTiming } from "@/components/ExhibitionHeroInfo";
 import { Cover, LiveBadge, Logo, SectionHead } from "@/components/ui";
 
 export default async function Landing({ params }: { params: Promise<{ slug: string }> }) {
@@ -20,6 +20,7 @@ export default async function Landing({ params }: { params: Promise<{ slug: stri
     db.from("live_streams").select("id, title, booth_id, current_viewers").eq("exhibition_id", e.id).eq("status", "live").limit(6),
     db.from("booths").select("id", { count: "exact", head: true }).eq("exhibition_id", e.id).eq("status", "published"),
   ]);
+  const { data: stats } = await db.rpc("exhibition_public_stats", { p_exhibition: e.id });
   const liveIds = new Set((streams ?? []).map((s) => s.booth_id));
   const isOver = e.status === "ended" || e.status === "archived";
 
@@ -32,7 +33,7 @@ export default async function Landing({ params }: { params: Promise<{ slug: stri
           <div className="flex items-center gap-4">
             <Logo path={e.logo_path} name={e.title} size={72} className="border-white/20" />
             <div>
-              {e.status === "live" && <LiveBadge label="المعرض مباشر الآن" />}
+              {e.status === "live" && <LiveBadge label="يقام الآن" />}
               {isOver && <span className="badge bg-white/10 text-bg">انتهى المعرض · المحتوى متاح للتصفح</span>}
               <h1 className="mt-2 text-3xl font-extrabold sm:text-5xl">{e.title}</h1>
             </div>
@@ -41,7 +42,8 @@ export default async function Landing({ params }: { params: Promise<{ slug: stri
             {fmtDate(e.starts_at, e.timezone)} — {fmtDate(e.ends_at, e.timezone)}
             {e.location_type !== "virtual" && e.venue ? ` · ${e.venue}` : " · افتراضي"}{e.city ? `، ${e.city}` : ""}
           </p>
-          {e.status === "scheduled" && <Countdown to={e.starts_at} onDark />}
+          <HeroStats stats={stats as { exhibitors?: number; visits?: number } | null} />
+          <HeroTiming status={e.status} startsAt={e.starts_at} endsAt={e.ends_at} />
           <div className="flex flex-wrap gap-3">
             <Link href={`/e/${slug}/lobby`} className="btn-primary">{e.status === "live" ? "ادخل المعرض الآن" : "تصفح الأجنحة"}</Link>
             {(sessions?.length ?? 0) > 0 && (
