@@ -4,6 +4,7 @@ import { expo, getUser } from "@/lib/supabase/server";
 import { fmtDateTime, timeAgo } from "@/lib/format";
 import { EmptyState, Logo, Tabs } from "@/components/ui";
 import { ChatPanel } from "@/components/client/ChatPanel";
+import { AutoMarkRead } from "@/components/client/AutoMarkRead";
 import { markAllRead, withdrawConsent } from "./actions";
 
 export const metadata = { title: "معرضي" };
@@ -42,6 +43,7 @@ export default async function Me({ searchParams }: { searchParams: Promise<{ tab
         { key: "notifications", label: "الإشعارات", href: "/me?tab=notifications", count: unread },
         { key: "privacy", label: "الخصوصية", href: "/me?tab=privacy" },
       ]} />
+      {tab === "notifications" && unread > 0 && <AutoMarkRead />}
       <div className="py-6">
         {tab === "agenda" && (sessions.length ? (
           <ul className="card divide-y divide-line">

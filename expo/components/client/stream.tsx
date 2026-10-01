@@ -172,7 +172,11 @@ function iceGathered(pc: RTCPeerConnection, ms = 2500) {
 }
 
 /** Go live from the browser: camera + mic sent to Cloudflare over WebRTC (WHIP), no OBS needed. */
-export function StreamStudio({ streamId, status: initialStatus }: { streamId: string; status: string }) {
+export function StreamStudio({ streamId, status: initialStatus, frameClassName = "aspect-video" }: {
+  streamId: string; status: string;
+  /** حجم شاشة الاستوديو — افتراضياً بنسبة الفيديو */
+  frameClassName?: string;
+}) {
   const previewRef = useRef<HTMLVideoElement>(null);
   const [media, setMedia] = useState<MediaStream | null>(null);
   const [pc, setPc] = useState<RTCPeerConnection | null>(null);
@@ -303,8 +307,8 @@ export function StreamStudio({ streamId, status: initialStatus }: { streamId: st
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="relative aspect-video overflow-hidden rounded-2xl bg-ink">
-        <video ref={previewRef} className="h-full w-full object-cover" autoPlay playsInline muted />
+      <div className={`relative overflow-hidden rounded-2xl bg-ink ${frameClassName}`}>
+        <video ref={previewRef} className="h-full w-full object-contain" autoPlay playsInline muted />
         {!media && <p className="absolute inset-0 grid place-items-center text-sm text-bg">المعاينة متوقفة</p>}
         {media && !camOn && <p className="absolute inset-0 grid place-items-center bg-ink text-sm text-bg">الكاميرا متوقفة</p>}
         {media && !micOn && <span className="absolute bottom-3 right-3 rounded-full bg-ink/70 px-2.5 py-0.5 text-xs text-bg">المايك مكتوم</span>}

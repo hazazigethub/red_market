@@ -34,12 +34,10 @@ export default async function Studio({ params, searchParams }: {
     ]);
     return (
       <div className="flex flex-col gap-4">
-        <Link href={`/merchant/booths/${id}/studio`} className="text-sm text-muted">← كل البثوث</Link>
         <Flash error={sp.error} />
         <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
           <div className="flex flex-col gap-4">
-            <h2 className="font-heading text-xl font-bold">{active.title}</h2>
-            <StreamStudio streamId={active.id} status={active.status} />
+            <StreamStudio streamId={active.id} status={active.status} frameClassName="h-[65vh] min-h-96" />
             <form action={pinProduct.bind(null, id, active.id)} className="card flex flex-wrap items-end gap-3 p-4">
               <div className="flex-1"><label className="label">المنتج المثبت أثناء البث</label>
                 <select name="product_id" className="input" defaultValue={active.pinned_product_id ?? ""}>
@@ -56,7 +54,7 @@ export default async function Studio({ params, searchParams }: {
           </div>
           <div className="card flex h-[65vh] min-h-96 flex-col">
             <h3 className="border-b border-line p-4 font-heading font-bold">دردشة البث (إشراف)</h3>
-            <div className="min-h-0 flex-1">{chat && <ChatPanel chatId={chat.id} meId={b.userId} canModerate compact />}</div>
+            <div className="min-h-0 flex-1">{chat && <ChatPanel chatId={chat.id} meId={b.userId} canModerate compact streamId={active.id} />}</div>
           </div>
         </div>
       </div>

@@ -18,7 +18,7 @@ export default async function BoothAdminLayout({ children, params }: { children:
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <h1 className="truncate font-heading text-2xl font-extrabold">{b.name}</h1>
-            <span className="badge">{b.status === "published" ? "منشور" : b.status === "hidden" ? "مخفي" : "مسودة"}</span>
+            {b.status !== "published" && <span className="badge">{b.status === "hidden" ? "مخفي" : "مسودة"}</span>}
           </div>
           <p className="text-sm text-muted">{b.exhibitions.title}</p>
         </div>
