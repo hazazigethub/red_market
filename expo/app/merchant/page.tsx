@@ -91,6 +91,8 @@ export default async function MerchantHome({ searchParams }: { searchParams: Pro
         <h2 className="mb-4 font-heading text-xl font-bold">معارض مفتوحة للمشاركة</h2>
         {allStores.length === 0 ? (
           <EmptyState title="تحتاج متجراً في Red Market" body="المشاركة في المعارض متاحة لأصحاب المتاجر. أنشئ متجرك في Red Market أولاً." />
+        ) : storeList.length === 0 ? (
+          <EmptyState title="المشاركة في المعارض موقوفة" body="تواصل مع دعم Red Market." />
         ) : openList.length === 0 ? <EmptyState title="لا توجد معارض مفتوحة حالياً" /> : (
           <div className="grid gap-4 md:grid-cols-2">
             {openList.map((e) => (
