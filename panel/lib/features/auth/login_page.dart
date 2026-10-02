@@ -86,8 +86,11 @@ class _LoginPageState extends State<LoginPage>
     final start = (order * 0.16).clamp(0.0, 0.7);
     final curve = CurvedAnimation(
       parent: _revealCtrl,
-      curve: Interval(start, (start + 0.4).clamp(0.0, 1.0),
-          curve: Curves.easeOutCubic),
+      curve: Interval(
+        start,
+        (start + 0.4).clamp(0.0, 1.0),
+        curve: Curves.easeOutCubic,
+      ),
     );
 
     return AnimatedBuilder(
@@ -102,7 +105,6 @@ class _LoginPageState extends State<LoginPage>
       child: child,
     );
   }
-
 
   @override
   void dispose() {
@@ -148,7 +150,10 @@ class _LoginPageState extends State<LoginPage>
       return;
     }
 
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     final supabase = Supabase.instance.client;
     try {
       final clean = _phone.text.trim().replaceAll(RegExp(r'\D'), '');
@@ -156,8 +161,10 @@ class _LoginPageState extends State<LoginPage>
       // يجلب بريد المصادقة المرتبط بالجوال — حقيقياً كان أو مولّداً
       String? email;
       try {
-        final found =
-            await supabase.rpc('get_login_email', params: {'p_phone': clean});
+        final found = await supabase.rpc(
+          'get_login_email',
+          params: {'p_phone': clean},
+        );
         email = found?.toString();
       } catch (e) {
         debugPrint('get_login_email error: $e');
@@ -168,7 +175,9 @@ class _LoginPageState extends State<LoginPage>
       }
 
       final res = await supabase.auth.signInWithPassword(
-        email: email, password: _password.text.trim());
+        email: email,
+        password: _password.text.trim(),
+      );
 
       final uid = res.user?.id;
       if (uid == null) throw 'تعذر تسجيل الدخول';
@@ -192,25 +201,27 @@ class _LoginPageState extends State<LoginPage>
 
       if (scheduled != null && mounted) {
         final nav = Navigator.of(context, rootNavigator: true);
-        nav.pushReplacement(MaterialPageRoute(
-          builder: (_) => AccountRecoveryPage(
-            scheduledAt: scheduled,
-            onRestored: () {
-              // سياق جذري محفوظ — لا يعتمد على صفحة أُزيلت
-              nav.pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const LoginPage()),
-                (route) => false,
-              );
-            },
+        nav.pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => AccountRecoveryPage(
+              scheduledAt: scheduled,
+              onRestored: () {
+                // سياق جذري محفوظ — لا يعتمد على صفحة أُزيلت
+                nav.pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                  (route) => false,
+                );
+              },
+            ),
           ),
-        ));
+        );
         return;
       }
 
       if (mounted) {
-        Navigator.of(context).pushReplacement(MaterialPageRoute(
-          builder: (_) => buildDashboardFor(role!),
-        ));
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => buildDashboardFor(role!)),
+        );
       }
     } catch (e) {
       if (mounted) setState(() => _error = _arabicError(e));
@@ -227,8 +238,9 @@ class _LoginPageState extends State<LoginPage>
         textDirection: TextDirection.rtl,
         child: AlertDialog(
           backgroundColor: Colors.white,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
             child: const Text(
@@ -316,57 +328,58 @@ class _LoginPageState extends State<LoginPage>
               const SizedBox(height: 44),
 
               ..._highlights.asMap().entries.map(
-                    (e) => _reveal(
-                      order: 2 + e.key,
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 22),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.14),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                    color: Colors.white
-                                        .withValues(alpha: 0.15)),
-                              ),
-                              child: Icon(e.value.$1,
-                                  color: Colors.white, size: 19),
+                (e) => _reveal(
+                  order: 2 + e.key,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 22),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.15),
                             ),
-                            const SizedBox(width: 15),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    e.value.$2,
-                                    style: const TextStyle(
-                                      fontSize: 14.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    e.value.$3,
-                                    style: TextStyle(
-                                      fontSize: 12.5,
-                                      height: 1.8,
-                                      color: Colors.white
-                                          .withValues(alpha: 0.75),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                          ),
+                          child: Icon(
+                            e.value.$1,
+                            color: Colors.white,
+                            size: 19,
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 15),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                e.value.$2,
+                                style: const TextStyle(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                e.value.$3,
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  height: 1.8,
+                                  color: Colors.white.withValues(alpha: 0.75),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                ),
+              ),
             ],
           ),
         ),
@@ -393,8 +406,7 @@ class _LoginPageState extends State<LoginPage>
                   child: SvgPicture.asset(
                     'assets/images/applogo.svg',
                     fit: BoxFit.contain,
-                    placeholderBuilder: (_) =>
-                        const SizedBox.shrink(),
+                    placeholderBuilder: (_) => const SizedBox.shrink(),
                   ),
                 ),
               ),
@@ -436,8 +448,7 @@ class _LoginPageState extends State<LoginPage>
               Text(
                 'سجّل دخولك لإدارة متجرك',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 13.5, color: Colors.grey.shade600),
+                style: TextStyle(fontSize: 13.5, color: Colors.grey.shade600),
               ),
 
               const SizedBox(height: 34),
@@ -475,20 +486,25 @@ class _LoginPageState extends State<LoginPage>
                     color: Colors.red.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                        color: Colors.red.withValues(alpha: 0.25)),
+                      color: Colors.red.withValues(alpha: 0.25),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline_rounded,
-                          color: Colors.red, size: 18),
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        color: Colors.red,
+                        size: 18,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           _error!,
                           style: const TextStyle(
-                              color: Colors.red,
-                              fontSize: 12.5,
-                              height: 1.7),
+                            color: Colors.red,
+                            fontSize: 12.5,
+                            height: 1.7,
+                          ),
                         ),
                       ),
                     ],
@@ -507,18 +523,25 @@ class _LoginPageState extends State<LoginPage>
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: _loading
                       ? const SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
-                      : const Text('دخول',
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'دخول',
                           style: TextStyle(
-                              fontSize: 15.5,
-                              fontWeight: FontWeight.bold)),
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
 
@@ -529,8 +552,11 @@ class _LoginPageState extends State<LoginPage>
                 children: [
                   _linkButton(
                     'ليس لديك متجر؟',
-                    () => Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const MerchantRegisterPage())),
+                    () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const MerchantRegisterPage(),
+                      ),
+                    ),
                   ),
                   _linkButton('نسيت كلمة المرور؟', _showForgotDialog),
                 ],
@@ -592,51 +618,96 @@ class _LoginPageState extends State<LoginPage>
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: AppColors.brand, width: 1.5),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 17,
+        ),
       ),
     );
   }
 }
-
 
 /// يبني اللوحة المناسبة للدور — يستعملها تسجيل الدخول وحارس الجلسة
 Widget buildDashboardFor(String role) {
   return DashboardShell(
     role: role,
     items: role == 'merchant'
-                ? const [
-                    NavItem('الرئيسية', Icons.dashboard, MerchantHomePage()),
-                    NavItem('عروضي', Icons.inventory_2, ProductsPage()),
-                    NavItem('الريلز', Icons.video_library, ManageReelsPage()),
-                    NavItem('التقارير', Icons.bar_chart, MerchantReportsPage()),
-                    NavItem('رسائل المتابعين', Icons.campaign, MerchantPromoPage()),
-                    NavItem('الاشتراكات', Icons.card_membership, MerchantSubscriptionsPage()),
-                    NavItem('الإشعارات', Icons.notifications, merchant_notif.NotificationsPage()),
-                    NavItem('إعدادات المتجر', Icons.settings, StoreSettingsPage()),
-                    NavItem('الحساب البنكي', Icons.account_balance, MerchantBankAccountPage()),
-                    NavItem('روابط مفيدة', Icons.link, UsefulLinksPage()),
-                  ]
-                : const [
-              NavItem('الرئيسية', Icons.dashboard, AdminHomePage()),
-              NavItem('التصنيفات', Icons.category, AdminCategoriesScreen()),
-              NavItem('إدارة العملاء', Icons.people, AdminUsersScreen()),
-              NavItem('إدارة التجار', Icons.storefront, AdminMerchantsScreen()),
-              NavItem('التجار الجدد', Icons.fiber_new_outlined, NewMerchantsScreen()),
-              NavItem('إدارة العروض', Icons.inventory, AdminProductsScreen()),
-              NavItem('تحليلات العملاء', Icons.analytics, AdminAnalyticsUsersScreen()),
-              NavItem('تصنيفات المتاجر', Icons.storefront, AdminAnalyticsMerchantCategoriesScreen()),
-              NavItem('تصنيفات العروض', Icons.inventory_2, AdminAnalyticsProductCategoriesScreen()),
-              NavItem('الإشعارات', Icons.notifications, AdminNotificationsScreen()),
-              NavItem('النشرة الأسبوعية', Icons.campaign, AdminNewsletterScreen()),
-              NavItem('أكواد الخصم', Icons.local_offer, DiscountCodesScreen()),
-              NavItem('التجار', Icons.store, AdminAnalyticsMerchantsScreen()),
-              NavItem('العروض', Icons.shopping_bag, AdminAnalyticsProductsScreen()),
-              NavItem('البلاغات', Icons.flag, AdminReportsScreen()),
-              NavItem('الزيارات', Icons.trending_up, AdminAnalyticsVisitsScreen()),
-              NavItem('البنرات', Icons.ad_units, AdminBannersScreen()),
-              NavItem('الإعلانات', Icons.campaign, AdminAnnouncementsScreen()),
-              NavItem('الإعدادات', Icons.settings, AdminSettingsScreen()),
-            ],
+        ? const [
+            NavItem('الرئيسية', Icons.dashboard, MerchantHomePage()),
+            NavItem('عروضي', Icons.inventory_2, ProductsPage()),
+            NavItem('الريلز', Icons.video_library, ManageReelsPage()),
+            NavItem('التقارير', Icons.bar_chart, MerchantReportsPage()),
+            NavItem('رسائل المتابعين', Icons.campaign, MerchantPromoPage()),
+            NavItem(
+              'الاشتراكات',
+              Icons.card_membership,
+              MerchantSubscriptionsPage(),
+            ),
+            NavItem(
+              'الإشعارات',
+              Icons.notifications,
+              merchant_notif.NotificationsPage(),
+            ),
+            NavItem('إعدادات المتجر', Icons.settings, StoreSettingsPage()),
+            NavItem(
+              'الحساب البنكي',
+              Icons.account_balance,
+              MerchantBankAccountPage(),
+            ),
+            NavItem('روابط مفيدة', Icons.link, UsefulLinksPage()),
+          ]
+        : const [
+            NavItem('الرئيسية', Icons.dashboard, AdminHomePage()),
+            NavItem('التصنيفات', Icons.category, AdminCategoriesScreen()),
+            NavItem('إدارة العملاء', Icons.people, AdminUsersScreen()),
+            NavItem('إدارة التجار', Icons.storefront, AdminMerchantsScreen()),
+            NavItem(
+              'التجار الجدد',
+              Icons.fiber_new_outlined,
+              NewMerchantsScreen(),
+            ),
+            NavItem('إدارة العروض', Icons.inventory, AdminProductsScreen()),
+            NavItem(
+              'تحليلات العملاء',
+              Icons.analytics,
+              AdminAnalyticsUsersScreen(),
+            ),
+            NavItem(
+              'تصنيفات المتاجر',
+              Icons.storefront,
+              AdminAnalyticsMerchantCategoriesScreen(),
+            ),
+            NavItem(
+              'تصنيفات العروض',
+              Icons.inventory_2,
+              AdminAnalyticsProductCategoriesScreen(),
+            ),
+            NavItem(
+              'الإشعارات',
+              Icons.notifications,
+              AdminNotificationsScreen(),
+            ),
+            NavItem(
+              'النشرة الأسبوعية',
+              Icons.campaign,
+              AdminNewsletterScreen(),
+            ),
+            NavItem('أكواد الخصم', Icons.local_offer, DiscountCodesScreen()),
+            NavItem('التجار', Icons.store, AdminAnalyticsMerchantsScreen()),
+            NavItem(
+              'العروض',
+              Icons.shopping_bag,
+              AdminAnalyticsProductsScreen(),
+            ),
+            NavItem('البلاغات', Icons.flag, AdminReportsScreen()),
+            NavItem(
+              'الزيارات',
+              Icons.trending_up,
+              AdminAnalyticsVisitsScreen(),
+            ),
+            NavItem('البنرات', Icons.ad_units, AdminBannersScreen()),
+            NavItem('الإعلانات', Icons.campaign, AdminAnnouncementsScreen()),
+            NavItem('الإعدادات', Icons.settings, AdminSettingsScreen()),
+          ],
   );
 }
