@@ -22,7 +22,7 @@ export function supabaseAdmin(): SupabaseClient | null {
 }
 
 export type SyncResult = {
-  ok: boolean; // تمت المعالجة (بغض النظر عن نجاح الدفع)
+  ok: boolean; // تمت المعالجة كاملة (بما فيها إضافة الرصيد) — false يجعل webhook يعيد المحاولة
   paid: boolean; // الدفع مكتمل
   message: string;
   paymentRowId?: string;
@@ -64,11 +64,11 @@ export async function syncPayment(
   const invoiceId = String(data.Invoice?.Id ?? '');
   const externalId = String(data.Invoice?.ExternalIdentifier ?? '');
 
-  let payment: { id: string; status: string; total_amount: number } | null = null;
+  let payment: { id: string; status: string; total_amount: number; payment_type: string } | null = null;
   if (invoiceId) {
     const { data: p } = await supabase
       .from('payments')
-      .select('id, status, total_amount')
+      .select('id, status, total_amount, payment_type')
       .eq('myratoorah_order_id', invoiceId)
       .maybeSingle();
     payment = p;
@@ -76,7 +76,7 @@ export async function syncPayment(
   if (!payment && UUID_RE.test(externalId)) {
     const { data: p } = await supabase
       .from('payments')
-      .select('id, status, total_amount')
+      .select('id, status, total_amount, payment_type')
       .eq('id', externalId)
       .maybeSingle();
     payment = p;
@@ -86,11 +86,21 @@ export async function syncPayment(
   const total = Number(payment.total_amount);
   const paid = data.Invoice?.Status === 'PAID';
 
+  // إضافة الرصيد (آمنة للتكرار: الدالة تتجاهل الدفعة إذا أُضيفت مسبقاً)
+  const creditWallet = async (): Promise<boolean> => {
+    if (payment!.payment_type !== 'wallet_charge') return true;
+    const { data: r, error } = await supabase.rpc('credit_wallet_from_payment', {
+      p_payment_id: payment!.id,
+    });
+    return !error && r?.ok === true;
+  };
+
   if (payment.status === 'completed') {
+    const credited = await creditWallet();
     return {
-      ok: true,
+      ok: credited,
       paid: true,
-      message: 'تم تسجيل هذه الدفعة مسبقاً',
+      message: credited ? 'تم تسجيل هذه الدفعة مسبقاً' : 'تم الدفع، وجاري إضافة الرصيد',
       paymentRowId: payment.id,
       total,
     };
@@ -127,10 +137,19 @@ export async function syncPayment(
     });
   }
 
+  if (!paid) {
+    return { ok: true, paid: false, message: String(failureReason), paymentRowId: payment.id, total };
+  }
+
+  const credited = await creditWallet();
   return {
-    ok: true,
-    paid,
-    message: paid ? 'شكراً لك، تم استلام المبلغ' : String(failureReason),
+    ok: credited,
+    paid: true,
+    message: credited
+      ? payment.payment_type === 'wallet_charge'
+        ? 'تمت إضافة المبلغ إلى رصيدك'
+        : 'شكراً لك، تم استلام المبلغ'
+      : 'تم الدفع، وجاري إضافة الرصيد',
     paymentRowId: payment.id,
     total,
   };

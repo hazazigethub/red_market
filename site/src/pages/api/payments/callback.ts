@@ -1,10 +1,7 @@
 // site/src/pages/api/payments/callback.ts
 // MyFatoorah يعيد العميل هنا بعد الدفع ومعه ?paymentId=...
-// نتحقق من الحالة من MyFatoorah مباشرة (GET /v3/payments/{paymentId}) ثم نحدّث Supabase.
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { syncPayment } from '../../../lib/myfatoorah';
 
 function escapeHtml(s: string) {
   return s.replace(/[&<>"']/g, (c) =>
@@ -61,90 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const mfPaymentId = typeof req.query.paymentId === 'string' ? req.query.paymentId : '';
   if (!mfPaymentId) return sendPage(res, false, 'رابط غير صالح');
 
-  const mfBase = (process.env.MYFATOORAH_BASE_URL ?? '').replace(/\/+$/, '');
-  const mfKey = process.env.MYFATOORAH_API_KEY ?? '';
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
-  if (!mfBase || !mfKey || !supabaseUrl || !serviceKey) {
-    return sendPage(res, false, 'إعدادات الخادم ناقصة');
-  }
-
-  // ===== حالة الدفع من MyFatoorah =====
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let data: any;
-  try {
-    const mfRes = await fetch(`${mfBase}/v3/payments/${encodeURIComponent(mfPaymentId)}`, {
-      headers: { Authorization: `Bearer ${mfKey}`, Accept: 'application/json' },
-    });
-    const json = await mfRes.json().catch(() => null);
-    if (!mfRes.ok || !json?.IsSuccess || !json?.Data) {
-      return sendPage(res, false, 'تعذّر التحقق من حالة الدفع');
-    }
-    data = json.Data;
-  } catch {
-    return sendPage(res, false, 'تعذّر الاتصال بـ MyFatoorah');
-  }
-
-  const supabase = createClient(supabaseUrl, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  // ===== إيجاد الدفعة: برقم فاتورة MyFatoorah، ثم بالمعرّف الخارجي =====
-  const invoiceId = String(data.Invoice?.Id ?? '');
-  const externalId = String(data.Invoice?.ExternalIdentifier ?? '');
-
-  let payment: { id: string; status: string; total_amount: number } | null = null;
-  if (invoiceId) {
-    const { data: p } = await supabase
-      .from('payments')
-      .select('id, status, total_amount')
-      .eq('myratoorah_order_id', invoiceId)
-      .maybeSingle();
-    payment = p;
-  }
-  if (!payment && UUID_RE.test(externalId)) {
-    const { data: p } = await supabase
-      .from('payments')
-      .select('id, status, total_amount')
-      .eq('id', externalId)
-      .maybeSingle();
-    payment = p;
-  }
-  if (!payment) return sendPage(res, false, 'لم يتم العثور على الدفعة');
-
-  const paid = data.Invoice?.Status === 'PAID';
-  const total = Number(payment.total_amount);
-
-  // لا نغيّر دفعة مكتملة مسبقاً
-  if (payment.status === 'completed') {
-    return sendPage(res, true, 'تم تسجيل هذه الدفعة مسبقاً', total);
-  }
-
-  const newStatus = paid ? 'completed' : 'failed';
-  const failureReason = paid
-    ? null
-    : data.Transaction?.Error?.Message || data.Invoice?.Status || 'لم يكتمل الدفع';
-
-  await supabase
-    .from('payments')
-    .update({
-      status: newStatus,
-      myratoorah_payment_id: data.Transaction?.PaymentId ?? mfPaymentId,
-      payment_method: data.Transaction?.PaymentMethod ?? null,
-      failure_reason: failureReason,
-      ...(paid ? { completed_at: new Date().toISOString() } : {}),
-    })
-    .eq('id', payment.id);
-
-  await supabase.from('payment_history').insert({
-    payment_id: payment.id,
-    previous_status: payment.status,
-    new_status: newStatus,
-    description: paid ? 'دفع ناجح عبر MyFatoorah' : `فشل الدفع: ${failureReason}`,
-    myratoorah_response: data,
-  });
-
-  return paid
-    ? sendPage(res, true, 'شكراً لك، تم استلام المبلغ', total)
-    : sendPage(res, false, String(failureReason), total);
+  const r = await syncPayment(mfPaymentId, 'callback');
+  // النجاح يُعرض حسب الدفع نفسه؛ إن تأخرت إضافة الرصيد يكملها الـ webhook
+  return sendPage(res, r.paid, r.message, r.total);
 }

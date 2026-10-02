@@ -74,19 +74,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   // ===== المبلغ =====
+  // الدفع حالياً لشحن المحفظة فقط. الضريبة تُحسب عند الشراء من الرصيد
+  // (purchase_banner / purchase_splash_ad)، فلا تُضاف هنا حتى لا تتكرر.
   const body = (req.body ?? {}) as Record<string, unknown>;
   const amount = Number(body.amount);
-  if (!Number.isFinite(amount) || amount <= 0 || amount > 100000) {
-    return res.status(400).json({ error: 'مبلغ غير صالح' });
+  if (!Number.isFinite(amount) || amount < 10 || amount > 50000) {
+    return res.status(400).json({ error: 'مبلغ الشحن يجب أن يكون بين 10 و 50,000 ر.س' });
   }
-  const paymentType =
-    typeof body.payment_type === 'string' && body.payment_type ? body.payment_type : 'custom';
-  const referenceId =
-    typeof body.reference_id === 'string' && body.reference_id ? body.reference_id : null;
+  const paymentType = 'wallet_charge';
+  const referenceId = null;
 
   const base = round2(amount);
-  const vat = round2(base * 0.15);
-  const total = round2(base + vat);
+  const vat = 0;
+  const total = base;
 
   // ===== سجل الدفعة =====
   const { data: payment, error: insertError } = await supabase
@@ -127,7 +127,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         PaymentMethod: 'CARD',
         Order: { Amount: total, Currency: 'SAR', ExternalIdentifier: payment.id },
         Customer: { Reference: payment.id },
-        IntegrationUrls: { Redirection: `${siteUrl}/api/payments/callback` },
+        IntegrationUrls: {
+          Redirection: `${siteUrl}/api/payments/callback`,
+          Webhook: `${siteUrl}/api/webhooks/payment`,
+        },
         Language: 'AR',
       }),
     });

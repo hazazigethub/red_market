@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // ✅ إضافة Riverpod
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../payments/payments_api.dart';
 
 class MerchantBankAccountPage extends ConsumerStatefulWidget {
   const MerchantBankAccountPage({super.key});
@@ -29,6 +30,37 @@ class _MerchantBankAccountPageState
   double _totalSpent = 0;
   List<Map<String, dynamic>> _transactions = [];
   bool _loadingWallet = true;
+
+  // شحن الرصيد
+  bool _charging = false;
+  bool _chargeLoading = false;
+  final TextEditingController _chargeController = TextEditingController();
+  static const _quickAmounts = [50, 100, 200, 500];
+
+  @override
+  void dispose() {
+    _ownerNameController.dispose();
+    _ibanController.dispose();
+    _chargeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitCharge() async {
+    final amount = parseAmount(_chargeController.text);
+    if (amount < 10 || amount > 50000) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('مبلغ الشحن يجب أن يكون بين 10 و 50,000 ر.س')),
+      );
+      return;
+    }
+    setState(() => _chargeLoading = true);
+    final error = await startWalletCharge(amount);
+    if (!mounted) return;
+    setState(() => _chargeLoading = false);
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+    }
+  }
 
   @override
   void initState() {
@@ -291,48 +323,203 @@ class _MerchantBankAccountPageState
 
           const SizedBox(height: 18),
 
-          SizedBox(
-            width: double.infinity,
-            height: 46,
-            child: ElevatedButton.icon(
-              // لتفعيل الشحن: استبدل null بـ _openChargeSheet
-              onPressed: null,
-              icon: const Icon(Icons.lock_outline_rounded, size: 17),
-              label: const Text(
-                "شحن الرصيد",
-                style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
+          if (!_charging) ...[
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: ElevatedButton.icon(
+                onPressed: () => setState(() => _charging = true),
+                icon: const Icon(Icons.add_card_rounded, size: 17),
+                label: const Text(
+                  "شحن الرصيد",
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: brandRed,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: brandRed,
-                disabledBackgroundColor: Colors.white.withValues(alpha: 0.25),
-                disabledForegroundColor: Colors.white70,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+            ),
+            const SizedBox(height: 8),
+            const Center(
+              child: Text(
+                "الدفع عبر MyFatoorah — مدى، فيزا، ماستركارد",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 10.5,
+                  fontFamily: 'Cairo',
+                ),
               ),
             ),
-          ),
+          ] else
+            _buildChargePanel(),
+        ],
+      ),
+    );
+  }
 
-          const SizedBox(height: 8),
+  // ===================== لوحة شحن الرصيد =====================
 
-          const Center(
-            child: Text(
-              "بوابة الدفع قيد الربط — تواصل مع الإدارة لشحن رصيدك",
-              textAlign: TextAlign.center,
+  Widget _buildChargePanel() {
+    OutlineInputBorder b(Color c, [double w = 1]) => OutlineInputBorder(
+          borderRadius: BorderRadius.circular(11),
+          borderSide: BorderSide(color: c, width: w),
+        );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            InkWell(
+              onTap: _chargeLoading
+                  ? null
+                  : () => setState(() {
+                        _charging = false;
+                        _chargeController.clear();
+                      }),
+              borderRadius: BorderRadius.circular(8),
+              child: const Padding(
+                padding: EdgeInsets.all(4),
+                child: Row(
+                  children: [
+                    Icon(Icons.arrow_back_ios_new,
+                        size: 15, color: Colors.white),
+                    SizedBox(width: 6),
+                    Text(
+                      "رجوع",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontFamily: 'Cairo',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const Spacer(),
+            const Text(
+              "شحن الرصيد",
               style: TextStyle(
-                color: Colors.white70,
-                fontSize: 10.5,
+                color: Colors.white,
+                fontSize: 13.5,
+                fontWeight: FontWeight.bold,
                 fontFamily: 'Cairo',
               ),
             ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _quickAmounts.map((a) {
+            final selected = parseAmount(_chargeController.text) == a;
+            return InkWell(
+              onTap: _chargeLoading
+                  ? null
+                  : () => setState(() => _chargeController.text = '$a'),
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$a ر.س',
+                  style: TextStyle(
+                    color: selected ? brandRed : Colors.white,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Cairo',
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 44,
+          child: TextField(
+            controller: _chargeController,
+            enabled: !_chargeLoading,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (_) => setState(() {}),
+            style: const TextStyle(fontFamily: 'Cairo', fontSize: 14),
+            decoration: InputDecoration(
+              hintText: 'مبلغ آخر',
+              hintStyle: const TextStyle(
+                  fontFamily: 'Cairo', fontSize: 13, color: Color(0xFF757575)),
+              suffixText: 'ر.س',
+              filled: true,
+              fillColor: Colors.white,
+              isDense: true,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              border: b(const Color(0xFFEDEFF3)),
+              enabledBorder: b(const Color(0xFFEDEFF3)),
+              disabledBorder: b(const Color(0xFFEDEFF3)),
+              focusedBorder: b(Colors.white, 1.4),
+            ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 46,
+          child: ElevatedButton(
+            onPressed: _chargeLoading ? null : _submitCharge,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: brandRed,
+              disabledBackgroundColor: Colors.white.withValues(alpha: 0.6),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            child: _chargeLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: brandRed),
+                  )
+                : const Text(
+                    "المتابعة إلى الدفع",
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Center(
+          child: Text(
+            "يُضاف المبلغ لرصيدك فور اكتمال الدفع",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 10.5,
+              fontFamily: 'Cairo',
+            ),
+          ),
+        ),
+      ],
     );
   }
 
