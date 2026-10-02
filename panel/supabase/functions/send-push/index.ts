@@ -37,8 +37,8 @@ async function getAccessToken(): Promise<string> {
 
   // استيراد المفتاح الخاص
   const pem = privateKey
-    .replace(/-----BEGIN PRIVATE KEY-----/, '')
-    .replace(/-----END PRIVATE KEY-----/, '')
+    .replace(/--BEGIN PRIVATE KEY--/, '')
+    .replace(/--END PRIVATE KEY--/, '')
     .replace(/\s/g, '');
 
   const binary = Uint8Array.from(atob(pem), (c) => c.charCodeAt(0));

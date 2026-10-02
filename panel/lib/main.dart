@@ -5,6 +5,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:red_market_core/red_market_core.dart';
 import 'features/auth/login_page.dart';
 import 'features/auth/account_recovery_page.dart';
+import 'features/payments/payment_screen.dart';
+import 'features/invoices/invoice_screen.dart';
+import 'features/admin/payment_dashboard.dart';
 
 final supabase = Supabase.instance.client;
 
@@ -37,7 +40,6 @@ class RedMarketWebApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       locale: const Locale('ar'),
       builder: (context, child) {
-        // ✅ كل الإشعارات تظهر كرسالة في وسط الصفحة
         final size = MediaQuery.sizeOf(context);
         const msgWidth = 380.0;
         final side = size.width > msgWidth + 32
@@ -65,7 +67,6 @@ class RedMarketWebApp extends StatelessWidget {
               ),
             ),
           ),
-          // ✅ الإشعارات تُرسم فوق كل الصفحات والنوافذ
           child: Directionality(
             textDirection: TextDirection.rtl,
             child: ScaffoldMessenger(
@@ -79,10 +80,14 @@ class RedMarketWebApp extends StatelessWidget {
         );
       },
       theme: base.copyWith(
-        // ✅ خط Cairo على كل نصوص اللوحة
         textTheme: GoogleFonts.cairoTextTheme(base.textTheme),
         primaryTextTheme: GoogleFonts.cairoTextTheme(base.primaryTextTheme),
       ),
+      routes: {
+        '/payment': (context) => const PaymentScreen(),
+        '/invoices': (context) => const InvoiceListScreen(),
+        '/admin-payments': (context) => const AdminPaymentDashboard(),
+      },
       home: const AuthGate(),
     );
   }
@@ -126,7 +131,9 @@ class _AuthGateState extends State<AuthGate> {
 
       // حساب مجدول للحذف: شاشة الاستعادة بدل اللوحة
       final raw = profile?['deletion_scheduled_at'];
-      final scheduled = raw == null ? null : DateTime.tryParse(raw.toString())?.toLocal();
+      final scheduled = raw == null
+          ? null
+          : DateTime.tryParse(raw.toString())?.toLocal();
 
       if (scheduled != null) {
         return AccountRecoveryPage(
