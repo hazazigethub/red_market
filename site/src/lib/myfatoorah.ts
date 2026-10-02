@@ -1,0 +1,137 @@
+// site/src/lib/myfatoorah.ts
+// منطق مشترك: جلب حالة الدفع من MyFatoorah وتحديث Supabase.
+// يستخدمه callback (رجوع العميل) و webhook (إشعار MyFatoorah) — مصدر الحقيقة واحد.
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function mfConfig() {
+  return {
+    base: (process.env.MYFATOORAH_BASE_URL ?? '').replace(/\/+$/, ''),
+    key: process.env.MYFATOORAH_API_KEY ?? '',
+  };
+}
+
+export function supabaseAdmin(): SupabaseClient | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+  if (!url || !key) return null;
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+export type SyncResult = {
+  ok: boolean; // تمت المعالجة (بغض النظر عن نجاح الدفع)
+  paid: boolean; // الدفع مكتمل
+  message: string;
+  paymentRowId?: string;
+  total?: number;
+};
+
+/**
+ * يجلب حالة الدفع من MyFatoorah (GET /v3/payments/{paymentId})
+ * ثم يحدّث جدول payments ويسجّل في payment_history.
+ * لا يحوّل دفعة مكتملة إلى غير مكتملة أبداً.
+ */
+export async function syncPayment(
+  mfPaymentId: string,
+  source: 'callback' | 'webhook',
+): Promise<SyncResult> {
+  const { base, key } = mfConfig();
+  const supabase = supabaseAdmin();
+  if (!base || !key || !supabase) {
+    return { ok: false, paid: false, message: 'إعدادات الخادم ناقصة' };
+  }
+
+  // ===== الحالة من MyFatoorah مباشرة =====
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let data: any;
+  try {
+    const res = await fetch(`${base}/v3/payments/${encodeURIComponent(mfPaymentId)}`, {
+      headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' },
+    });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.IsSuccess || !json?.Data) {
+      return { ok: false, paid: false, message: 'تعذّر التحقق من حالة الدفع' };
+    }
+    data = json.Data;
+  } catch {
+    return { ok: false, paid: false, message: 'تعذّر الاتصال بـ MyFatoorah' };
+  }
+
+  // ===== إيجاد الدفعة =====
+  const invoiceId = String(data.Invoice?.Id ?? '');
+  const externalId = String(data.Invoice?.ExternalIdentifier ?? '');
+
+  let payment: { id: string; status: string; total_amount: number } | null = null;
+  if (invoiceId) {
+    const { data: p } = await supabase
+      .from('payments')
+      .select('id, status, total_amount')
+      .eq('myratoorah_order_id', invoiceId)
+      .maybeSingle();
+    payment = p;
+  }
+  if (!payment && UUID_RE.test(externalId)) {
+    const { data: p } = await supabase
+      .from('payments')
+      .select('id, status, total_amount')
+      .eq('id', externalId)
+      .maybeSingle();
+    payment = p;
+  }
+  if (!payment) return { ok: false, paid: false, message: 'لم يتم العثور على الدفعة' };
+
+  const total = Number(payment.total_amount);
+  const paid = data.Invoice?.Status === 'PAID';
+
+  if (payment.status === 'completed') {
+    return {
+      ok: true,
+      paid: true,
+      message: 'تم تسجيل هذه الدفعة مسبقاً',
+      paymentRowId: payment.id,
+      total,
+    };
+  }
+
+  const newStatus = paid ? 'completed' : 'failed';
+  const failureReason = paid
+    ? null
+    : data.Transaction?.Error?.Message || data.Invoice?.Status || 'لم يكتمل الدفع';
+
+  // تحديث مشروط: لا يلمس دفعة أصبحت مكتملة في نفس اللحظة (callback و webhook معاً)
+  const { data: updated } = await supabase
+    .from('payments')
+    .update({
+      status: newStatus,
+      myratoorah_payment_id: data.Transaction?.PaymentId ?? mfPaymentId,
+      payment_method: data.Transaction?.PaymentMethod ?? null,
+      failure_reason: failureReason,
+      ...(paid ? { completed_at: new Date().toISOString() } : {}),
+    })
+    .eq('id', payment.id)
+    .neq('status', 'completed')
+    .select('id');
+
+  if (updated && updated.length > 0) {
+    await supabase.from('payment_history').insert({
+      payment_id: payment.id,
+      previous_status: payment.status,
+      new_status: newStatus,
+      description: `${source === 'webhook' ? 'Webhook' : 'Callback'}: ${
+        paid ? 'دفع ناجح عبر MyFatoorah' : `فشل الدفع: ${failureReason}`
+      }`,
+      myratoorah_response: data,
+    });
+  }
+
+  return {
+    ok: true,
+    paid,
+    message: paid ? 'شكراً لك، تم استلام المبلغ' : String(failureReason),
+    paymentRowId: payment.id,
+    total,
+  };
+}
