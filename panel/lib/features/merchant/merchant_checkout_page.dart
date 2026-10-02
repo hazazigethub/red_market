@@ -32,11 +32,35 @@ class _MerchantCheckoutPageState extends State<MerchantCheckoutPage> {
   bool _keepExpiry = false;
   bool _paying = false;
 
+  /// رصيد المحفظة
+  double? _balance;
+
   @override
   void initState() {
     super.initState();
     _loadProration();
+    _loadBalance();
   }
+
+  Future<void> _loadBalance() async {
+    try {
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null) return;
+      final w = await supabase
+          .from('merchant_wallets')
+          .select('balance')
+          .eq('merchant_id', uid)
+          .maybeSingle();
+      if (mounted) {
+        setState(() => _balance = ((w?['balance'] as num?) ?? 0).toDouble());
+      }
+    } catch (e) {
+      debugPrint('Balance error: $e');
+    }
+  }
+
+  bool get _insufficient =>
+      !_isFree && _balance != null && _balance! < _finalPrice;
 
   Future<void> _loadProration() async {
     try {
@@ -126,7 +150,7 @@ class _MerchantCheckoutPageState extends State<MerchantCheckoutPage> {
     }
   }
 
-  /// يُنفَّذ بعد نجاح الدفع — جاهز للتفعيل عند ربط البوابة
+  /// يفعّل الباقة — المبلغ المستحق يُحسب ويُخصم من الرصيد في قاعدة البيانات
   Future<void> _completePayment() async {
     if (_paying) return;
     setState(() => _paying = true);
@@ -482,15 +506,16 @@ class _MerchantCheckoutPageState extends State<MerchantCheckoutPage> {
 
                     // ===== الدفع =====
                     ElevatedButton.icon(
-                      // مجاني ⇒ يعمل · بمقابل ⇒ ينتظر بوابة الدفع
-                      onPressed:
-                          (_isFree && !_paying) ? _completePayment : null,
+                      // مجاني ⇒ تفعيل مباشر · بمقابل ⇒ يُخصم من الرصيد
+                      onPressed: (_paying || _loadingProration || _insufficient)
+                          ? null
+                          : _completePayment,
                       icon: Icon(
                           _isFree
                               ? Icons.check_circle_outline_rounded
-                              : Icons.lock_outline_rounded,
+                              : Icons.account_balance_wallet_outlined,
                           size: 18),
-                      label: Text(_isFree ? 'تفعيل الباقة' : 'إتمام الدفع',
+                      label: Text(_isFree ? 'تفعيل الباقة' : 'الدفع من الرصيد',
                           style: const TextStyle(
                               fontFamily: 'Cairo',
                               fontWeight: FontWeight.bold,
@@ -510,8 +535,11 @@ class _MerchantCheckoutPageState extends State<MerchantCheckoutPage> {
                         _isFree
                             ? 'فترة تأسيس مجانية — الاشتراكات ستبدأ لاحقاً '
                                 'وستُبلَّغ قبلها بوقت كافٍ'
-                            : 'بوابة الدفع قيد الربط — تواصل مع الإدارة '
-                                'لتفعيل اشتراكك',
+                            : _insufficient
+                                ? 'رصيدك غير كافٍ (${_balance!.toStringAsFixed(2)} ر.س) — '
+                                    'اشحن رصيدك من صفحة الحساب البنكي'
+                                : 'يُخصم ${_finalPrice.toStringAsFixed(2)} ر.س من رصيد المتجر'
+                                    '${_balance == null ? '' : ' — رصيدك الحالي ${_balance!.toStringAsFixed(2)} ر.س'}',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                             fontFamily: 'Cairo',

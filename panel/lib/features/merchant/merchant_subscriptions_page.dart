@@ -626,14 +626,19 @@ class _MerchantSubscriptionsPageState
                       child: ElevatedButton(
                         onPressed: isDisabled
                             ? null
-                            : () {
-                                Navigator.of(context).push(
+                            : () async {
+                                final done = await Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (_) => MerchantCheckoutPage(
                                       plan: Map<String, dynamic>.from(plan),
                                     ),
                                   ),
                                 );
+                                // بعد الاشتراك: إعادة جلب الباقة الحالية لتحديث البطاقات
+                                if (done == true) {
+                                  ref.invalidate(currentMerchantPlanProvider);
+                                  ref.invalidate(trialEligibleProvider);
+                                }
                               },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: isDisabled
