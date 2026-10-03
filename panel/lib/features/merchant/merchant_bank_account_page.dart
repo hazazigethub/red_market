@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart'; // ✅ إضافة River
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../payments/payments_api.dart';
 import '../payments/invoice_print.dart';
+import '../payments/charge_dialog.dart';
 
 class MerchantBankAccountPage extends ConsumerStatefulWidget {
   const MerchantBankAccountPage({super.key});
@@ -58,11 +59,23 @@ class _MerchantBankAccountPageState
       return;
     }
     setState(() => _chargeLoading = true);
-    final error = await startWalletCharge(amount);
+    final paid = await showChargeDialog(context, amount);
     if (!mounted) return;
     setState(() => _chargeLoading = false);
-    if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+
+    if (paid) {
+      setState(() {
+        _charging = false;
+        _chargeController.clear();
+      });
+      await _loadWallet();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تمت إضافة ${amount.toStringAsFixed(2)} ر.س إلى رصيدك')),
+      );
+    } else {
+      // أُغلقت النافذة: إن كان الدفع قد تم فعلاً يُضاف عبر الإشعار، فنحدّث الرصيد احتياطاً
+      await _loadWallet();
     }
   }
 
@@ -379,7 +392,7 @@ class _MerchantBankAccountPageState
             const SizedBox(height: 8),
             const Center(
               child: Text(
-                "الدفع عبر MyFatoorah — مدى، فيزا، ماستركارد",
+                "دفع آمن — مدى، فيزا، ماستركارد",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white70,

@@ -37,6 +37,7 @@ export type SyncResult = {
 export async function syncPayment(
   mfPaymentId: string,
   source: 'callback' | 'webhook',
+  hintRowId?: string, // معرّف الدفعة من صفحة الدفع المدمجة (احتياط إن لم يُرجع المعرّف الخارجي)
 ): Promise<SyncResult> {
   const { base, key } = mfConfig();
   const supabase = supabaseAdmin();
@@ -63,6 +64,7 @@ export async function syncPayment(
   // ===== إيجاد الدفعة =====
   const invoiceId = String(data.Invoice?.Id ?? '');
   const externalId = String(data.Invoice?.ExternalIdentifier ?? '');
+  const customerRef = String(data.Customer?.Reference ?? '');
 
   let payment: { id: string; status: string; total_amount: number; payment_type: string } | null = null;
   if (invoiceId) {
@@ -81,7 +83,26 @@ export async function syncPayment(
       .maybeSingle();
     payment = p;
   }
+  // الدفع المدمج: رقم الفاتورة غير معروف مسبقاً
+  for (const ref of [customerRef, hintRowId ?? '']) {
+    if (payment || !UUID_RE.test(ref)) continue;
+    const { data: p } = await supabase
+      .from('payments')
+      .select('id, status, total_amount, payment_type')
+      .eq('id', ref)
+      .eq('status', 'processing')
+      .is('myratoorah_order_id', null)
+      .maybeSingle();
+    payment = p;
+  }
   if (!payment) return { ok: false, paid: false, message: 'لم يتم العثور على الدفعة' };
+
+  // المبلغ المدفوع يجب أن يطابق مبلغ الدفعة
+  const paidValue = Number(data.Amount?.ValueInDisplayCurrency ?? data.Amount?.ValueInBaseCurrency);
+  if (Number.isFinite(paidValue) && data.Amount?.DisplayCurrency === 'SAR'
+      && Math.abs(paidValue - Number(payment.total_amount)) > 0.01) {
+    return { ok: false, paid: false, message: 'المبلغ المدفوع لا يطابق الدفعة' };
+  }
 
   const total = Number(payment.total_amount);
   const paid = data.Invoice?.Status === 'PAID';
@@ -117,6 +138,7 @@ export async function syncPayment(
     .update({
       status: newStatus,
       myratoorah_payment_id: data.Transaction?.PaymentId ?? mfPaymentId,
+      ...(invoiceId ? { myratoorah_order_id: invoiceId } : {}),
       payment_method: data.Transaction?.PaymentMethod ?? null,
       failure_reason: failureReason,
       ...(paid ? { completed_at: new Date().toISOString() } : {}),

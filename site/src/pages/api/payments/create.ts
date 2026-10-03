@@ -114,9 +114,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .update({ status: 'failed', failure_reason: reason })
       .eq('id', payment.id);
 
-  // ===== جلسة الدفع في MyFatoorah (POST /v3/payments) =====
+  // ===== جلسة دفع مدمجة في MyFatoorah (POST /v3/sessions) =====
+  // العميل يدفع داخل صفحة رد ماركت (checkout) ولا يرى موقع MyFatoorah
   try {
-    const mfRes = await fetch(`${mfBase}/v3/payments`, {
+    const integrationUrls = siteUrl.startsWith('https://')
+      ? {
+          IntegrationUrls: {
+            Redirection: `${siteUrl}/api/payments/callback`,
+            Webhook: `${siteUrl}/api/webhooks/payment`,
+          },
+        }
+      : {};
+
+    const mfRes = await fetch(`${mfBase}/v3/sessions`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${mfKey}`,
@@ -124,13 +134,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         Accept: 'application/json',
       },
       body: JSON.stringify({
-        PaymentMethod: 'CARD',
+        PaymentMode: 'COMPLETE_PAYMENT',
         Order: { Amount: total, Currency: 'SAR', ExternalIdentifier: payment.id },
-        Customer: { Reference: payment.id },
-        IntegrationUrls: {
-          Redirection: `${siteUrl}/api/payments/callback`,
-          Webhook: `${siteUrl}/api/webhooks/payment`,
-        },
+        // لا نرسل مرجع عميل: لا ربط للبطاقات بالحساب ولا حفظ لها
+        // البطاقات فقط: الطرق غير المدعومة في الدمج تحوّل العميل لصفحة MyFatoorah
+        SupportedPaymentMethods: ['card'],
+        ...integrationUrls,
         Language: 'AR',
       }),
     });
@@ -138,7 +147,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mfJson: any = await mfRes.json().catch(() => null);
 
-    if (!mfRes.ok || !mfJson?.IsSuccess || !mfJson?.Data?.PaymentURL) {
+    if (!mfRes.ok || !mfJson?.IsSuccess || !mfJson?.Data?.SessionId) {
       const reason =
         (Array.isArray(mfJson?.ValidationErrors) &&
           mfJson.ValidationErrors
@@ -155,13 +164,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from('payments')
       .update({
         status: 'processing',
-        myratoorah_order_id: String(mfJson.Data.InvoiceId),
+        myratoorah_session_id: String(mfJson.Data.SessionId),
       })
       .eq('id', payment.id);
 
     return res.status(200).json({
       payment_id: payment.id,
-      payment_url: mfJson.Data.PaymentURL,
+      payment_url: `${siteUrl}/api/payments/checkout?pid=${payment.id}`,
     });
   } catch (e) {
     const reason = e instanceof Error ? e.message : String(e);

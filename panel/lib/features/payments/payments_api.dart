@@ -1,19 +1,18 @@
 // panel/lib/features/payments/payments_api.dart
-// طلب شحن الرصيد من الموقع (Next.js)، ثم الانتقال لصفحة MyFatoorah.
+// طلب شحن الرصيد من الموقع (Next.js): ينشئ الدفعة وجلسة الدفع، ويعيد رابط صفحة الدفع المدمجة.
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// عنوان الموقع الذي ينشئ جلسة الدفع
 /// محلياً: http://localhost:3000 — عند النشر يُستبدل بنطاق الموقع
 const String kPaymentsApiBase = 'http://localhost:3000';
 
-/// يبدأ شحن الرصيد. يعيد رسالة خطأ، أو null إذا انتقل لصفحة الدفع.
-Future<String?> startWalletCharge(double amount) async {
+/// يعيد (رابط صفحة الدفع، رسالة خطأ) — أحدهما فقط غير فارغ
+Future<(String?, String?)> createWalletCharge(double amount) async {
   final session = Supabase.instance.client.auth.currentSession;
-  if (session == null) return 'يجب تسجيل الدخول أولاً';
+  if (session == null) return (null, 'يجب تسجيل الدخول أولاً');
 
   try {
     final res = await http.post(
@@ -32,14 +31,11 @@ Future<String?> startWalletCharge(double amount) async {
 
     final url = body['payment_url']?.toString();
     if (res.statusCode != 200 || url == null || url.isEmpty) {
-      return body['error']?.toString() ?? 'تعذّر إنشاء الدفع (${res.statusCode})';
+      return (null, body['error']?.toString() ?? 'تعذّر إنشاء الدفع (${res.statusCode})');
     }
-
-    // نفس التبويب — لتجنّب حظر النوافذ المنبثقة في المتصفح
-    await launchUrl(Uri.parse(url), webOnlyWindowName: '_self');
-    return null;
+    return (url, null);
   } catch (_) {
-    return 'تعذّر الاتصال بخادم الدفع';
+    return (null, 'تعذّر الاتصال بخادم الدفع');
   }
 }
 
