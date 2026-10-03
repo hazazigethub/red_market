@@ -19,6 +19,10 @@ class _MerchantAutoRenewPageState extends State<MerchantAutoRenewPage> {
 
   Map<String, dynamic>? _sub;
 
+  /// سعر التجديد = سعر الباقة الكامل الحالي، ورصيد المحفظة
+  double? _renewPrice;
+  double _balance = 0;
+
   @override
   void initState() {
     super.initState();
@@ -42,9 +46,27 @@ class _MerchantAutoRenewPageState extends State<MerchantAutoRenewPage> {
           .limit(1)
           .maybeSingle();
 
+      double? renewPrice;
+      if (row != null && row['plan_id'] != null) {
+        final plan = await supabase
+            .from('subscription_plans')
+            .select('price')
+            .eq('id', row['plan_id'])
+            .maybeSingle();
+        renewPrice = (plan?['price'] as num?)?.toDouble();
+      }
+
+      final wallet = await supabase
+          .from('merchant_wallets')
+          .select('balance')
+          .eq('merchant_id', uid)
+          .maybeSingle();
+
       if (mounted) {
         setState(() {
           _sub = row == null ? null : Map<String, dynamic>.from(row);
+          _renewPrice = renewPrice;
+          _balance = ((wallet?['balance'] as num?) ?? 0).toDouble();
           _loading = false;
         });
       }
@@ -191,8 +213,38 @@ class _MerchantAutoRenewPageState extends State<MerchantAutoRenewPage> {
             _fmt(_sub?['expires_at']),
           ),
           const SizedBox(height: 8),
-          _line('المبلغ',
-              '${((_sub?['price'] as num?)?.toDouble() ?? 0).toStringAsFixed(2)} ر.س'),
+          _line('مبلغ التجديد',
+              _renewPrice == null ? '—' : '${_renewPrice!.toStringAsFixed(2)} ر.س'),
+          const SizedBox(height: 8),
+          _line('رصيد المتجر', '${_balance.toStringAsFixed(2)} ر.س'),
+
+          if (enabled && !isTrial && _renewPrice != null && _balance < _renewPrice!) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded,
+                      color: Colors.orange, size: 17),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'رصيدك لا يكفي للتجديد — اشحن ${(_renewPrice! - _balance).toStringAsFixed(2)} ر.س على الأقل قبل ${_fmt(_sub?['expires_at'])}',
+                      style: const TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 12,
+                          height: 1.7,
+                          color: Colors.black87),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
 
           if (isTrial) ...[
             const SizedBox(height: 16),
@@ -230,6 +282,8 @@ class _MerchantAutoRenewPageState extends State<MerchantAutoRenewPage> {
     final points = enabled
         ? const [
             'يُجدَّد اشتراكك تلقائياً في تاريخ الانتهاء',
+            'يُخصم مبلغ التجديد من رصيد المتجر بسعر الباقة الكامل',
+            'إذا لم يكفِ الرصيد، تُعاد المحاولة كل ساعة لمدة 3 أيام',
             'يبقى متجرك ظاهراً للعملاء بلا انقطاع',
             'يمكنك الإيقاف في أي وقت قبل موعد التجديد',
           ]
