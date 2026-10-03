@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // ✅ إضافة Riverpod
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../payments/payments_api.dart';
+import '../payments/invoice_print.dart';
 
 class MerchantBankAccountPage extends ConsumerStatefulWidget {
   const MerchantBankAccountPage({super.key});
@@ -29,6 +30,9 @@ class _MerchantBankAccountPageState
   double _totalCharged = 0;
   double _totalSpent = 0;
   List<Map<String, dynamic>> _transactions = [];
+
+  /// مستند كل حركة: معرّف الحركة ← (invoice|receipt, معرّف المستند)
+  Map<String, (String, String)> _docs = {};
   bool _loadingWallet = true;
 
   // شحن الرصيد
@@ -87,9 +91,34 @@ class _MerchantBankAccountPageState
           .order('created_at', ascending: false)
           .limit(30);
 
+      // الفواتير والإيصالات المرتبطة بالحركات
+      final docs = <String, (String, String)>{};
+      final ids = tx.map((e) => e['id'].toString()).toList();
+      if (ids.isNotEmpty) {
+        try {
+          final inv = await supabase
+              .from('invoices')
+              .select('id, wallet_transaction_id')
+              .inFilter('wallet_transaction_id', ids);
+          for (final r in inv) {
+            docs[r['wallet_transaction_id'].toString()] = ('invoice', r['id'].toString());
+          }
+          final rec = await supabase
+              .from('receipts')
+              .select('id, wallet_transaction_id')
+              .inFilter('wallet_transaction_id', ids);
+          for (final r in rec) {
+            docs[r['wallet_transaction_id'].toString()] = ('receipt', r['id'].toString());
+          }
+        } catch (e) {
+          debugPrint('Docs load error: $e');
+        }
+      }
+
       if (!mounted) return;
 
       setState(() {
+        _docs = docs;
         _balance = ((wallet?['balance'] as num?) ?? 0).toDouble();
         _totalCharged = ((wallet?['total_charged'] as num?) ?? 0).toDouble();
         _totalSpent = ((wallet?['total_spent'] as num?) ?? 0).toDouble();
@@ -682,6 +711,20 @@ class _MerchantBankAccountPageState
               color: positive ? Colors.green.shade700 : brandRed,
             ),
           ),
+          if (_docs[t['id'].toString()] case (final kind, final docId))
+            IconButton(
+              onPressed: () async {
+                final err = await openFinanceDocument(kind, docId);
+                if (err != null && mounted) {
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text(err)));
+                }
+              },
+              icon: const Icon(Icons.receipt_long_outlined, size: 18),
+              color: Colors.grey.shade600,
+              tooltip: kind == 'invoice' ? 'الفاتورة' : 'الإيصال',
+              visualDensity: VisualDensity.compact,
+            ),
         ],
       ),
     );
