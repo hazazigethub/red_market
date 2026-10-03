@@ -22,6 +22,12 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   final _urlTiktok = TextEditingController();
   final _urlSnapchat = TextEditingController();
 
+  // بيانات المنشأة — تظهر على الفواتير
+  final _sellerName = TextEditingController();
+  final _sellerCr = TextEditingController();
+  final _sellerAddress = TextEditingController();
+  final _sellerVat = TextEditingController();
+
   // ميزات التاجر — كل واحدة تُفتح وتُغلق وحدها
   bool _featPromo = false;
   bool _featBanners = false;
@@ -41,6 +47,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     _urlInstagram.dispose();
     _urlTiktok.dispose();
     _urlSnapchat.dispose();
+    _sellerName.dispose();
+    _sellerCr.dispose();
+    _sellerAddress.dispose();
+    _sellerVat.dispose();
     super.dispose();
   }
 
@@ -65,6 +75,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           _urlInstagram.text = data['url_instagram'] ?? '';
           _urlTiktok.text = data['url_tiktok'] ?? '';
           _urlSnapchat.text = data['url_snapchat'] ?? '';
+          _sellerName.text = data['seller_name'] ?? '';
+          _sellerCr.text = data['seller_cr_number'] ?? '';
+          _sellerAddress.text = data['seller_address'] ?? '';
+          _sellerVat.text = data['seller_vat_number'] ?? '';
           _featPromo = data['feat_promo'] ?? false;
           _featBanners = data['feat_banners'] ?? false;
           _featCampaigns = data['feat_campaigns'] ?? false;
@@ -85,6 +99,17 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   }
 
   Future<void> _saveSettings() async {
+    // الرقم الضريبي السعودي: 15 رقماً يبدأ وينتهي بـ 3
+    final vat = _sellerVat.text.trim();
+    if (vat.isNotEmpty && !RegExp(r'^3\d{13}3$').hasMatch(vat)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('الرقم الضريبي يجب أن يكون 15 رقماً يبدأ وينتهي بـ 3'),
+            backgroundColor: Colors.red),
+      );
+      return;
+    }
+
     setState(() => _isSaving = true);
     try {
       await supabase.from('system_settings').upsert({
@@ -97,6 +122,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         'url_instagram': _clean(_urlInstagram),
         'url_tiktok': _clean(_urlTiktok),
         'url_snapchat': _clean(_urlSnapchat),
+        'seller_name': _clean(_sellerName),
+        'seller_cr_number': _clean(_sellerCr),
+        'seller_address': _clean(_sellerAddress),
+        'seller_vat_number': _clean(_sellerVat),
         'feat_promo': _featPromo,
         'feat_banners': _featBanners,
         'feat_campaigns': _featCampaigns,
@@ -194,6 +223,44 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                   ),
                                 ],
                               ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            _card(
+                              icon: Icons.receipt_long_outlined,
+                              title: 'بيانات المنشأة للفواتير',
+                              subtitle:
+                                  'تظهر على كل فاتورة — عند إضافة الرقم الضريبي تصدر الفواتير الجديدة فواتير ضريبية',
+                              child: _grid(wide, [
+                                _field(
+                                  controller: _sellerName,
+                                  label: 'الاسم القانوني للمنشأة',
+                                  hint: 'كما في السجل التجاري',
+                                  icon: Icons.business_outlined,
+                                  ltr: false,
+                                ),
+                                _field(
+                                  controller: _sellerCr,
+                                  label: 'رقم السجل التجاري',
+                                  hint: '1010xxxxxx',
+                                  icon: Icons.badge_outlined,
+                                  keyboard: TextInputType.number,
+                                ),
+                                _field(
+                                  controller: _sellerAddress,
+                                  label: 'العنوان',
+                                  hint: 'المدينة — الحي — الشارع',
+                                  icon: Icons.location_on_outlined,
+                                  ltr: false,
+                                ),
+                                _field(
+                                  controller: _sellerVat,
+                                  label: 'الرقم الضريبي (اختياري)',
+                                  hint: '3xxxxxxxxxxxxx3 — اتركه فارغاً إن لم تكن مسجلاً',
+                                  icon: Icons.verified_outlined,
+                                  keyboard: TextInputType.number,
+                                ),
+                              ]),
                             ),
                             const SizedBox(height: 16),
 
@@ -519,6 +586,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     required String hint,
     required IconData icon,
     TextInputType? keyboard,
+    bool ltr = true,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -538,9 +606,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         TextFormField(
           controller: controller,
           keyboardType: keyboard,
-          // الروابط والأرقام تُقرأ من اليسار
-          textDirection: TextDirection.ltr,
-          textAlign: TextAlign.left,
+          // الروابط والأرقام تُقرأ من اليسار، والنصوص العربية من اليمين
+          textDirection: ltr ? TextDirection.ltr : TextDirection.rtl,
+          textAlign: ltr ? TextAlign.left : TextAlign.right,
           style: const TextStyle(fontSize: 12.5),
           decoration: _dec(hint),
         ),
