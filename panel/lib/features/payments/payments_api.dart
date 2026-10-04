@@ -5,9 +5,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// عنوان الموقع الذي ينشئ جلسة الدفع
-/// محلياً: http://localhost:3000 — عند النشر يُستبدل بنطاق الموقع
-const String kPaymentsApiBase = 'http://localhost:3000';
+const String kPaymentsApiBase = String.fromEnvironment(
+  'PAYMENTS_API',
+  defaultValue: 'https://www.redmarket.pro',
+);
 
 /// يعيد (رابط صفحة الدفع، رسالة خطأ) — أحدهما فقط غير فارغ
 Future<(String?, String?)> createWalletCharge(double amount) async {
@@ -31,7 +32,10 @@ Future<(String?, String?)> createWalletCharge(double amount) async {
 
     final url = body['payment_url']?.toString();
     if (res.statusCode != 200 || url == null || url.isEmpty) {
-      return (null, body['error']?.toString() ?? 'تعذّر إنشاء الدفع (${res.statusCode})');
+      return (
+        null,
+        body['error']?.toString() ?? 'تعذّر إنشاء الدفع (${res.statusCode})',
+      );
     }
     return (url, null);
   } catch (_) {
