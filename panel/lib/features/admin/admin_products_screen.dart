@@ -13,11 +13,10 @@ class AdminProductsScreen extends StatefulWidget {
 }
 
 class _AdminProductsScreenState extends State<AdminProductsScreen> {
-  /// رابط الموقع — يُمرَّر عند البناء
-  /// flutter build web --dart-define=SITE_URL=https://redmarket.sa
+  /// رابط الموقع — يمكن تغييره عند البناء بـ --dart-define=SITE_URL=...
   static const String _siteUrl = String.fromEnvironment(
     'SITE_URL',
-    defaultValue: 'http://localhost:3000',
+    defaultValue: 'https://www.redmarket.pro',
   );
 
   /// يفتح صفحة العرض في الموقع بتبويب جديد
