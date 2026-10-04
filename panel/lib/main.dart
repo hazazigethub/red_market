@@ -5,9 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:red_market_core/red_market_core.dart';
 import 'features/auth/login_page.dart';
 import 'features/auth/account_recovery_page.dart';
-import 'features/payments/payment_screen.dart';
-import 'features/invoices/invoice_screen.dart';
-import 'features/admin/payment_dashboard.dart';
 
 final supabase = Supabase.instance.client;
 
@@ -83,11 +80,6 @@ class RedMarketWebApp extends StatelessWidget {
         textTheme: GoogleFonts.cairoTextTheme(base.textTheme),
         primaryTextTheme: GoogleFonts.cairoTextTheme(base.primaryTextTheme),
       ),
-      routes: {
-        '/payment': (context) => const PaymentScreen(),
-        '/invoices': (context) => const InvoiceListScreen(),
-        '/admin-payments': (context) => const AdminPaymentDashboard(),
-      },
       home: const AuthGate(),
     );
   }
