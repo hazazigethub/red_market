@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../shared/promo_popup.dart';
+import '../../shared/vat.dart';
 
 /// صفحة الحملة الموسمية للتاجر
 class MerchantCampaignPage extends StatefulWidget {
@@ -27,6 +28,9 @@ class _MerchantCampaignPageState extends State<MerchantCampaignPage> {
   @override
   void initState() {
     super.initState();
+    Vat.load().then((_) {
+      if (mounted) setState(() {});
+    });
     _load().then((_) {
       // نافذة كود الخصم عند فتح الشاشة، إذا كانت هناك حملة
       if (mounted && _campaign != null) showPromoPopup(context, 'campaign');
@@ -148,7 +152,7 @@ class _MerchantCampaignPageState extends State<MerchantCampaignPage> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModal) {
           final subtotal = fee * count;
-          final vat = subtotal * 0.15;
+          final vat = Vat.on(subtotal);
           final total = subtotal + vat;
           final code = codeCtrl.text.trim();
           final hasCode = code.isNotEmpty;
@@ -216,9 +220,11 @@ class _MerchantCampaignPageState extends State<MerchantCampaignPage> {
                               fee <= 0 ? 'مجاني' : '${fee.toInt()} ر.س'),
                           const SizedBox(height: 7),
                           _line('عدد العروض', '$count'),
-                          const SizedBox(height: 7),
-                          _line('ضريبة القيمة المضافة',
-                              '${vat.toStringAsFixed(2)} ر.س'),
+                          if (Vat.rate > 0) ...[
+                            const SizedBox(height: 7),
+                            _line('ضريبة القيمة المضافة ${Vat.label}',
+                                '${vat.toStringAsFixed(2)} ر.س'),
+                          ],
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 9),
                             child: Divider(

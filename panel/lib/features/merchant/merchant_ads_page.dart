@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../shared/promo_popup.dart';
+import '../../shared/vat.dart';
 
 import 'banner_terms_sheet.dart';
 import 'merchant_nav.dart';
@@ -2118,6 +2119,9 @@ class _BookingSheetState extends State<_BookingSheet> {
     super.initState();
     _loadProducts();
     _loadBalance();
+    Vat.load().then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   /// يجلب رصيد المتجر
@@ -2314,7 +2318,7 @@ class _BookingSheetState extends State<_BookingSheet> {
   @override
   Widget build(BuildContext context) {
     final subtotal = _unitPrice * _slots;
-    final vat = subtotal * 0.15;
+    final vat = Vat.on(subtotal.toDouble());
     final total = subtotal + vat;
     final enough = _loadingBalance || _balance >= total;
 
@@ -2563,9 +2567,11 @@ class _BookingSheetState extends State<_BookingSheet> {
                                 _priceLine('عدد البنرات', '$_slots'),
                                 const SizedBox(height: 8),
                                 _priceLine('المجموع', '$subtotal ر.س'),
-                                const SizedBox(height: 8),
-                                _priceLine('ضريبة القيمة المضافة 15%',
-                                    '${vat.toStringAsFixed(2)} ر.س'),
+                                if (Vat.rate > 0) ...[
+                                  const SizedBox(height: 8),
+                                  _priceLine('ضريبة القيمة المضافة ${Vat.label}',
+                                      '${vat.toStringAsFixed(2)} ر.س'),
+                                ],
                               ],
                               const Padding(
                                 padding:
@@ -2912,6 +2918,9 @@ class _SplashBookingSheetState extends State<_SplashBookingSheet> {
     super.initState();
     _loadProducts();
     _loadBalance();
+    Vat.load().then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -3106,7 +3115,7 @@ class _SplashBookingSheetState extends State<_SplashBookingSheet> {
   @override
   Widget build(BuildContext context) {
     final subtotal = widget.price.toDouble();
-    final vat = subtotal * 0.15;
+    final vat = Vat.on(subtotal);
     final total = subtotal + vat;
     final enough = _loadingBalance || _balance >= total;
 
@@ -3302,9 +3311,11 @@ class _SplashBookingSheetState extends State<_SplashBookingSheet> {
                               if (total > 0) ...[
                                 _priceLine('سعر اليوم',
                                     '${widget.price} ر.س'),
-                                const SizedBox(height: 8),
-                                _priceLine('ضريبة القيمة المضافة 15%',
-                                    '${vat.toStringAsFixed(2)} ر.س'),
+                                if (Vat.rate > 0) ...[
+                                  const SizedBox(height: 8),
+                                  _priceLine('ضريبة القيمة المضافة ${Vat.label}',
+                                      '${vat.toStringAsFixed(2)} ر.س'),
+                                ],
                               ],
                               const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 10),
