@@ -138,7 +138,9 @@ class _MerchantAutoRenewPageState extends State<MerchantAutoRenewPage> {
     if (_sub == null) return _empty();
 
     final enabled = _sub?['auto_renew'] == true;
-    final isTrial = _sub?['is_trial'] == true;
+    // مجاني = تجريبي أو بكود 100% — لا يتجدد تلقائياً
+    final isTrial = _sub?['is_trial'] == true ||
+        (((_sub?['price'] as num?) ?? 0) <= 0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -213,8 +215,9 @@ class _MerchantAutoRenewPageState extends State<MerchantAutoRenewPage> {
             _fmt(_sub?['expires_at']),
           ),
           const SizedBox(height: 8),
-          _line('مبلغ التجديد',
-              _renewPrice == null ? '—' : '${_renewPrice!.toStringAsFixed(2)} ر.س'),
+          if (!isTrial)
+            _line('مبلغ التجديد',
+                _renewPrice == null ? '—' : '${_renewPrice!.toStringAsFixed(2)} ر.س'),
           const SizedBox(height: 8),
           _line('رصيد المتجر', '${_balance.toStringAsFixed(2)} ر.س'),
 
@@ -259,10 +262,12 @@ class _MerchantAutoRenewPageState extends State<MerchantAutoRenewPage> {
                   const Icon(Icons.info_outline_rounded,
                       color: Colors.blue, size: 17),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'أنت في فترة تجريبية — لا تجديد تلقائي عليها',
-                      style: TextStyle(
+                      (_sub?['is_trial'] == true)
+                          ? 'أنت في فترة تجريبية — لا تجديد تلقائي عليها. عند انتهائها اشترك في باقة مدفوعة'
+                          : 'اشتراكك مجاني — لا يتجدد تلقائياً. عند انتهائه اشترك في باقة مدفوعة',
+                      style: const TextStyle(
                           fontFamily: 'Cairo',
                           fontSize: 12,
                           height: 1.7,
