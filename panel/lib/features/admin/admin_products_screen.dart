@@ -138,22 +138,31 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                           displayedProducts = allProducts;
                         case 'active':
                           displayedProducts = allProducts
-                              .where((p) => p['is_available'] == true && notBanned(p))
+                              .where(
+                                (p) =>
+                                    p['is_available'] == true && notBanned(p),
+                              )
                               .toList();
                         case 'reported':
                           // العروض المُبلغ عنها والتي لم تُحظر بعد
                           displayedProducts = allProducts
-                              .where((p) =>
-                                  reportedProductIds.contains(p['id'].toString()) &&
-                                  notBanned(p))
+                              .where(
+                                (p) =>
+                                    reportedProductIds.contains(
+                                      p['id'].toString(),
+                                    ) &&
+                                    notBanned(p),
+                              )
                               .toList();
                         case 'banned':
-                          displayedProducts =
-                              allProducts.where((p) => p['is_banned'] == true).toList();
+                          displayedProducts = allProducts
+                              .where((p) => p['is_banned'] == true)
+                              .toList();
                         default:
                           if (_searchQuery.isNotEmpty) {
                             displayedProducts = allProducts.where((p) {
-                              final name = p['name']?.toString().toLowerCase() ?? '';
+                              final name =
+                                  p['name']?.toString().toLowerCase() ?? '';
                               return name.contains(_searchQuery.toLowerCase());
                             }).toList();
                           }
@@ -163,45 +172,36 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                         padding: const EdgeInsets.all(20),
                         children: [
                           if (_view == null) ...[
-                            _buildSummaryCard(
-                              "إجمالي العروض",
-                              "$totalCount",
-                              Colors.purple,
-                              Icons.inventory_2,
-                              () => _openView('all'),
-                            ),
-                            const SizedBox(height: 15),
-                            Row(
-                              children: [
-                                _statItem(
-                                  "النشطة",
-                                  "$activeCount",
-                                  Colors.green,
-                                  Icons.check_circle,
-                                  () => _openView('active'),
-                                ),
-                                const SizedBox(width: 10),
-                                _statItem(
-                                  "المحظورة",
-                                  "$bannedCount",
-                                  Colors.orange,
-                                  Icons.block,
-                                  () => _openView('banned'),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                _statItem(
-                                  "بلاغات العروض",
-                                  "$reportedCount",
-                                  Colors.red,
-                                  Icons.report_gmailerrorred,
-                                  () => _openView('reported'),
-                                ),
-                              ],
-                            ),
+                            _statsGrid([
+                              (
+                                'إجمالي العروض',
+                                totalCount,
+                                Icons.inventory_2_outlined,
+                                Colors.purple,
+                                'all',
+                              ),
+                              (
+                                'النشطة',
+                                activeCount,
+                                Icons.check_circle_outline_rounded,
+                                Colors.green,
+                                'active',
+                              ),
+                              (
+                                'المحظورة',
+                                bannedCount,
+                                Icons.block_rounded,
+                                Colors.orange,
+                                'banned',
+                              ),
+                              (
+                                'بلاغات العروض',
+                                reportedCount,
+                                Icons.report_gmailerrorred_rounded,
+                                brandRed,
+                                'reported',
+                              ),
+                            ]),
                             const SizedBox(height: 25),
                           ],
                           if (_view != null || _searchQuery.isNotEmpty) ...[
@@ -213,12 +213,17 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                                     borderRadius: BorderRadius.circular(8),
                                     child: const Padding(
                                       padding: EdgeInsets.symmetric(
-                                          horizontal: 4, vertical: 6),
+                                        horizontal: 4,
+                                        vertical: 6,
+                                      ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          Icon(Icons.arrow_back_ios_new,
-                                              size: 15, color: brandRed),
+                                          Icon(
+                                            Icons.arrow_back_ios_new,
+                                            size: 15,
+                                            color: brandRed,
+                                          ),
                                           SizedBox(width: 6),
                                           Text(
                                             "رجوع",
@@ -314,114 +319,92 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
     );
   }
 
-  Widget _buildSummaryCard(
-    String title,
-    String value,
-    Color color,
-    IconData icon, [
-    VoidCallback? onTap,
-  ]) {
-    return MouseRegion(
-      cursor: onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
-      child: GestureDetector(
-      onTap: onTap,
-      child: Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        border: onTap != null
-            ? Border.all(color: color.withValues(alpha: 0.5), width: 1.5)
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: color.withValues(alpha: 0.1),
-            child: Icon(icon, color: color, size: 22),
-          ),
-          const SizedBox(width: 15),
-          Text(
-            title,
-            style: const TextStyle(
-              fontFamily: 'Cairo',
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const Spacer(),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    ),
-      ),
+  /// بطاقات مربعة متجاورة: 4 في الصف على الشاشات الواسعة، و2 على الضيقة
+  Widget _statsGrid(List<(String, int, IconData, Color, String)> items) {
+    return LayoutBuilder(
+      builder: (context, c) {
+        const gap = 12.0;
+        final cols = c.maxWidth >= 640 ? 4 : 2;
+        final size = ((c.maxWidth - gap * (cols - 1)) / cols).clamp(0.0, 200.0);
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final it in items)
+              SizedBox(
+                width: size,
+                height: size,
+                child: _statTile(
+                  it.$1,
+                  it.$2,
+                  it.$3,
+                  it.$4,
+                  () => _openView(it.$5),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _statItem(
+  Widget _statTile(
     String label,
-    String value,
-    Color color,
+    int value,
     IconData icon,
-    VoidCallback? onTap,
+    Color color,
+    VoidCallback onTap,
   ) {
-    return Expanded(
-      child: MouseRegion(
-        cursor: onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
-        child: GestureDetector(
+    return Material(
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: const BorderSide(color: Color(0xFFEDEFF3)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
         onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(
-              color: onTap != null ? color : color.withValues(alpha: 0.1),
-              width: onTap != null ? 1.5 : 1,
-            ),
-          ),
-          child: Row(
+        hoverColor: color.withValues(alpha: 0.04),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
-                  ),
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 10,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(icon, color: color, size: 22),
               ),
-              // تم حذف أيقونة السهم من هنا
+              const SizedBox(height: 12),
+              Text(
+                '$value',
+                style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1F2937),
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 12.5,
+                  color: Color(0xFF757575),
+                ),
+              ),
             ],
           ),
         ),
-      ),
       ),
     );
   }
