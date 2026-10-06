@@ -4,6 +4,7 @@ import ProductInteractions from '@/components/ProductInteractions';
 import TrackView from '@/components/TrackView';
 import OutboundLink from '@/components/OutboundLink';
 import ProductGallery from '@/components/ProductGallery';
+import ReportButton from '@/components/ReportButton';
 import type { Product, Merchant } from '@/lib/types';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -299,6 +300,10 @@ export default async function ProductPage({
             productId={product.id}
             initialLikes={product.likes_count ?? 0}
           />
+
+          <div className="mt-6">
+            <ReportButton targetId={product.id} targetType="product" variant="link" />
+          </div>
         </div>
       </div>
 

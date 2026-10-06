@@ -10,6 +10,7 @@ import Image from 'next/image';
 import type { Metadata } from 'next';
 import VisitLogger from '@/components/VisitLogger';
 import OutboundLink from '@/components/OutboundLink';
+import ReportButton from '@/components/ReportButton';
 
 export const revalidate = 60;
 
@@ -128,6 +129,7 @@ export default async function StorePage({
                 </Link>
 
                 <ShareButton name={merchant.store_name ?? 'متجر'} />
+                <ReportButton targetId={merchant.id} targetType="merchant" />
               </div>
             </div>
           </div>
@@ -161,6 +163,7 @@ export default async function StorePage({
                 </Link>
 
                 <ShareButton name={merchant.store_name ?? 'متجر'} />
+                <ReportButton targetId={merchant.id} targetType="merchant" />
               </div>
             </div>
 
