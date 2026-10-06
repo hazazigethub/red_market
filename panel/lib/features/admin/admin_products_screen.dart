@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:web/web.dart' as web;
 
 class AdminProductsScreen extends StatefulWidget {
   /// نص البحث — يأتي من الغلاف
@@ -19,11 +19,12 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
     defaultValue: 'https://www.redmarket.pro',
   );
 
-  /// يفتح صفحة العرض في الموقع بتبويب جديد
-  Future<void> _openProductPage(dynamic productId) async {
-    final url = Uri.parse('$_siteUrl/product/$productId');
+  /// يفتح صفحة العرض في الموقع بتبويب جديد (مباشرة من المتصفح ضمن نقرة المستخدم)
+  void _openProductPage(dynamic productId) {
+    final url = '$_siteUrl/product/$productId';
     try {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+      final win = web.window.open(url, '_blank');
+      if (win == null) throw Exception('popup blocked');
     } catch (e) {
       debugPrint('Open product error: $e');
       if (mounted) {
@@ -71,6 +72,60 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   };
 
   void _openView(String v) => setState(() => _view = v);
+
+  /// رفض البلاغ: تُغلق البلاغات المعلّقة على العرض، ويبقى العرض ظاهراً
+  Future<void> _rejectReports(Map<String, dynamic> p, int count) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          title: const Text('رفض البلاغ',
+              style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 16)),
+          content: Text(
+            'سيبقى العرض "${p['name'] ?? ''}" ظاهراً للعملاء، وتُغلق بلاغاته ($count).',
+            style: const TextStyle(fontFamily: 'Cairo', fontSize: 13.5, height: 1.7),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('إلغاء', style: TextStyle(fontFamily: 'Cairo', color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('رفض البلاغ',
+                  style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, color: Color(0xFFD32027))),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await supabase
+          .from('reports')
+          .update({'status': 'resolved'})
+          .eq('target_id', p['id'])
+          .eq('target_type', 'product')
+          .eq('status', 'pending');
+      if (!mounted) return;
+      setState(() {});
+      messenger.showSnackBar(const SnackBar(
+        content: Text('تم رفض البلاغ — العرض ما زال ظاهراً', style: TextStyle(fontFamily: 'Cairo')),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ));
+    } catch (e) {
+      debugPrint('Reject reports error: $e');
+      messenger.showSnackBar(const SnackBar(
+        content: Text('تعذّر رفض البلاغ', style: TextStyle(fontFamily: 'Cairo')),
+        backgroundColor: Colors.red,
+      ));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,31 +193,22 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                           displayedProducts = allProducts;
                         case 'active':
                           displayedProducts = allProducts
-                              .where(
-                                (p) =>
-                                    p['is_available'] == true && notBanned(p),
-                              )
+                              .where((p) => p['is_available'] == true && notBanned(p))
                               .toList();
                         case 'reported':
                           // العروض المُبلغ عنها والتي لم تُحظر بعد
                           displayedProducts = allProducts
-                              .where(
-                                (p) =>
-                                    reportedProductIds.contains(
-                                      p['id'].toString(),
-                                    ) &&
-                                    notBanned(p),
-                              )
+                              .where((p) =>
+                                  reportedProductIds.contains(p['id'].toString()) &&
+                                  notBanned(p))
                               .toList();
                         case 'banned':
-                          displayedProducts = allProducts
-                              .where((p) => p['is_banned'] == true)
-                              .toList();
+                          displayedProducts =
+                              allProducts.where((p) => p['is_banned'] == true).toList();
                         default:
                           if (_searchQuery.isNotEmpty) {
                             displayedProducts = allProducts.where((p) {
-                              final name =
-                                  p['name']?.toString().toLowerCase() ?? '';
+                              final name = p['name']?.toString().toLowerCase() ?? '';
                               return name.contains(_searchQuery.toLowerCase());
                             }).toList();
                           }
@@ -173,34 +219,10 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                         children: [
                           if (_view == null) ...[
                             _statsGrid([
-                              (
-                                'إجمالي العروض',
-                                totalCount,
-                                Icons.inventory_2_outlined,
-                                Colors.purple,
-                                'all',
-                              ),
-                              (
-                                'النشطة',
-                                activeCount,
-                                Icons.check_circle_outline_rounded,
-                                Colors.green,
-                                'active',
-                              ),
-                              (
-                                'المحظورة',
-                                bannedCount,
-                                Icons.block_rounded,
-                                Colors.orange,
-                                'banned',
-                              ),
-                              (
-                                'بلاغات العروض',
-                                reportedCount,
-                                Icons.report_gmailerrorred_rounded,
-                                brandRed,
-                                'reported',
-                              ),
+                              ('إجمالي العروض', totalCount, Icons.inventory_2_outlined, Colors.purple, 'all'),
+                              ('النشطة', activeCount, Icons.check_circle_outline_rounded, Colors.green, 'active'),
+                              ('المحظورة', bannedCount, Icons.block_rounded, Colors.orange, 'banned'),
+                              ('بلاغات العروض', reportedCount, Icons.report_gmailerrorred_rounded, brandRed, 'reported'),
                             ]),
                             const SizedBox(height: 25),
                           ],
@@ -213,17 +235,12 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                                     borderRadius: BorderRadius.circular(8),
                                     child: const Padding(
                                       padding: EdgeInsets.symmetric(
-                                        horizontal: 4,
-                                        vertical: 6,
-                                      ),
+                                          horizontal: 4, vertical: 6),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          Icon(
-                                            Icons.arrow_back_ios_new,
-                                            size: 15,
-                                            color: brandRed,
-                                          ),
+                                          Icon(Icons.arrow_back_ios_new,
+                                              size: 15, color: brandRed),
                                           SizedBox(width: 6),
                                           Text(
                                             "رجوع",
@@ -334,13 +351,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
               SizedBox(
                 width: size,
                 height: size,
-                child: _statTile(
-                  it.$1,
-                  it.$2,
-                  it.$3,
-                  it.$4,
-                  () => _openView(it.$5),
-                ),
+                child: _statTile(it.$1, it.$2, it.$3, it.$4, () => _openView(it.$5)),
               ),
           ],
         );
@@ -632,29 +643,62 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                     ),
                   ],
                   const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _openProductPage(p['id']),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: brandRed,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 44,
+                          child: ElevatedButton.icon(
+                            onPressed: () => _openProductPage(p['id']),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: brandRed,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(11),
+                              ),
+                              elevation: 0,
+                            ),
+                            icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                            label: const Text(
+                              "معاينة العرض",
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        elevation: 0,
                       ),
-                      icon: const Icon(Icons.gavel_rounded, size: 18),
-                      label: const Text(
-                        "مراجعة العرض واتخاذ قرار",
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                      // رفض البلاغ: فقط لعرض عليه بلاغات وغير محظور
+                      if (reasons.isNotEmpty && !isBanned) ...[
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: SizedBox(
+                            height: 44,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _rejectReports(p, reasons.length),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.green.shade700,
+                                side: BorderSide(color: Colors.green.shade300),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(11),
+                                ),
+                              ),
+                              icon: const Icon(Icons.verified_outlined, size: 18),
+                              label: const Text(
+                                "رفض البلاغ",
+                                style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                      ],
+                    ],
                   ),
                 ],
               ),
