@@ -60,8 +60,17 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
             .toList(),
       );
 
-  bool _showOnlyReported = false;
-  bool _showOnlyBanned = false; // حالة جديدة لعرض المحظورات فقط
+  /// القائمة المفتوحة داخل الصفحة: all | active | reported | banned — null = الملخّص
+  String? _view;
+
+  static const _viewTitles = {
+    'all': 'جميع العروض',
+    'active': 'العروض النشطة',
+    'reported': 'قائمة البلاغات النشطة',
+    'banned': 'قائمة المحظورات',
+  };
+
+  void _openView(String v) => setState(() => _view = v);
 
   @override
   Widget build(BuildContext context) {
@@ -119,42 +128,47 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                           )
                           .length;
 
+                      bool notBanned(Map<String, dynamic> p) =>
+                          p['is_banned'] == false || p['is_banned'] == null;
+
                       List<Map<String, dynamic>> displayedProducts = [];
 
-                      if (_showOnlyReported) {
-                        // عرض العروض المُبلغ عنها والتي لم تُحظر بعد
-                        displayedProducts = allProducts
-                            .where(
-                              (p) =>
-                                  reportedProductIds.contains(
-                                    p['id'].toString(),
-                                  ) &&
-                                  (p['is_banned'] == false ||
-                                      p['is_banned'] == null),
-                            )
-                            .toList();
-                      } else if (_showOnlyBanned) {
-                        // عرض العروض المحظورة فقط
-                        displayedProducts = allProducts
-                            .where((p) => p['is_banned'] == true)
-                            .toList();
-                      } else if (_searchQuery.isNotEmpty) {
-                        displayedProducts = allProducts.where((p) {
-                          final name =
-                              p['name']?.toString().toLowerCase() ?? '';
-                          return name.contains(_searchQuery.toLowerCase());
-                        }).toList();
+                      switch (_view) {
+                        case 'all':
+                          displayedProducts = allProducts;
+                        case 'active':
+                          displayedProducts = allProducts
+                              .where((p) => p['is_available'] == true && notBanned(p))
+                              .toList();
+                        case 'reported':
+                          // العروض المُبلغ عنها والتي لم تُحظر بعد
+                          displayedProducts = allProducts
+                              .where((p) =>
+                                  reportedProductIds.contains(p['id'].toString()) &&
+                                  notBanned(p))
+                              .toList();
+                        case 'banned':
+                          displayedProducts =
+                              allProducts.where((p) => p['is_banned'] == true).toList();
+                        default:
+                          if (_searchQuery.isNotEmpty) {
+                            displayedProducts = allProducts.where((p) {
+                              final name = p['name']?.toString().toLowerCase() ?? '';
+                              return name.contains(_searchQuery.toLowerCase());
+                            }).toList();
+                          }
                       }
 
                       return ListView(
                         padding: const EdgeInsets.all(20),
                         children: [
-                          if (!_showOnlyReported && !_showOnlyBanned) ...[
+                          if (_view == null) ...[
                             _buildSummaryCard(
                               "إجمالي العروض",
                               "$totalCount",
                               Colors.purple,
                               Icons.inventory_2,
+                              () => _openView('all'),
                             ),
                             const SizedBox(height: 15),
                             Row(
@@ -164,7 +178,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                                   "$activeCount",
                                   Colors.green,
                                   Icons.check_circle,
-                                  null,
+                                  () => _openView('active'),
                                 ),
                                 const SizedBox(width: 10),
                                 _statItem(
@@ -172,12 +186,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                                   "$bannedCount",
                                   Colors.orange,
                                   Icons.block,
-                                  () {
-                                    setState(() {
-                                      _showOnlyBanned = true;
-                                      _showOnlyReported = false;
-                                    });
-                                  },
+                                  () => _openView('banned'),
                                 ),
                               ],
                             ),
@@ -189,30 +198,59 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                                   "$reportedCount",
                                   Colors.red,
                                   Icons.report_gmailerrorred,
-                                  () {
-                                    setState(() {
-                                      _showOnlyReported = true;
-                                      _showOnlyBanned = false;
-                                    });
-                                  },
+                                  () => _openView('reported'),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 25),
                           ],
-                          if (_showOnlyReported ||
-                              _showOnlyBanned ||
-                              _searchQuery.isNotEmpty) ...[
-                            Text(
-                              _showOnlyReported
-                                  ? "قائمة البلاغات النشطة"
-                                  : (_showOnlyBanned
-                                        ? "قائمة المحظورات"
-                                        : "نتائج البحث"),
-                              style: const TextStyle(
-                                fontFamily: 'Cairo',
-                                fontWeight: FontWeight.bold,
-                              ),
+                          if (_view != null || _searchQuery.isNotEmpty) ...[
+                            Row(
+                              children: [
+                                if (_view != null) ...[
+                                  InkWell(
+                                    onTap: () => setState(() => _view = null),
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 4, vertical: 6),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.arrow_back_ios_new,
+                                              size: 15, color: brandRed),
+                                          SizedBox(width: 6),
+                                          Text(
+                                            "رجوع",
+                                            style: TextStyle(
+                                              fontFamily: 'Cairo',
+                                              fontSize: 13,
+                                              color: brandRed,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                ],
+                                Expanded(
+                                  child: Text(
+                                    _viewTitles[_view] ?? "نتائج البحث",
+                                    style: const TextStyle(
+                                      fontFamily: 'Cairo',
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  "${displayedProducts.length}",
+                                  style: const TextStyle(
+                                    fontFamily: 'Cairo',
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 15),
                             if (displayedProducts.isEmpty)
@@ -280,13 +318,21 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
     String title,
     String value,
     Color color,
-    IconData icon,
-  ) {
-    return Container(
+    IconData icon, [
+    VoidCallback? onTap,
+  ]) {
+    return MouseRegion(
+      cursor: onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
+      child: GestureDetector(
+      onTap: onTap,
+      child: Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
+        border: onTap != null
+            ? Border.all(color: color.withValues(alpha: 0.5), width: 1.5)
+            : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -319,6 +365,8 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
           ),
         ],
       ),
+    ),
+      ),
     );
   }
 
@@ -330,7 +378,9 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
     VoidCallback? onTap,
   ) {
     return Expanded(
-      child: GestureDetector(
+      child: MouseRegion(
+        cursor: onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
+        child: GestureDetector(
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.all(15),
@@ -371,6 +421,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
