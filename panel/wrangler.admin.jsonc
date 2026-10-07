@@ -1,0 +1,10 @@
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  "name": "red-market-admin",
+  "compatibility_date": "2026-09-01",
+  "routes": [{ "pattern": "admin.redmarket.pro", "custom_domain": true }],
+  "assets": {
+    "directory": "./build/web_admin",
+    "not_found_handling": "single-page-application"
+  }
+}

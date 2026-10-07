@@ -2,38 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:red_market_core/red_market_core.dart';
+import '../../app_config.dart';
 import '../../shell/dashboard_shell.dart';
 import 'merchant_register_page.dart';
 import 'account_recovery_page.dart';
-import '../admin/categories_page.dart';
-import '../admin/admin_home_page.dart';
-import '../admin/new_merchants_screen.dart';
-import '../admin/admin_banners_screen.dart';
-import '../admin/admin_announcements_screen.dart';
-import '../merchant/merchant_home_page.dart';
-import '../merchant/manage_reels_page.dart';
-import '../merchant/products_page.dart';
-import '../merchant/merchant_reports_page.dart';
-import '../merchant/merchant_promo_page.dart';
-import '../merchant/merchant_subscriptions_page.dart';
-import '../merchant/notifications_page.dart' as merchant_notif;
-import '../merchant/useful_links_page.dart';
-import '../merchant/store_settings_page.dart';
-import '../merchant/merchant_bank_account_page.dart';
-import '../admin/admin_analytics_visits_screen.dart';
-import '../admin/admin_customer_screen.dart';
-import '../admin/admin_products_screen.dart';
-import '../admin/admin_merchants_screen.dart';
-import '../admin/admin_analytics_merchants_screen.dart';
-import '../admin/admin_analytics_products_screen.dart';
-import '../admin/admin_reports_screen.dart';
-import '../admin/admin_settings_screen.dart';
-import '../admin/admin_notifications_screen.dart';
-import '../admin/admin_newsletter_screen.dart';
-import '../admin/discount_codes_screen.dart';
-import '../admin/admin_analytics_customer_screen.dart';
-import '../admin/admin_analytics_merchant_categories_screen.dart';
-import '../admin/admin_analytics_product_categories_screen.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -189,9 +161,12 @@ class _LoginPageState extends State<LoginPage>
           .maybeSingle();
       final role = profile?['role']?.toString();
 
-      if (role != 'super_admin' && role != 'merchant') {
+      // كل مدخل يقبل دوره فقط: لوحة التاجر للتجار، ولوحة الإدارة للإدارة
+      if (role != AppConfig.role) {
         await supabase.auth.signOut();
-        throw 'هذه اللوحة مخصصة للتجار والإدارة فقط';
+        throw AppConfig.isAdmin
+            ? 'هذه اللوحة مخصصة للإدارة فقط'
+            : 'هذه اللوحة مخصصة للتجار فقط';
       }
       // حساب مجدول للحذف: نعرض شاشة الاستعادة بدل اللوحة
       final scheduledRaw = profile?['deletion_scheduled_at'];
@@ -220,7 +195,7 @@ class _LoginPageState extends State<LoginPage>
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => buildDashboardFor(role!)),
+          MaterialPageRoute(builder: (_) => AppConfig.dashboard()),
         );
       }
     } catch (e) {
@@ -272,7 +247,9 @@ class _LoginPageState extends State<LoginPage>
         body: SafeArea(
           child: Row(
             children: [
-              if (wide) Expanded(flex: 5, child: _sidePanel()),
+              // اللوح التعريفي يخص التاجر — لوحة الإدارة تعرض النموذج فقط
+              if (wide && !AppConfig.isAdmin)
+                Expanded(flex: 5, child: _sidePanel()),
               Expanded(flex: 4, child: _form()),
             ],
           ),
@@ -446,7 +423,9 @@ class _LoginPageState extends State<LoginPage>
               ),
               const SizedBox(height: 7),
               Text(
-                'سجّل دخولك لإدارة متجرك',
+                AppConfig.isAdmin
+                    ? 'سجّل دخولك إلى لوحة الإدارة'
+                    : 'سجّل دخولك لإدارة متجرك',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13.5, color: Colors.grey.shade600),
               ),
@@ -547,7 +526,9 @@ class _LoginPageState extends State<LoginPage>
 
               const SizedBox(height: 18),
 
-              Row(
+              // روابط التسجيل والاستعادة تخص التاجر
+              if (!AppConfig.isAdmin)
+                Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _linkButton(
@@ -625,89 +606,4 @@ class _LoginPageState extends State<LoginPage>
       ),
     );
   }
-}
-
-/// يبني اللوحة المناسبة للدور — يستعملها تسجيل الدخول وحارس الجلسة
-Widget buildDashboardFor(String role) {
-  return DashboardShell(
-    role: role,
-    items: role == 'merchant'
-        ? const [
-            NavItem('الرئيسية', Icons.dashboard, MerchantHomePage()),
-            NavItem('عروضي', Icons.inventory_2, ProductsPage()),
-            NavItem('الريلز', Icons.video_library, ManageReelsPage()),
-            NavItem('التقارير', Icons.bar_chart, MerchantReportsPage()),
-            NavItem('رسائل المتابعين', Icons.campaign, MerchantPromoPage()),
-            NavItem(
-              'الاشتراكات',
-              Icons.card_membership,
-              MerchantSubscriptionsPage(),
-            ),
-            NavItem(
-              'الإشعارات',
-              Icons.notifications,
-              merchant_notif.NotificationsPage(),
-            ),
-            NavItem('إعدادات المتجر', Icons.settings, StoreSettingsPage()),
-            NavItem(
-              'الحساب البنكي',
-              Icons.account_balance,
-              MerchantBankAccountPage(),
-            ),
-            NavItem('روابط مفيدة', Icons.link, UsefulLinksPage()),
-          ]
-        : const [
-            NavItem('الرئيسية', Icons.dashboard, AdminHomePage()),
-            NavItem('التصنيفات', Icons.category, AdminCategoriesScreen()),
-            NavItem('إدارة العملاء', Icons.people, AdminUsersScreen()),
-            NavItem('إدارة التجار', Icons.storefront, AdminMerchantsScreen()),
-            NavItem(
-              'التجار الجدد',
-              Icons.fiber_new_outlined,
-              NewMerchantsScreen(),
-            ),
-            NavItem('إدارة العروض', Icons.inventory, AdminProductsScreen()),
-            NavItem(
-              'تحليلات العملاء',
-              Icons.analytics,
-              AdminAnalyticsUsersScreen(),
-            ),
-            NavItem(
-              'تصنيفات المتاجر',
-              Icons.storefront,
-              AdminAnalyticsMerchantCategoriesScreen(),
-            ),
-            NavItem(
-              'تصنيفات العروض',
-              Icons.inventory_2,
-              AdminAnalyticsProductCategoriesScreen(),
-            ),
-            NavItem(
-              'الإشعارات',
-              Icons.notifications,
-              AdminNotificationsScreen(),
-            ),
-            NavItem(
-              'النشرة الأسبوعية',
-              Icons.campaign,
-              AdminNewsletterScreen(),
-            ),
-            NavItem('أكواد الخصم', Icons.local_offer, DiscountCodesScreen()),
-            NavItem('التجار', Icons.store, AdminAnalyticsMerchantsScreen()),
-            NavItem(
-              'العروض',
-              Icons.shopping_bag,
-              AdminAnalyticsProductsScreen(),
-            ),
-            NavItem('البلاغات', Icons.flag, AdminReportsScreen()),
-            NavItem(
-              'الزيارات',
-              Icons.trending_up,
-              AdminAnalyticsVisitsScreen(),
-            ),
-            NavItem('البنرات', Icons.ad_units, AdminBannersScreen()),
-            NavItem('الإعلانات', Icons.campaign, AdminAnnouncementsScreen()),
-            NavItem('الإعدادات', Icons.settings, AdminSettingsScreen()),
-          ],
-  );
 }
