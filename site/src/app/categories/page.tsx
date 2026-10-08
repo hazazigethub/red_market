@@ -19,7 +19,7 @@ async function getCategories() {
     .from('store_categories')
     .select('id, name')
     .eq('is_visible', true)
-    .order('name');
+    .order('sort_order', { ascending: true }).order('name');
   return (data as StoreCategory[]) ?? [];
 }
 

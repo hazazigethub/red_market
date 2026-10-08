@@ -52,7 +52,7 @@ export default function AccountPage() {
           .from('store_categories')
           .select('id, name')
           .eq('is_visible', true)
-          .order('name'),
+          .order('sort_order', { ascending: true }).order('name'),
       ]);
 
       const p = profRes.data;

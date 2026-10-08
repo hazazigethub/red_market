@@ -1,0 +1,13 @@
+warning: in the working copy of 'panel/lib/features/admin/categories_page.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'site/src/app/category/[id]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'site/src/app/interests/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'site/src/app/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'site/src/app/search/page.tsx', LF will be replaced by CRLF the next time Git touches it
+ panel/lib/features/admin/categories_page.dart | 190 [32m+++++++++++++++++++++[m[31m-----[m
+ site/src/app/account/info/page.tsx            |   2 [32m+[m[31m-[m
+ site/src/app/categories/page.tsx              |   2 [32m+[m[31m-[m
+ site/src/app/category/[id]/page.tsx           |   4 [32m+[m[31m-[m
+ site/src/app/interests/page.tsx               |   2 [32m+[m[31m-[m
+ site/src/app/page.tsx                         |   3 [32m+[m[31m-[m
+ site/src/app/search/page.tsx                  |   1 [32m+[m
+ 7 files changed, 164 insertions(+), 40 deletions(-)

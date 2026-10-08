@@ -35,7 +35,8 @@ async function getData() {
       supabase
         .from('store_categories')
         .select('*')
-        .eq('is_visible', true),
+        .eq('is_visible', true)
+        .order('sort_order', { ascending: true }),
       supabase
         .from('products')
         .select('*')

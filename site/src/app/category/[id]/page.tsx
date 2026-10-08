@@ -25,7 +25,7 @@ async function getData(id: string, sub?: string, leaf?: string) {
     .select('id, name')
     .eq('parent_id', id)
     .eq('is_visible', true)
-    .order('name');
+    .order('sort_order', { ascending: true }).order('name');
   const subs = (subsData as Cat[]) ?? [];
 
   // الفرعي المختار يجب أن يتبع هذا التصنيف
@@ -38,7 +38,7 @@ async function getData(id: string, sub?: string, leaf?: string) {
       .select('id, name')
       .eq('parent_id', activeSub)
       .eq('is_visible', true)
-      .order('name');
+      .order('sort_order', { ascending: true }).order('name');
     leaves = (data as Cat[]) ?? [];
   }
   const activeLeaf =

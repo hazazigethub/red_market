@@ -35,6 +35,7 @@ export default function SearchPage() {
           .from('store_categories')
           .select('id, name')
           .eq('is_visible', true)
+          .order('sort_order', { ascending: true })
           .limit(10),
         supabaseBrowser.rpc('search_products', {
           p_query: null,

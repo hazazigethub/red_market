@@ -41,7 +41,7 @@ export default function InterestsPage() {
           .from('store_categories')
           .select('id, name')
           .eq('is_visible', true)
-          .order('name'),
+          .order('sort_order', { ascending: true }).order('name'),
       ]);
 
       if (!alive) return;

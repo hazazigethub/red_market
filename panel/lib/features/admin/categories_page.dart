@@ -22,6 +22,16 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
   String? _selectedProductCategoryName;
   bool _isProcessing = false;
 
+  /// التصنيفات المعروضة في المستوى الحالي — بترتيب ظهورها في الموقع
+  List<Map<String, dynamic>> _items = [];
+  bool _loading = true;
+  String? _loadedKey;
+  int _loadSeq = 0;
+
+  /// يتغير عند الانتقال بين المستويات، فيُعاد التحميل
+  String get _viewKey =>
+      '$_level|${_selectedStoreCategoryId ?? ''}|${_selectedProductCategoryId ?? ''}';
+
   /// ١ رئيسي · ٢ فرعي · ٣ فرعي الفرعي
   int get _level {
     if (_selectedProductCategoryId != null) return 3;
@@ -41,6 +51,68 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
   }
 
   String get _searchQuery => widget.searchQuery;
+
+  /// يجلب تصنيفات المستوى الحالي مرتبة حسب sort_order
+  Future<void> _load() async {
+    final level = _level;
+    final key = _viewKey;
+    final seq = ++_loadSeq;
+    setState(() {
+      _loading = true;
+      _loadedKey = key;
+    });
+
+    var query = supabase.from(_tableForLevel(level)).select();
+    if (level == 2) {
+      query = query.eq('parent_id', _selectedStoreCategoryId as Object);
+    } else if (level == 3) {
+      query = query.eq('parent_id', _selectedProductCategoryId as Object);
+    }
+
+    try {
+      final data = await query
+          .order('sort_order', ascending: true)
+          .order('name', ascending: true);
+      if (!mounted || seq != _loadSeq) return;
+      setState(() {
+        _items = List<Map<String, dynamic>>.from(data);
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted || seq != _loadSeq) return;
+      setState(() {
+        _items = [];
+        _loading = false;
+      });
+    }
+  }
+
+  /// نقل تصنيف إلى مكان تصنيف آخر، ثم حفظ الترتيب كاملاً
+  Future<void> _moveCategory(String fromId, String toId) async {
+    final from = _items.indexWhere((e) => e['id'].toString() == fromId);
+    final to = _items.indexWhere((e) => e['id'].toString() == toId);
+    if (from < 0 || to < 0 || from == to) return;
+
+    final before = List<Map<String, dynamic>>.from(_items);
+    final moved = List<Map<String, dynamic>>.from(_items);
+    final item = moved.removeAt(from);
+    moved.insert(to, item);
+    setState(() => _items = moved);
+
+    try {
+      await supabase.rpc(
+        'reorder_categories',
+        params: {
+          'p_table': _tableForLevel(_level),
+          'p_ids': moved.map((e) => e['id'].toString()).toList(),
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _items = before);
+      _showSnackBar('تعذر حفظ الترتيب، حاول مجدداً', Colors.red);
+    }
+  }
 
   @override
   void dispose() {
@@ -110,7 +182,7 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
       if (mounted) {
         Navigator.pop(context);
         _showSnackBar("تم الحذف بنجاح", Colors.green);
-        setState(() {});
+        _load();
       }
     } catch (e) {
       _showSnackBar("خطأ: لا يمكن الحذف لارتباطه ببيانات أخرى", Colors.red);
@@ -148,6 +220,7 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
       if (mounted) {
         Navigator.pop(context);
         _showSnackBar("تم الحفظ بنجاح", Colors.green);
+        _load();
       }
     } catch (e) {
       if (mounted) {
@@ -167,12 +240,18 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
         .from(_tableForLevel(level))
         .update({'is_visible': !currentStatus})
         .eq('id', id);
-    if (mounted) setState(() {});
+    if (mounted) _load();
   }
 
   @override
   Widget build(BuildContext context) {
     const Color brandRed = Color(0xFFD32027);
+
+    if (_loadedKey != _viewKey) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _loadedKey != _viewKey) _load();
+      });
+    }
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -243,6 +322,17 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
                         ),
                       ],
                     ),
+                    if (_searchQuery.isEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        'اسحب البطاقة وأفلتها مكان بطاقة أخرى لتغيير ترتيب ظهورها في الموقع',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
                     const Divider(thickness: 1, height: 20),
                   ],
                 ),
@@ -275,41 +365,73 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
   }
 
   Widget _buildCategoryGrid({required int level, required Color brandRed}) {
-    var query = supabase.from(_tableForLevel(level)).select();
-    if (level == 2) {
-      query = query.eq('parent_id', _selectedStoreCategoryId as Object);
-    } else if (level == 3) {
-      query = query.eq('parent_id', _selectedProductCategoryId as Object);
+    if (_loading || _loadedKey != _viewKey) {
+      return const SliverFillRemaining(
+        child: Center(child: CircularProgressIndicator(color: Colors.red)),
+      );
     }
 
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: query.order('name'),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SliverFillRemaining(
-            child: Center(child: CircularProgressIndicator(color: Colors.red)),
-          );
-        }
-        var data = snapshot.data ?? [];
-        if (_searchQuery.isNotEmpty) {
-          data = data
-              .where((item) => item['name'].toString().contains(_searchQuery))
-              .toList();
-        }
-        if (data.isEmpty) return SliverFillRemaining(child: _buildEmptyState());
+    var data = _items;
+    final searching = _searchQuery.isNotEmpty;
+    if (searching) {
+      data = data
+          .where((item) => item['name'].toString().contains(_searchQuery))
+          .toList();
+    }
+    if (data.isEmpty) return SliverFillRemaining(child: _buildEmptyState());
 
-        return SliverGrid(
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 180,
-            mainAxisExtent: 140,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
+    return SliverGrid(
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 180,
+        mainAxisExtent: 140,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+      ),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final item = data[index];
+        final bool isVisible = item['is_visible'] ?? true;
+        final card = _buildCompactCard(item, isVisible, level, brandRed);
+        // الترتيب بالسحب معطّل أثناء البحث لأن القائمة ناقصة
+        if (searching) return card;
+        return _draggableCard(item, card, brandRed);
+      }, childCount: data.length),
+    );
+  }
+
+  /// بطاقة قابلة للسحب، وتستقبل غيرها: الإفلات عليها يضع المسحوب مكانها
+  Widget _draggableCard(
+    Map<String, dynamic> item,
+    Widget card,
+    Color brandRed,
+  ) {
+    final id = item['id'].toString();
+    return DragTarget<String>(
+      onWillAcceptWithDetails: (details) => details.data != id,
+      onAcceptWithDetails: (details) => _moveCategory(details.data, id),
+      builder: (context, candidates, rejected) {
+        final hovering = candidates.isNotEmpty;
+        return Draggable<String>(
+          data: id,
+          feedback: Material(
+            color: Colors.transparent,
+            child: SizedBox(
+              width: 160,
+              height: 130,
+              child: Opacity(opacity: 0.9, child: card),
+            ),
           ),
-          delegate: SliverChildBuilderDelegate((context, index) {
-            final item = data[index];
-            final bool isVisible = item['is_visible'] ?? true;
-            return _buildCompactCard(item, isVisible, level, brandRed);
-          }, childCount: data.length),
+          childWhenDragging: Opacity(opacity: 0.3, child: card),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: hovering ? brandRed : Colors.transparent,
+                width: 2,
+              ),
+            ),
+            child: card,
+          ),
         );
       },
     );
