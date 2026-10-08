@@ -59,7 +59,7 @@ class _AdminAnalyticsMerchantCategoriesScreenState
                 stream: supabase
                     .from('store_categories')
                     .stream(primaryKey: ['id'])
-                    .order('name'),
+                    .order('sort_order', ascending: true),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(

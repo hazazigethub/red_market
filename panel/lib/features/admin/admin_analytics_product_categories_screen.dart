@@ -56,7 +56,8 @@ class _AdminAnalyticsProductCategoriesScreenState
               child: StreamBuilder<List<Map<String, dynamic>>>(
                 stream: supabase
                     .from('store_categories')
-                    .stream(primaryKey: ['id']),
+                    .stream(primaryKey: ['id'])
+          .order('sort_order', ascending: true),
                 builder: (context, mainSnapshot) {
                   if (mainSnapshot.connectionState == ConnectionState.waiting) {
                     return const Center(
@@ -68,7 +69,8 @@ class _AdminAnalyticsProductCategoriesScreenState
                   return StreamBuilder<List<Map<String, dynamic>>>(
                     stream: supabase
                         .from('product_categories')
-                        .stream(primaryKey: ['id']),
+                        .stream(primaryKey: ['id'])
+          .order('sort_order', ascending: true),
                     builder: (context, subSnapshot) {
                       final allSubs = subSnapshot.data ?? [];
 

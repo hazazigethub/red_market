@@ -30,7 +30,8 @@ class _CustomerInterestsPageState extends State<CustomerInterestsPage> {
       final categoriesData = await supabase
           .from('store_categories')
           .select('name')
-          .eq('is_visible', true);
+          .eq('is_visible', true)
+          .order('sort_order', ascending: true);
 
       final profileData = await supabase
           .from('profiles')

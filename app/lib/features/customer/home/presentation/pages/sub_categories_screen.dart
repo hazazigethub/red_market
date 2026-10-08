@@ -49,7 +49,7 @@ class _SubCategoriesScreenState extends State<SubCategoriesScreen> {
           .select('id, name')
           .eq('parent_id', widget.parentId)
           .eq('is_visible', true)
-          .order('name');
+          .order('sort_order', ascending: true).order('name', ascending: true);
       _subs = List<Map<String, dynamic>>.from(data);
     } catch (e) {
       debugPrint('Subs error: $e');
@@ -101,7 +101,7 @@ class _SubCategoriesScreenState extends State<SubCategoriesScreen> {
             .select('id, name')
             .eq('parent_id', id)
             .eq('is_visible', true)
-            .order('name');
+            .order('sort_order', ascending: true).order('name', ascending: true);
         if (mounted && _subId == id) {
           setState(() => _leaves = List<Map<String, dynamic>>.from(data));
         }
@@ -300,7 +300,7 @@ class _SubCategoryItemsPageState extends State<SubCategoryItemsPage> {
             .select()
             .eq('parent_id', widget.categoryId)
             .eq('is_visible', true)
-            .order('name'),
+            .order('sort_order', ascending: true).order('name', ascending: true),
       ]);
 
       if (mounted) {

@@ -274,7 +274,7 @@ class _ProductsPageState extends State<ProductsPage> {
                 .from('product_categories')
                 .select()
                 .eq('parent_id', storeCategoryId)
-                .order('name');
+                .order('sort_order', ascending: true).order('name', ascending: true);
 
       if (mounted) {
         setState(() {
@@ -1597,7 +1597,7 @@ class _ProductsPageState extends State<ProductsPage> {
                             .from('sup_product_subcategories')
                             .select()
                             .eq('parent_id', selectedCategoryId as Object)
-                            .order('name');
+                            .order('sort_order', ascending: true).order('name', ascending: true);
                         final subList = (subs as List)
                             .map((e) => CategoryItem.fromJson(e))
                             .toList();

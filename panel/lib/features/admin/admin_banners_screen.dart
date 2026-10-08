@@ -919,7 +919,8 @@ class _AdminBannersScreenState extends State<AdminBannersScreen> {
                                             List<Map<String, dynamic>>>(
                                           future: supabase
                                               .from('product_categories')
-                                              .select(),
+                                              .select()
+          .order('sort_order', ascending: true),
                                           builder: (context, snapshot) {
                                             if (snapshot.connectionState ==
                                                 ConnectionState.waiting) {

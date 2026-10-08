@@ -29,7 +29,8 @@ class _InterestsSelectionScreenState extends State<InterestsSelectionScreen> {
       final data = await supabase
           .from('store_categories')
           .select('name')
-          .eq('is_visible', true);
+          .eq('is_visible', true)
+          .order('sort_order', ascending: true);
 
       setState(() {
         _categories = List<Map<String, dynamic>>.from(data);

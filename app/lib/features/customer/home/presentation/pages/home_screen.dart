@@ -408,7 +408,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       final catData = await supabase
           .from('store_categories')
           .select()
-          .eq('is_visible', true);
+          .eq('is_visible', true)
+          .order('sort_order', ascending: true);
       final activeProfiles = await supabase
           .from('profiles')
           .select('id')

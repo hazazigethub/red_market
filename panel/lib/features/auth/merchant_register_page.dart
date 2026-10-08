@@ -55,7 +55,8 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
   Future<List<Map<String, dynamic>>> _loadCategories() async {
     final v = await Supabase.instance.client
         .from('store_categories')
-        .select('id, name');
+        .select('id, name')
+          .order('sort_order', ascending: true).order('name', ascending: true);
     return List<Map<String, dynamic>>.from(v);
   }
 
