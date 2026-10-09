@@ -181,7 +181,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
 
   static const _sections = <Map<String, dynamic>>[
     {'label': 'عروضي', 'icon': Icons.inventory_2_outlined},
-    {'label': 'الريلز', 'icon': Icons.video_library_outlined},
+    {'label': 'مقاطع العروض', 'icon': Icons.video_library_outlined},
     {'label': 'التقارير', 'icon': Icons.bar_chart_outlined},
     {'label': 'رسائل المتابعين', 'icon': Icons.campaign_outlined},
     {'label': 'بنراتي', 'icon': Icons.ad_units_outlined},
@@ -583,7 +583,7 @@ class _MerchantHomePageState extends State<MerchantHomePage> {
 
                   final stats = [
                     _stat('عروضي', _count('products', 'merchant_id')),
-                    _stat('الريلز', _count('reels', 'merchant_id')),
+                    _stat('مقاطع العروض', _count('reels', 'merchant_id')),
                     _stat('زيارات متجري',
                         _count('analytics_visits', 'merchant_id')),
                     _stat('المتابعون', _followers()),

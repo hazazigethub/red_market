@@ -2,7 +2,7 @@ import ReelsViewer from '@/components/ReelsViewer';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'الريلز — رد ماركت',
+  title: 'مقاطع العروض — رد ماركت',
   description: 'شاهد أحدث مقاطع المتاجر على رد ماركت',
 };
 

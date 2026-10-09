@@ -1371,7 +1371,7 @@ class _MerchantControlScreenState extends State<MerchantControlScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _statRow('العروض', (products as List).length),
-                _statRow('الريلز', (reels as List).length),
+                _statRow('مقاطع العروض', (reels as List).length),
                 _statRow('الزيارات', (visits as List).length),
               ],
             ),

@@ -490,7 +490,7 @@ class _ReelsSearchPageState extends State<ReelsSearchPage> {
                             const Icon(Icons.search_rounded,
                                 color: Colors.white12, size: 70),
                             const SizedBox(height: 20),
-                            Text("ابحث عن ريلز أو متجر",
+                            Text("ابحث عن مقطع أو متجر",
                                 style: GoogleFonts.cairo(
                                     color: Colors.white38, fontSize: 16)),
                             const SizedBox(height: 8),

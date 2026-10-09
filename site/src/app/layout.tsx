@@ -15,7 +15,7 @@ import { FaGooglePlay } from 'react-icons/fa6';
 import './globals.css';
 
 const cairo = Cairo({
-  subsets: ['arabic'],
+  subsets: ['arabic', 'latin'],
   display: 'swap',
   preload: true,
   // أوزان محددة — تقلّل حجم الخط المحمَّل
@@ -65,13 +65,13 @@ export default function RootLayout({
             <nav className="flex items-center gap-0.5 shrink-0">
               <Link
                 href="/reels"
-                aria-label="الريلز"
-                title="الريلز"
+                aria-label="مقاطع العروض"
+                title="مقاطع العروض"
                 className="h-11 px-2 rounded-full flex items-center gap-1.5 hover:bg-gray-100 transition-colors"
                 style={{ color: '#D32027' }}
               >
                 <TvMinimalPlay size={30} strokeWidth={1.6} />
-                <span className="text-sm font-bold">Reels</span>
+                <span className="text-sm font-bold">مقاطع العروض</span>
               </Link>
 
               {/* على الحاسب فقط — وعلى الجوال تنزل للصف الثاني */}

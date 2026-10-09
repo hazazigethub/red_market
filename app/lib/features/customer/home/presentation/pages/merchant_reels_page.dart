@@ -81,7 +81,7 @@ class _MerchantReelsPageState extends State<MerchantReelsPage> {
                 Icon(Icons.play_circle_outline,
                     size: 60, color: Colors.grey.withValues(alpha: 0.4)),
                 const SizedBox(height: 12),
-                const Text("لا توجد ريلز لهذا المتجر",
+                const Text("لا توجد مقاطع لهذا المتجر",
                     style: TextStyle(fontFamily: 'Cairo', color: Colors.grey)),
               ],
             ),

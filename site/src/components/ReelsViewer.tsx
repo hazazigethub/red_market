@@ -308,7 +308,7 @@ export default function ReelsViewer({
       : `${window.location.origin}/reels`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: reel.title ?? 'ريلز', url });
+        await navigator.share({ title: reel.title ?? 'مقطع عرض', url });
       } else {
         await navigator.clipboard.writeText(url);
         showToast('نُسخ الرابط');
@@ -391,7 +391,7 @@ export default function ReelsViewer({
     return (
       <main className="max-w-5xl mx-auto px-4 py-20 text-center min-h-[60vh]">
         <h1 className="text-2xl font-bold mb-4">
-          {merchantId ? 'فيديوهات المتجر' : 'الريلز'}
+          {merchantId ? 'فيديوهات المتجر' : 'مقاطع العروض'}
         </h1>
         <p className="text-gray-500">
           {merchantId ? 'لا توجد مقاطع لهذا المتجر' : 'لا توجد مقاطع حالياً'}

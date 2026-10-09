@@ -217,7 +217,7 @@ export default function NotificationsPage() {
                         ? 'تصفّح النشرة'
                         : n.product_id
                           ? 'فتح العرض'
-                          : 'مشاهدة الريلز'}
+                          : 'مشاهدة مقاطع العروض'}
                     </Link>
                   )}
                 </div>

@@ -360,7 +360,7 @@ class _AdminPlansScreenState extends State<AdminPlansScreen> {
           const SizedBox(height: 7),
           _line('حد العروض', '${plan['product_limit'] ?? 0}'),
           const SizedBox(height: 7),
-          _line('حد الريلز', '${plan['reels_limit'] ?? 0}'),
+          _line('حد مقاطع العروض', '${plan['reels_limit'] ?? 0}'),
           const SizedBox(height: 7),
           _line('عدد الميزات', '${features.length}'),
           const SizedBox(height: 7),
@@ -648,7 +648,7 @@ class _PlanFormState extends State<_PlanForm> {
                                       number: true)),
                               const SizedBox(width: 12),
                               Expanded(
-                                  child: _field(_reels, 'حد الريلز',
+                                  child: _field(_reels, 'حد مقاطع العروض',
                                       number: true)),
                             ],
                           ),

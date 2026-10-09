@@ -19,7 +19,7 @@ Widget buildMerchantDashboard() {
     items: const [
       NavItem('الرئيسية', Icons.dashboard, MerchantHomePage()),
       NavItem('عروضي', Icons.inventory_2, ProductsPage()),
-      NavItem('الريلز', Icons.video_library, ManageReelsPage()),
+      NavItem('مقاطع العروض', Icons.video_library, ManageReelsPage()),
       NavItem('التقارير', Icons.bar_chart, MerchantReportsPage()),
       NavItem('رسائل المتابعين', Icons.campaign, MerchantPromoPage()),
       NavItem(

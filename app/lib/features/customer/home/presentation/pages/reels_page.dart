@@ -663,7 +663,7 @@ class _ReelsPageState extends State<ReelsPage>
                     const Icon(Icons.search_rounded,
                         color: Colors.white38, size: 18),
                     const SizedBox(width: 8),
-                    Text("بحث عن ريلز أو متجر...",
+                    Text("ابحث عن مقطع أو متجر...",
                         style: GoogleFonts.cairo(
                             color: Colors.white38, fontSize: 12)),
                   ],
@@ -820,7 +820,7 @@ class _ReelsPageState extends State<ReelsPage>
                 const Icon(Icons.videocam_off, size: 48, color: Colors.white24),
           ),
           const SizedBox(height: 20),
-          Text("لا توجد مقاطع ريلز متاحة حالياً",
+          Text("لا توجد مقاطع عروض متاحة حالياً",
               style: GoogleFonts.cairo(color: Colors.white54, fontSize: 15)),
           const SizedBox(height: 16),
           GestureDetector(

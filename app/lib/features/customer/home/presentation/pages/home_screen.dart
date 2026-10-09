@@ -768,7 +768,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             _buildNavItem(0, Icons.home_filled, "الرئيسية"),
             _buildNavItem(1, Icons.bookmark_border_rounded, "المفضلة"),
-            _buildNavItem(2, Icons.play_circle_outline, "ريلز"),
+            _buildNavItem(2, Icons.play_circle_outline, "مقاطع العروض"),
             _buildNavItem(3, Icons.notifications_none, "الإشعارات"),
             if (!isAdmin && !isMerchant)
               _buildNavItem(4, Icons.person_outline, "حسابي"),

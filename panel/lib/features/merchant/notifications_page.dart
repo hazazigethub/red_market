@@ -156,7 +156,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   'https://redmarket.sa/product/$pId')
             else if (rId != null)
               _dialogAction(ctx, Icons.play_circle_fill_rounded,
-                  "مشاهدة الريلز", 'https://redmarket.sa/reels'),
+                  "مشاهدة مقاطع العروض", 'https://redmarket.sa/reels'),
           ],
         ),
       ),

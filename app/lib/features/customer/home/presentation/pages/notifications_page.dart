@@ -180,7 +180,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                   context.push('/reels');
                 },
                 icon: const Icon(Icons.play_circle_fill_rounded, size: 18),
-                label: const Text("مشاهدة الريلز",
+                label: const Text("مشاهدة مقاطع العروض",
                     style: TextStyle(
                         fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(

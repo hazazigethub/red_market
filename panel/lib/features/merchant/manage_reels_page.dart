@@ -137,7 +137,7 @@ class _ManageReelsPageState extends State<ManageReelsPage> {
         if (mounted) {
           setState(() => _isUploading = false);
           _showErrorDialog(
-              "وصلت للحد الأقصى", "باقتك تسمح بـ $_reelsLimit ريلز فقط.");
+              "وصلت للحد الأقصى", "باقتك تسمح بـ $_reelsLimit مقاطع فقط.");
         }
         return;
       }
@@ -268,7 +268,7 @@ class _ManageReelsPageState extends State<ManageReelsPage> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          "وصلت للحد الأقصى ($_reelsLimit ريلز). رقّ باقتك لإضافة المزيد.",
+                          "وصلت للحد الأقصى ($_reelsLimit مقاطع). رقّ باقتك لإضافة المزيد.",
                           style: const TextStyle(fontFamily: 'Cairo'),
                         ),
                         backgroundColor: Colors.red,
@@ -339,7 +339,7 @@ class _ManageReelsPageState extends State<ManageReelsPage> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        "الريلز: $_currentReelsCount / $_reelsLimit",
+                        "مقاطع العروض: $_currentReelsCount / $_reelsLimit",
                         style: TextStyle(
                           fontFamily: 'Cairo',
                           fontSize: 13,
@@ -535,7 +535,7 @@ class _ManageReelsPageState extends State<ManageReelsPage> {
               ),
               ListTile(
                 leading: const Icon(Icons.delete_outline, color: Colors.red),
-                title: const Text("حذف الريلز",
+                title: const Text("حذف المقطع",
                     style: TextStyle(fontFamily: 'Cairo', color: Colors.red)),
                 onTap: () {
                   Navigator.pop(ctx);
