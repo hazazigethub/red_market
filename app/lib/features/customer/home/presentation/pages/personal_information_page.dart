@@ -106,6 +106,209 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
     }
   }
 
+  /// تغيير رقم الجوال — يُتحقق برمز يُرسل إلى بريد الحساب
+  void _showChangePhoneSheet() {
+    final phoneController = TextEditingController();
+    final codeController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool codeSent = false;
+    bool busy = false;
+
+    String cleanPhone() =>
+        phoneController.text.trim().replaceAll(RegExp(r'\D'), '');
+
+    Future<void> sendCode(StateSetter setSheet) async {
+      final phone = cleanPhone();
+      if (!RegExp(r'^05\d{8}$').hasMatch(phone)) {
+        _showSnackBar("أدخل رقماً صحيحاً بصيغة 05xxxxxxxx", Colors.orange);
+        return;
+      }
+      if (phone == _phoneController.text.trim()) {
+        _showSnackBar("هذا هو رقمك الحالي", Colors.orange);
+        return;
+      }
+      setSheet(() => busy = true);
+      try {
+        await supabase.auth.signInWithOtp(
+          email: _emailController.text.trim(),
+          shouldCreateUser: false,
+        );
+        setSheet(() => codeSent = true);
+        _showSnackBar("أُرسل الرمز إلى ${_emailController.text}", Colors.green);
+      } catch (e) {
+        debugPrint('Send phone code error: $e');
+        _showSnackBar("تعذر إرسال الرمز، حاول بعد قليل", Colors.red);
+      } finally {
+        setSheet(() => busy = false);
+      }
+    }
+
+    Future<void> confirm(BuildContext sheetContext, StateSetter setSheet) async {
+      if (!formKey.currentState!.validate()) return;
+      final phone = cleanPhone();
+      setSheet(() => busy = true);
+      try {
+        // ١) التحقق من الرمز
+        await supabase.auth.verifyOTP(
+          email: _emailController.text.trim(),
+          token: codeController.text.trim(),
+          type: OtpType.email,
+        );
+
+        // ٢) تحديث الرقم
+        final uid = supabase.auth.currentUser?.id;
+        if (uid == null) throw Exception('no session');
+        await supabase
+            .from('profiles')
+            .update({'phone_number': phone}).eq('id', uid);
+
+        _phoneController.text = phone;
+        if (sheetContext.mounted) Navigator.pop(sheetContext);
+        _showSnackBar("تم تغيير رقم الجوال بنجاح ✅", Colors.green);
+      } on AuthException catch (e) {
+        debugPrint('Verify phone code error: ${e.message}');
+        _showSnackBar("الرمز غير صحيح أو منتهي الصلاحية", Colors.red);
+      } on PostgrestException catch (e) {
+        debugPrint('Update phone error: ${e.message}');
+        _showSnackBar(
+            e.code == '23505'
+                ? "هذا الرقم مسجّل في حساب آخر"
+                : "تعذر تحديث الرقم",
+            Colors.red);
+      } catch (e) {
+        debugPrint('Change phone error: $e');
+        _showSnackBar("حدث خطأ أثناء التحديث", Colors.red);
+      } finally {
+        if (mounted) setSheet(() => busy = false);
+      }
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheet) => Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+          ),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            left: 20,
+            right: 20,
+            top: 20,
+          ),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text("تغيير رقم الجوال",
+                    style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold)),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: phoneController,
+                  enabled: !codeSent,
+                  keyboardType: TextInputType.phone,
+                  textDirection: TextDirection.ltr,
+                  textAlign: TextAlign.left,
+                  decoration: InputDecoration(
+                    labelText: "رقم الجوال الجديد",
+                    hintText: "05xxxxxxxx",
+                    labelStyle:
+                        const TextStyle(fontFamily: 'Cairo', fontSize: 13),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: brandRed)),
+                  ),
+                ),
+                const SizedBox(height: 15),
+                Text(
+                  "سنرسل رمز تحقق إلى\n${_emailController.text}",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontFamily: 'Cairo', fontSize: 13, height: 1.7),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: busy ? null : () => sendCode(setSheet),
+                    style: OutlinedButton.styleFrom(
+                        foregroundColor: brandRed,
+                        side: const BorderSide(color: brandRed),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10))),
+                    child: Text(
+                        busy && !codeSent
+                            ? "جاري الإرسال..."
+                            : codeSent
+                                ? "إعادة إرسال الرمز"
+                                : "إرسال الرمز",
+                        style: const TextStyle(fontFamily: 'Cairo')),
+                  ),
+                ),
+                if (codeSent) ...[
+                  const SizedBox(height: 15),
+                  TextFormField(
+                    controller: codeController,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    maxLength: 6,
+                    decoration: InputDecoration(
+                      labelText: "رمز التحقق",
+                      labelStyle:
+                          const TextStyle(fontFamily: 'Cairo', fontSize: 13),
+                      counterText: '',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: brandRed)),
+                    ),
+                    validator: (v) => (v ?? '').trim().length == 6
+                        ? null
+                        : "أدخل الرمز المكوّن من ستة أرقام",
+                  ),
+                  const SizedBox(height: 15),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: busy ? null : () => confirm(context, setSheet),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: brandRed,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12))),
+                      child: busy
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
+                          : const Text("تأكيد التغيير",
+                              style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showChangePasswordSheet() {
     final newPwdController = TextEditingController();
     final confirmPwdController = TextEditingController();
@@ -499,6 +702,14 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
       decoration: InputDecoration(
         prefixIcon:
             const Icon(Icons.phone_android, color: Colors.grey, size: 22),
+        suffixIcon: TextButton(
+          onPressed: _showChangePhoneSheet,
+          child: const Text("تغيير",
+              style: TextStyle(
+                  fontFamily: 'Cairo',
+                  color: brandRed,
+                  fontWeight: FontWeight.bold)),
+        ),
         filled: true,
         fillColor: Colors.grey.withValues(alpha: 0.05),
         border: OutlineInputBorder(
