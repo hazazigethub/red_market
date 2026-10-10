@@ -42,7 +42,7 @@ export async function syncPayment(
   const { base, key } = mfConfig();
   const supabase = supabaseAdmin();
   if (!base || !key || !supabase) {
-    return { ok: false, paid: false, message: 'إعدادات الخادم ناقصة' };
+    return { ok: false, paid: false, message: 'الشحن غير متاح حالياً' };
   }
 
   // ===== الحالة من MyFatoorah مباشرة =====

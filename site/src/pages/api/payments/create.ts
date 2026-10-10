@@ -43,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
 
   if (!mfBase || !mfKey || !siteUrl || !supabaseUrl || !serviceKey) {
-    return res.status(500).json({ error: 'إعدادات الخادم ناقصة (.env.local)' });
+    return res.status(500).json({ error: 'الشحن غير متاح حالياً' });
   }
 
   // ===== التحقق من المستخدم عبر جلسة Supabase =====
