@@ -484,6 +484,8 @@ class _PlanFormState extends State<_PlanForm> {
 
   List<String> _features = [];
   final _featureCtrl = TextEditingController();
+  int? _editingIndex;
+  final _editCtrl = TextEditingController();
 
   bool get _isEdit => widget.plan != null;
 
@@ -521,10 +523,12 @@ class _PlanFormState extends State<_PlanForm> {
     _reels.dispose();
     _discount.dispose();
     _featureCtrl.dispose();
+    _editCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
+    if (_editingIndex != null) _saveEdit();
     if (!_formKey.currentState!.validate() || _saving) return;
     setState(() => _saving = true);
 
@@ -720,35 +724,16 @@ class _PlanFormState extends State<_PlanForm> {
 
                           const SizedBox(height: 12),
 
-                          ..._features.asMap().entries.map((e) => Container(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF7F8FA),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.check_circle_rounded,
-                                        size: 15, color: brandRed),
-                                    const SizedBox(width: 9),
-                                    Expanded(
-                                      child: Text(e.value,
-                                          style: const TextStyle(
-                                              fontFamily: 'Cairo',
-                                              fontSize: 12.5)),
-                                    ),
-                                    GestureDetector(
-                                      onTap: () => setState(
-                                          () => _features.removeAt(e.key)),
-                                      child: Icon(Icons.close,
-                                          size: 16,
-                                          color: Colors.grey.shade400),
-                                    ),
-                                  ],
-                                ),
-                              )),
+                          ReorderableListView(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            buildDefaultDragHandles: false,
+                            onReorder: _reorderFeature,
+                            children: [
+                              for (int i = 0; i < _features.length; i++)
+                                _featureTile(i),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -800,6 +785,112 @@ class _PlanFormState extends State<_PlanForm> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _reorderFeature(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) newIndex -= 1;
+      final item = _features.removeAt(oldIndex);
+      _features.insert(newIndex, item);
+      _editingIndex = null;
+    });
+  }
+
+  void _startEdit(int i) {
+    setState(() {
+      _editingIndex = i;
+      _editCtrl.text = _features[i];
+    });
+  }
+
+  void _saveEdit() {
+    final i = _editingIndex;
+    if (i == null) return;
+    final t = _editCtrl.text.trim();
+    setState(() {
+      if (t.isNotEmpty) _features[i] = t;
+      _editingIndex = null;
+    });
+  }
+
+  void _deleteFeature(int i) {
+    setState(() {
+      _features.removeAt(i);
+      _editingIndex = null;
+    });
+  }
+
+  Widget _featureTile(int i) {
+    final editing = _editingIndex == i;
+    return Container(
+      key: ValueKey(Object.hash(i, _features[i])),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F8FA),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: editing ? brandRed : Colors.transparent),
+      ),
+      child: Row(
+        children: [
+          ReorderableDragStartListener(
+            index: i,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.grab,
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(Icons.drag_indicator_rounded,
+                    size: 18, color: Colors.grey.shade500),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          if (editing) ...[
+            Expanded(
+              child: TextField(
+                controller: _editCtrl,
+                autofocus: true,
+                style: const TextStyle(fontFamily: 'Cairo', fontSize: 12.5),
+                decoration: const InputDecoration(
+                    isDense: true, border: InputBorder.none),
+                onSubmitted: (_) => _saveEdit(),
+              ),
+            ),
+            IconButton(
+              tooltip: '\u062d\u0641\u0638',
+              onPressed: _saveEdit,
+              icon: const Icon(Icons.check_rounded,
+                  size: 18, color: Colors.green),
+            ),
+            IconButton(
+              tooltip: '\u0625\u0644\u063a\u0627\u0621',
+              onPressed: () => setState(() => _editingIndex = null),
+              icon: Icon(Icons.undo_rounded,
+                  size: 18, color: Colors.grey.shade600),
+            ),
+            IconButton(
+              tooltip: '\u062d\u0630\u0641 \u0627\u0644\u0645\u064a\u0632\u0629',
+              onPressed: () => _deleteFeature(i),
+              icon: const Icon(Icons.delete_outline_rounded,
+                  size: 18, color: Colors.red),
+            ),
+          ] else ...[
+            const Icon(Icons.check_circle_rounded, size: 15, color: brandRed),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Text(_features[i],
+                  style: const TextStyle(fontFamily: 'Cairo', fontSize: 12.5)),
+            ),
+            IconButton(
+              tooltip: '\u062a\u0639\u062f\u064a\u0644',
+              onPressed: () => _startEdit(i),
+              icon: Icon(Icons.edit_outlined,
+                  size: 17, color: Colors.grey.shade600),
+            ),
+          ],
+        ],
       ),
     );
   }
