@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:red_market_core/red_market_core.dart';
 import '../../app_config.dart';
 import '../../shell/dashboard_shell.dart';
+import '../../shared/visit_logger.dart';
 import 'merchant_register_page.dart';
 import 'account_recovery_page.dart';
 
@@ -46,6 +47,9 @@ class _LoginPageState extends State<LoginPage>
   @override
   void initState() {
     super.initState();
+    PanelVisitLogger.log(
+      AppConfig.isAdmin ? 'panel_admin_login' : 'panel_login',
+    );
     clearSavedNavPosition(); // ✅ بعد أي خروج يبدأ الدخول التالي من الرئيسية
     _revealCtrl = AnimationController(
       vsync: this,
