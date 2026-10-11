@@ -163,6 +163,42 @@ class _AdminAnalyticsVisitsScreenState
         }
       }
 
+      // زيارات لوحة التاجر — جدول مستقل عن زيارات العملاء
+      int panelLoginTotal = 0;
+      int panelRegisterTotal = 0;
+      int panelLoginRange = 0;
+      int panelRegisterRange = 0;
+      try {
+        final panelRows = await supabase
+            .from('panel_visits')
+            .select('page_name, visited_at')
+            .order('visited_at', ascending: false)
+            .limit(50000);
+
+        for (final p in (panelRows as List)) {
+          if (p['visited_at'] == null) continue;
+          final name = p['page_name']?.toString() ?? '';
+          final d = material.DateUtils.dateOnly(
+            DateTime.parse(p['visited_at']).toLocal(),
+          );
+          final inRange =
+              (d.isAtSameMomentAs(_selectedRange.start) ||
+                  d.isAfter(_selectedRange.start)) &&
+              (d.isAtSameMomentAs(_selectedRange.end) ||
+                  d.isBefore(_selectedRange.end));
+
+          if (name == 'panel_login') {
+            panelLoginTotal++;
+            if (inRange) panelLoginRange++;
+          } else if (name == 'panel_register') {
+            panelRegisterTotal++;
+            if (inRange) panelRegisterRange++;
+          }
+        }
+      } catch (e) {
+        material.debugPrint('panel_visits error: $e');
+      }
+
       return {
         'total': totalVisitsCount,
         'monthly': monthlyVisitsCount,
@@ -175,6 +211,10 @@ class _AdminAnalyticsVisitsScreenState
         'web': filteredWebCount,
         'totalMales': filteredMales,
         'totalFemales': filteredFemales,
+        'panelLoginTotal': panelLoginTotal,
+        'panelRegisterTotal': panelRegisterTotal,
+        'panelLogin': panelLoginRange,
+        'panelRegister': panelRegisterRange,
       };
     } catch (e) {
       material.debugPrint("Error fetching analytics: $e");
@@ -362,6 +402,51 @@ class _AdminAnalyticsVisitsScreenState
                             "${s['web']}",
                             material.Colors.blue.shade700,
                             material.Icons.language_rounded,
+                          ),
+                        ],
+                      ),
+                      const material.SizedBox(height: 30),
+                      const material.Text(
+                        "لوحة التاجر",
+                        style: material.TextStyle(
+                          fontFamily: 'Cairo',
+                          fontWeight: material.FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const material.SizedBox(height: 6),
+                      material.Text(
+                        'الرقم الكبير للفترة المحددة، وبين القوسين الإجمالي منذ البداية',
+                        style: material.TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 11.5,
+                          color: material.Colors.grey.shade500,
+                        ),
+                      ),
+                      const material.SizedBox(height: 12),
+                      material.Row(
+                        children: [
+                          _buildStaticSmallCard(
+                            "صفحة الدخول (${s['panelLoginTotal']})",
+                            "${s['panelLogin']}",
+                            material.Colors.indigo,
+                            material.Icons.login_rounded,
+                          ),
+                          const material.SizedBox(width: 10),
+                          _buildStaticSmallCard(
+                            "صفحة التسجيل (${s['panelRegisterTotal']})",
+                            "${s['panelRegister']}",
+                            material.Colors.teal,
+                            material.Icons.store_mall_directory_outlined,
+                          ),
+                          const material.SizedBox(width: 10),
+                          _buildStaticSmallCard(
+                            "من الدخول إلى التسجيل",
+                            (s['panelLogin'] as int) == 0
+                                ? "—"
+                                : "${(((s['panelRegister'] as int) / (s['panelLogin'] as int)) * 100).round()}%",
+                            material.Colors.purple,
+                            material.Icons.percent_rounded,
                           ),
                         ],
                       ),

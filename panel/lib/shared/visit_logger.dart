@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// تسجيل زيارات صفحات اللوحة في جدول analytics_visits.
+/// تسجيل زيارات صفحات اللوحة في جدول panel_visits.
 ///
 /// زيارة واحدة لكل صفحة في الجلسة، حتى لا تتضخّم الأرقام
 /// عند إعادة بناء الصفحة أو تحديثها داخل التطبيق.
@@ -17,9 +17,8 @@ class PanelVisitLogger {
 
     try {
       final supabase = Supabase.instance.client;
-      await supabase.from('analytics_visits').insert({
+      await supabase.from('panel_visits').insert({
         'page_name': page,
-        'platform': 'panel',
         'user_id': supabase.auth.currentUser?.id,
         'visited_at': DateTime.now().toUtc().toIso8601String(),
       });

@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'otp_verification_page.dart';
 import 'package:red_market_core/red_market_core.dart';
 import '../merchant/terms_page.dart';
+import '../../shared/visit_logger.dart';
 
 class MerchantRegisterPage extends StatefulWidget {
   const MerchantRegisterPage({super.key});
@@ -49,6 +50,7 @@ class _MerchantRegisterPageState extends State<MerchantRegisterPage> {
   @override
   void initState() {
     super.initState();
+    PanelVisitLogger.log('panel_register');
     _categoriesFuture = _loadCategories();
   }
 
