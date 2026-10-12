@@ -3,14 +3,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-client';
 
-const BRAND = '#D32027';
-
 /// شريط أخبار متحرّك — رسائله تُدار من لوحة الأدمن
 export default function NewsTicker() {
   const [messages, setMessages] = useState<string[]>([]);
 
   /// نسخ تكفي لملء عرض الشريط — وإلا ظهرت الرسائل في نطاق ضيّق
   const [copies, setCopies] = useState(2);
+
+  /// مدة اللفة تُحسب من عرض الشريط: نحو 60 بكسل في الثانية
+  const [dur, setDur] = useState(30);
   const boxRef = useRef<HTMLDivElement>(null);
   const stripRef = useRef<HTMLDivElement>(null);
 
@@ -22,15 +23,24 @@ export default function NewsTicker() {
     const w = strip.offsetWidth;
     if (w <= 0) return;
 
-    setCopies(Math.max(2, Math.ceil(box.offsetWidth / w) + 1));
+    setCopies(Math.max(3, Math.ceil((box.offsetWidth * 2) / w) + 1));
+    setDur(Math.max(8, Math.round(w / 90)));
   }, []);
 
   useEffect(() => {
     if (messages.length === 0) return;
     measure();
 
+    const t1 = setTimeout(measure, 250);
+    const t2 = setTimeout(measure, 1200);
+    document.fonts?.ready.then(() => measure()).catch(() => {});
+
     window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      window.removeEventListener('resize', measure);
+    };
   }, [messages, measure]);
 
   useEffect(() => {
@@ -78,10 +88,7 @@ export default function NewsTicker() {
           <span className="text-xs font-semibold text-gray-700 whitespace-nowrap">
             {m}
           </span>
-          <span
-            className="inline-block w-1 h-1 rounded-full mx-5"
-            style={{ backgroundColor: BRAND }}
-          />
+          <span className="inline-block w-12" />
         </span>
       ))}
     </div>
@@ -89,7 +96,7 @@ export default function NewsTicker() {
 
   return (
     <div className="flex items-stretch border-b border-gray-200 overflow-hidden"
-         style={{ backgroundColor: `${BRAND}0F` }}>
+         style={{ backgroundColor: '#FFFFFF' }}>
       <div
         ref={boxRef}
         className="flex-1 overflow-hidden py-1.5"
@@ -97,7 +104,7 @@ export default function NewsTicker() {
       >
         <div
           className="flex w-max animate-rm-ticker"
-          style={{ '--rm-copies': copies } as React.CSSProperties}
+          style={{ '--rm-copies': copies, '--rm-dur': dur + 's' } as React.CSSProperties}
         >
           {Array.from({ length: copies }, (_, i) => strip(i))}
         </div>
@@ -109,11 +116,11 @@ export default function NewsTicker() {
             transform: translateX(0);
           }
           to {
-            transform: translateX(calc(-100% / var(--rm-copies)));
+            transform: translateX(calc(100% / var(--rm-copies)));
           }
         }
         .animate-rm-ticker {
-          animation: rm-ticker 5s linear infinite;
+          animation: rm-ticker var(--rm-dur, 30s) linear infinite;
         }
         .animate-rm-ticker:hover {
           animation-play-state: paused;
